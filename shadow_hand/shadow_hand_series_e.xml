@@ -4,10 +4,10 @@
     <!-- These settings affect the quality of the rendering. In general, larger values
         result in higher quality, but possibly slower speed.
      -->
-    <!-- <visual>
-        <map fogstart="3" fogend="5" force="0.1" znear="0.1"/>
-        <quality shadowsize="2048" offsamples="8"/>
-    </visual> -->
+    <visual>
+        <!-- <map fogstart="3" fogend="5" force="0.1" znear="0.1"/> -->
+        <!-- <quality shadowsize="2048"/> -->
+    </visual>
 
     <!-- Need to tune this:
         timestep: Simulation timestep in seconds. Default is 0.002.

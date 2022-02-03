@@ -14,7 +14,6 @@ def render(
     duration: float = 2.0,
     framerate: float = 30,
 ) -> None:
-    print(duration)
     while physics.data.time < duration:
         physics.step()
         if len(frames) < physics.data.time * framerate:
@@ -24,34 +23,42 @@ def render(
 
 def main() -> None:
     hand = shadow_hand_e.ShadowHandSeriesE(actuation=consts.Actuation.POSITION)
+
+    # Make the sky white. Must be done before the physics object is initialized.
+    hand.mjcf_model.asset.add(
+        "texture",
+        type="skybox",
+        builtin="flat",
+        height="1",
+        width="1",
+        rgb1="1 1 1",
+        rgb2="1 1 1",
+    )
+
     physics = mjcf.Physics.from_mjcf_model(hand.mjcf_model)
 
     duration_per = 0.2
     framerate = 30
     frames: List[np.ndarray] = []
 
-    # Create a sequence of control commands that will lower each finger sequentially,
-    # then raise each finger in reverse order.
     control = np.zeros((consts.NUM_JOINTS,), dtype=float)
     time = 0.0
 
     # Wave wrist.
     time += duration_per
-    for _ in range(2):
+    for i in range(2):
         control[0] = consts.ACTUATOR_CTRLRANGE[consts.Actuators.A_WRJ1][0]
         hand.set_position_control(physics, hand.joint_positions_to_control(control))
         render(physics, frames, time, framerate)
-        control[0] = consts.ACTUATOR_CTRLRANGE[consts.Actuators.A_WRJ1][1]
+        if i == 1:
+            control[0] = 0.0
+        else:
+            control[0] = consts.ACTUATOR_CTRLRANGE[consts.Actuators.A_WRJ1][1]
         hand.set_position_control(physics, hand.joint_positions_to_control(control))
         render(physics, frames, time + duration_per, framerate)
         time += 2 * duration_per
 
-    control[0] = 0
-    hand.set_position_control(physics, hand.joint_positions_to_control(control))
-    render(physics, frames, time, framerate)
-
     # Thumb.
-    time += duration_per
     control[23] = consts.ACTUATOR_CTRLRANGE[consts.Actuators.A_THJ0][1]
     hand.set_position_control(physics, hand.joint_positions_to_control(control))
     render(physics, frames, time, framerate)
@@ -118,7 +125,7 @@ def main() -> None:
     hand.set_position_control(physics, hand.joint_positions_to_control(control))
     render(physics, frames, time, framerate)
 
-    imageio.mimsave("temp/render.gif", frames, fps=framerate)
+    imageio.mimsave("temp/teaser.gif", frames, fps=framerate)
 
 
 if __name__ == "__main__":

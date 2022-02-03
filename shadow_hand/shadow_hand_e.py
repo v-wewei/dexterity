@@ -21,11 +21,12 @@ class _ActuatorParams:
 # visually reasonable results.
 c = 0.6
 cx = 3.0
+cy = 20.0
 _ACTUATOR_PARAMS = {
     consts.Actuation.POSITION: {
         # Wrist.
-        consts.Actuators.A_WRJ1: _ActuatorParams(kp=20.0),
-        consts.Actuators.A_WRJ0: _ActuatorParams(kp=20.0),
+        consts.Actuators.A_WRJ1: _ActuatorParams(kp=cy),
+        consts.Actuators.A_WRJ0: _ActuatorParams(kp=cy),
         # First finger.
         consts.Actuators.A_FFJ3: _ActuatorParams(kp=c),
         consts.Actuators.A_FFJ2: _ActuatorParams(kp=c),
