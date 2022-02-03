@@ -154,7 +154,7 @@ class ShadowHandSeriesE:
         Returns:
             A (20, 2) ndarray containing (lower, upper) control bounds.
         """
-        # These are queried from the MJCF instead of the hard-coded constants. This is
+        # These are queried from the mjcf instead of the hard-coded constants. This is
         # to account for any possible runtime randomizations.
         return np.array(physics.bind(self._actuators).ctrlrange, copy=True)
 
@@ -167,7 +167,7 @@ class ShadowHandSeriesE:
         Returns:
             A (24, 2) ndarray containing (lower, upper) position bounds.
         """
-        # These are queried from the MJCF instead of the hard-coded constants. This is
+        # These are queried from the mjcf instead of the hard-coded constants. This is
         # to account for any possible runtime randomizations.
         return np.array(physics.bind(self._joints).range, copy=True)
 
@@ -232,14 +232,11 @@ class ShadowHandSeriesE:
         if self._actuation == consts.Actuation.POSITION:
             self._add_position_actuators()
 
-    def _add_torque_actuators(self) -> None:
-        ...
-
     def _add_position_actuators(self) -> None:
         """Adds position actuators to the mjcf model."""
 
         def add_actuator(act: consts.Actuators, params: _ActuatorParams) -> MjcfElement:
-            # Create a position actuator MJCF elem.
+            # Create a position actuator mjcf elem.
             actuator = self._mjcf_root.actuator.add(
                 "position",
                 name=act.name,
@@ -251,7 +248,7 @@ class ShadowHandSeriesE:
             )
 
             # NOTE(kevin): When specifying the joint or tendon to which an actuator is
-            # attached, the MJCF element itself is used, rather than the name string.
+            # attached, the mjcf element itself is used, rather than the name string.
             if act in consts.ACTUATOR_TENDON_MAPPING:
                 actuator.tendon = self._tendon_elem_mapping[
                     consts.ACTUATOR_TENDON_MAPPING[act]
@@ -274,17 +271,3 @@ class ShadowHandSeriesE:
             rgb = np.random.uniform(size=3).flatten()
             rgba = np.append(rgb, 1)
             geom.rgba = rgba
-
-
-if __name__ == "__main__":
-    import matplotlib.pyplot as plt
-
-    def render(physics, name=""):
-        pixels = physics.render(width=640, height=480, camera_id="cam0")
-        _ = plt.figure(name)
-        plt.imshow(pixels)
-        plt.show()
-
-    hand = ShadowHandSeriesE(actuation=consts.Actuation.POSITION)
-    physics = mjcf.Physics.from_mjcf_model(hand.mjcf_model)
-    physics.step()
