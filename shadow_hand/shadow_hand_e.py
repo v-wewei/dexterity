@@ -19,37 +19,34 @@ class _ActuatorParams:
 # NOTE(kevin): The values of the constants below are not really tuned. At the moment,
 # I just loaded the model in the MuJoCo viewer and set the values manually to get
 # visually reasonable results.
-c = 0.6
-cx = 3.0
-cy = 20.0
 _ACTUATOR_PARAMS = {
     consts.Actuation.POSITION: {
         # Wrist.
-        consts.Actuators.A_WRJ1: _ActuatorParams(kp=cy),
-        consts.Actuators.A_WRJ0: _ActuatorParams(kp=cy),
+        consts.Actuators.A_WRJ1: _ActuatorParams(kp=20.0),
+        consts.Actuators.A_WRJ0: _ActuatorParams(kp=20.0),
         # First finger.
-        consts.Actuators.A_FFJ3: _ActuatorParams(kp=c),
-        consts.Actuators.A_FFJ2: _ActuatorParams(kp=c),
-        consts.Actuators.A_FFJ1: _ActuatorParams(kp=c),
+        consts.Actuators.A_FFJ3: _ActuatorParams(kp=0.6),
+        consts.Actuators.A_FFJ2: _ActuatorParams(kp=0.6),
+        consts.Actuators.A_FFJ1: _ActuatorParams(kp=0.6),
         # Middle finger.
-        consts.Actuators.A_MFJ3: _ActuatorParams(kp=c),
-        consts.Actuators.A_MFJ2: _ActuatorParams(kp=c),
-        consts.Actuators.A_MFJ1: _ActuatorParams(kp=c),
+        consts.Actuators.A_MFJ3: _ActuatorParams(kp=0.6),
+        consts.Actuators.A_MFJ2: _ActuatorParams(kp=0.6),
+        consts.Actuators.A_MFJ1: _ActuatorParams(kp=0.6),
         # Ring finger.
-        consts.Actuators.A_RFJ3: _ActuatorParams(kp=c),
-        consts.Actuators.A_RFJ2: _ActuatorParams(kp=c),
-        consts.Actuators.A_RFJ1: _ActuatorParams(kp=c),
+        consts.Actuators.A_RFJ3: _ActuatorParams(kp=0.6),
+        consts.Actuators.A_RFJ2: _ActuatorParams(kp=0.6),
+        consts.Actuators.A_RFJ1: _ActuatorParams(kp=0.6),
         # Little finger.
-        consts.Actuators.A_LFJ4: _ActuatorParams(kp=c),
-        consts.Actuators.A_LFJ3: _ActuatorParams(kp=c),
-        consts.Actuators.A_LFJ2: _ActuatorParams(kp=c),
-        consts.Actuators.A_LFJ1: _ActuatorParams(kp=c),
+        consts.Actuators.A_LFJ4: _ActuatorParams(kp=0.6),
+        consts.Actuators.A_LFJ3: _ActuatorParams(kp=0.6),
+        consts.Actuators.A_LFJ2: _ActuatorParams(kp=0.6),
+        consts.Actuators.A_LFJ1: _ActuatorParams(kp=0.6),
         # Thumb.
-        consts.Actuators.A_THJ4: _ActuatorParams(kp=cx),
-        consts.Actuators.A_THJ3: _ActuatorParams(kp=cx),
-        consts.Actuators.A_THJ2: _ActuatorParams(kp=cx),
-        consts.Actuators.A_THJ1: _ActuatorParams(kp=cx),
-        consts.Actuators.A_THJ0: _ActuatorParams(kp=cx),
+        consts.Actuators.A_THJ4: _ActuatorParams(kp=3.0),
+        consts.Actuators.A_THJ3: _ActuatorParams(kp=3.0),
+        consts.Actuators.A_THJ2: _ActuatorParams(kp=3.0),
+        consts.Actuators.A_THJ1: _ActuatorParams(kp=3.0),
+        consts.Actuators.A_THJ0: _ActuatorParams(kp=3.0),
     }
 }
 
