@@ -257,7 +257,7 @@
             frictionloss: Friction loss due to dry friction.
             range: The joint limits. By default (0, 0).
          -->
-        <joint limited="true" damping="0.05" armature="0.005" margin="0.0" frictionloss="0.1"/>
+        <joint limited="true" damping="0.1" armature="0.005" margin="0.0" frictionloss="0.1"/>
         <!-- Above values are taken from sr_common -->
 
         <default class="collision">
@@ -287,7 +287,7 @@
         </default>
 
         <default class="thumb">
-            <joint frictionloss="0.001" damping="0.05"/>
+            <joint frictionloss="0.001" damping="0.2"/>
             <default class="THJ4"/>
             <default class="THJ3"/>
             <default class="THJ2"/>

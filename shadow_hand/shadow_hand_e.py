@@ -19,34 +19,36 @@ class _ActuatorParams:
 # NOTE(kevin): The values of the constants below are not really tuned. At the moment,
 # I just loaded the model in the MuJoCo viewer and set the values manually to get
 # visually reasonable results.
+c = 0.6
+cx = 3.0
 _ACTUATOR_PARAMS = {
     consts.Actuation.POSITION: {
         # Wrist.
         consts.Actuators.A_WRJ1: _ActuatorParams(kp=20.0),
         consts.Actuators.A_WRJ0: _ActuatorParams(kp=20.0),
         # First finger.
-        consts.Actuators.A_FFJ3: _ActuatorParams(kp=2.0),
-        consts.Actuators.A_FFJ2: _ActuatorParams(kp=1.0),
-        consts.Actuators.A_FFJ1: _ActuatorParams(kp=1.0),
+        consts.Actuators.A_FFJ3: _ActuatorParams(kp=c),
+        consts.Actuators.A_FFJ2: _ActuatorParams(kp=c),
+        consts.Actuators.A_FFJ1: _ActuatorParams(kp=c),
         # Middle finger.
-        consts.Actuators.A_MFJ3: _ActuatorParams(kp=2.0),
-        consts.Actuators.A_MFJ2: _ActuatorParams(kp=1.0),
-        consts.Actuators.A_MFJ1: _ActuatorParams(kp=1.0),
+        consts.Actuators.A_MFJ3: _ActuatorParams(kp=c),
+        consts.Actuators.A_MFJ2: _ActuatorParams(kp=c),
+        consts.Actuators.A_MFJ1: _ActuatorParams(kp=c),
         # Ring finger.
-        consts.Actuators.A_RFJ3: _ActuatorParams(kp=2.0),
-        consts.Actuators.A_RFJ2: _ActuatorParams(kp=1.0),
-        consts.Actuators.A_RFJ1: _ActuatorParams(kp=1.0),
+        consts.Actuators.A_RFJ3: _ActuatorParams(kp=c),
+        consts.Actuators.A_RFJ2: _ActuatorParams(kp=c),
+        consts.Actuators.A_RFJ1: _ActuatorParams(kp=c),
         # Little finger.
-        consts.Actuators.A_LFJ4: _ActuatorParams(kp=1.0),
-        consts.Actuators.A_LFJ3: _ActuatorParams(kp=2.0),
-        consts.Actuators.A_LFJ2: _ActuatorParams(kp=1.0),
-        consts.Actuators.A_LFJ1: _ActuatorParams(kp=1.0),
+        consts.Actuators.A_LFJ4: _ActuatorParams(kp=c),
+        consts.Actuators.A_LFJ3: _ActuatorParams(kp=c),
+        consts.Actuators.A_LFJ2: _ActuatorParams(kp=c),
+        consts.Actuators.A_LFJ1: _ActuatorParams(kp=c),
         # Thumb.
-        consts.Actuators.A_THJ4: _ActuatorParams(kp=1.0),
-        consts.Actuators.A_THJ3: _ActuatorParams(kp=1.0),
-        consts.Actuators.A_THJ2: _ActuatorParams(kp=1.0),
-        consts.Actuators.A_THJ1: _ActuatorParams(kp=1.0),
-        consts.Actuators.A_THJ0: _ActuatorParams(kp=1.0),
+        consts.Actuators.A_THJ4: _ActuatorParams(kp=cx),
+        consts.Actuators.A_THJ3: _ActuatorParams(kp=cx),
+        consts.Actuators.A_THJ2: _ActuatorParams(kp=cx),
+        consts.Actuators.A_THJ1: _ActuatorParams(kp=cx),
+        consts.Actuators.A_THJ0: _ActuatorParams(kp=cx),
     }
 }
 
@@ -171,6 +173,23 @@ class ShadowHandSeriesE:
         # to account for any possible runtime randomizations.
         return np.array(physics.bind(self._joints).range, copy=True)
 
+    def clip_position_control(
+        self, physics: mjcf.Physics, control: np.ndarray
+    ) -> np.ndarray:
+        """Clips the position control vector to the supported range.
+
+        Args:
+            physics: A `mujoco.Physics` instance.
+            control: The position control vector, of shape (20,).
+        """
+        bounds = self.actuator_ctrl_range(physics)
+
+        return np.clip(
+            a=control,
+            a_min=bounds[:, 0],
+            a_max=bounds[:, 1],
+        )
+
     def set_position_control(self, physics: mjcf.Physics, control: np.ndarray) -> None:
         """Sets the positions of the joints to the given control command.
 
@@ -179,7 +198,7 @@ class ShadowHandSeriesE:
 
         Args:
             physics: A `mujoco.Physics` instance.
-            control: The desired joint configuration of the hand.
+            control: The position control vector, of shape (20,).
         """
         # TODO(kevin): Should we clip instead?
         if not self.is_position_control_valid(physics, control):
@@ -242,8 +261,8 @@ class ShadowHandSeriesE:
                 name=act.name,
                 ctrllimited=True,
                 ctrlrange=consts.ACTUATION_LIMITS[self._actuation][act],
-                forcelimited=True,
-                forcerange=consts.EFFORT_LIMITS[act],
+                # forcelimited=True,
+                # forcerange=consts.EFFORT_LIMITS[act],
                 kp=params.kp,
             )
 
