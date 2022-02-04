@@ -3,11 +3,9 @@ from typing import List
 
 import numpy as np
 from dm_control import mjcf
-from typing_extensions import TypeAlias
 
 from shadow_hand import shadow_hand_e_constants as consts
-
-MjcfElement: TypeAlias = mjcf.element._ElementImpl
+from shadow_hand.hints import MjcfElement
 
 
 @dataclasses.dataclass
@@ -77,6 +75,7 @@ class ShadowHandSeriesE:
         self._add_mjcf_elements()
         self._add_tendons()
         self._add_actuators()
+        self._add_sensors()
 
         if self._randomize_color:
             self._color_hand()
@@ -107,6 +106,11 @@ class ShadowHandSeriesE:
     def tendons(self) -> List[MjcfElement]:
         """List of tendon elements belonging to the hand."""
         return self._tendons
+
+    @property
+    def joint_torque_sensors(self) -> List[MjcfElement]:
+        """List of joint torque sensor elements belonging to the hand."""
+        return self._joint_torque_sensors
 
     # ================= #
     # Public methods.
@@ -181,7 +185,6 @@ class ShadowHandSeriesE:
             control: The position control vector, of shape (20,).
         """
         bounds = self.actuator_ctrl_range(physics)
-
         return np.clip(
             a=control,
             a_min=bounds[:, 0],
@@ -228,6 +231,20 @@ class ShadowHandSeriesE:
             self._joints.append(joint_elem)
             self._joint_elem_mapping[joint] = joint_elem
 
+        # Parse fingertip sites.
+        self._fingertip_sites: List[mjcf.Element] = []
+        for tip_name in consts.FINGERTIP_NAMES:
+            tip_elem = self._mjcf_root.find("body", tip_name)
+            tip_site = tip_elem.add(
+                "site",
+                name=tip_name + "_site",
+                pos="0 0 0",
+                # NOTE(kevin): The kwargs below are for visualization purposes.
+                size=[2e-3],
+                rgba="1 0 0 1",
+            )
+            self._fingertip_sites.append(tip_site)
+
     def _add_tendons(self) -> None:
         """Add tendons to the hand."""
         self._tendons = []
@@ -259,8 +276,8 @@ class ShadowHandSeriesE:
                 name=act.name,
                 ctrllimited=True,
                 ctrlrange=consts.ACTUATION_LIMITS[self._actuation][act],
-                # forcelimited=True,
-                # forcerange=consts.EFFORT_LIMITS[act],
+                forcelimited=True,
+                forcerange=consts.EFFORT_LIMITS[act],
                 kp=params.kp,
             )
 
@@ -281,8 +298,32 @@ class ShadowHandSeriesE:
         for actuator, actuator_params in _ACTUATOR_PARAMS[self._actuation].items():
             self._actuators.append(add_actuator(actuator, actuator_params))
 
+    def _add_sensors(self) -> None:
+        """Add sensors to the mjcf model."""
+        self._add_torque_sensors()
+
+    def _add_torque_sensors(self) -> None:
+        """Adds torque sensors to the joints of the hand."""
+        self._joint_torque_sensors = []
+        self._joint_torque_sensor_elem_mapping = {}
+        for joint in consts.Joints:
+            joint_elem = self._joint_elem_mapping[joint]
+            site_elem = joint_elem.parent.add(
+                "site",
+                size=[1e-3],
+                name=joint_elem.name + "_site",
+            )
+            # Create a 3-axis torque sensor.
+            torque_sensor_elem = joint_elem.root.sensor.add(
+                "torque",
+                site=site_elem,
+                name=joint_elem.name + "_torque",
+            )
+            self._joint_torque_sensors.append(torque_sensor_elem)
+            self._joint_torque_sensor_elem_mapping[joint] = torque_sensor_elem
+
     def _color_hand(self) -> None:
-        """Randomly assign an RGB color to the hand components."""
+        """Assigns a random RGB color to the hand."""
         for geom_name in consts.COLORED_GEOMS:
             geom = self._mjcf_root.find("geom", geom_name)
             rgb = np.random.uniform(size=3).flatten()

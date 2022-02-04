@@ -309,6 +309,7 @@
                 <inertial pos="0 0 0.029" quat="0.5 0.5 0.5 0.5" mass="0.1" diaginertia="6.4e-05 4.38e-05 3.5e-05" />
                 <!-- <joint name="WRJ1" axis="0 1 0" range="-0.523599 0.174533" damping="1.0" frictionloss="0.1"/> -->
                 <joint name="WRJ1" axis="0 1 0" range="-0.488692 0.139626" damping="1.0" frictionloss="0.1"/>
+                <!-- <site name="WRJ1_site" size="1e-3" /> -->
                 <geom name="wrist" type="mesh" material="metal" mesh="wrist_visual" class="visual" />
                 <geom type="mesh" material="metal" mesh="wrist_collision_1" class="collision" />
                 <geom type="mesh" material="metal" mesh="wrist_collision_2" class="collision" />
@@ -321,6 +322,7 @@
                     <inertial pos="0 0 0.035" quat="0.707107 0 0 0.707107" mass="0.3" diaginertia="0.0005287 0.0003581 0.000191" />
                     <!-- <joint name="WRJ0" axis="1 0 0" range="-0.698132 0.488692" damping="1.0" frictionloss="0.1"/> -->
                     <joint name="WRJ0" axis="1 0 0" range="-0.698132 0.488692" damping="1.0" frictionloss="0.1"/>
+                    <!-- <site name="WRJ0_site" size="1e-3" /> -->
                     <geom name="palm" type="mesh" material="plastic" mesh="palm_visual" class="visual" />
                     <geom type="mesh" material="plastic" mesh="palm_collision_0" class="collision" />
                     <geom type="mesh" material="plastic" mesh="palm_collision_1" class="collision" />
@@ -476,17 +478,20 @@
                     <body name="ffknuckle" pos="0.033 0 0.095">
                         <inertial pos="0 0 0" quat="0.5 0.5 -0.5 0.5" mass="0.008" diaginertia="3.2e-07 2.6e-07 2.6e-07" />
                         <joint name="FFJ3" class="FJ3" axis="0 -1 0"/>
+                        <!-- <site name="FFJ3_site" size="1e-3" /> -->
                         <geom name="ffknuckle" type="mesh" material="metal" mesh="knuckle_visual" class="visual" />
                         <geom type="mesh" material="metal" mesh="knuckle_collision" class="collision" />
                         <body name="ffproximal">
                             <inertial pos="0 0 0.0225" quat="0.707107 0 0 0.707107" mass="0.03" diaginertia="1e-05 9.8e-06 1.8e-06"/>
                             <joint name="FFJ2" class="FJ2"/>
+                            <!-- <site name="FFJ2_site" size="1e-3" /> -->
                             <geom name="ffproximal" type="mesh" material="plastic" mesh="F3_visual" class="visual" />
                             <geom type="mesh" material="plastic" mesh="F3_collision_proximal" class="collision" />
                             <geom type="mesh" material="plastic" mesh="F3_collision_distal" class="collision" />
                             <body name="ffmiddle" pos="0 0 0.045">
                                 <inertial pos="0 0 0.0125" quat="0.707107 0 0 0.707107" mass="0.017" diaginertia="2.7e-06 2.6e-06 8.7e-07"/>
                                 <joint name="FFJ1" class="FJ1"/>
+                                <!-- <site name="FFJ1_site" size="1e-3" /> -->
                                 <geom name="ffmiddle" type="mesh" material="plastic" mesh="F2_visual" class="visual" />
                                 <geom type="mesh" material="plastic" mesh="F2_collision_proximal" class="collision" />
                                 <geom type="mesh" material="plastic" mesh="F2_collision_middle" class="collision" />
@@ -494,10 +499,12 @@
                                 <body name="ffdistal" pos="0 0 0.025">
                                     <inertial pos="0 0 0.012" quat="0.707107 0 0 0.707107" mass="0.012" diaginertia="1.1e-06 9.4e-07 5.3e-07"/>
                                     <joint name="FFJ0" class="FJ0"/>
+                                    <!-- <site name="FFJ0_site" size="1e-3" /> -->
                                     <geom name="ffdistal" type="mesh" material="plastic" mesh="F1_visual" class="visual" />
                                     <geom type="mesh" material="plastic" mesh="F1_collision" class="collision" />
                                     <body name="fftip" pos="0 0 0.026">
                                         <inertial pos="0 0 0" mass="0.001" diaginertia="0 0 0"/>
+                                        <!-- <site name="fftip_site" pos="0 -0.01 0"/> -->
                                     </body>
                                 </body>
                             </body>
@@ -506,10 +513,12 @@
                     <body name="mfknuckle" pos="0.011 0 0.099">
                         <inertial pos="0 0 0" quat="0.5 0.5 -0.5 0.5" mass="0.008" diaginertia="3.2e-07 2.6e-07 2.6e-07" />
                         <joint name="MFJ3" class="FJ3" axis="0 -1 0"/>
+                        <!-- <site name="MFJ3_site" size="1e-3" /> -->
                         <geom name="mfknuckle" type="mesh" material="metal" mesh="knuckle_visual" class="visual" />
                         <geom type="mesh" material="metal" mesh="knuckle_collision" class="collision" />
                         <body name="mfproximal">
                             <joint name="MFJ2" class="FJ2"/>
+                            <!-- <site name="MFJ2_site" size="1e-3" /> -->
                             <inertial pos="0 0 0.0225" quat="0.707107 0 0 0.707107" mass="0.03" diaginertia="1e-05 9.8e-06 1.8e-06"/>
                             <geom name="mfproximal" type="mesh" material="plastic" mesh="F3_visual" class="visual" />
                             <geom type="mesh" material="plastic" mesh="F3_collision_proximal" class="collision" />
@@ -517,6 +526,7 @@
                             <body name="mfmiddle" pos="0 0 0.045">
                                 <inertial pos="0 0 0.0125" quat="0.707107 0 0 0.707107" mass="0.017" diaginertia="2.7e-06 2.6e-06 8.7e-07"/>
                                 <joint name="MFJ1" class="FJ1"/>
+                                <!-- <site name="MFJ1_site" size="1e-3" /> -->
                                 <geom name="mfmiddle" type="mesh" material="plastic" mesh="F2_visual" class="visual" />
                                 <geom type="mesh" material="plastic" mesh="F2_collision_proximal" class="collision" />
                                 <geom type="mesh" material="plastic" mesh="F2_collision_middle" class="collision" />
@@ -524,10 +534,12 @@
                                 <body name="mfdistal" pos="0 0 0.025">
                                     <inertial pos="0 0 0.012" quat="0.707107 0 0 0.707107" mass="0.012" diaginertia="1.1e-06 9.4e-07 5.3e-07"/>
                                     <joint name="MFJ0" class="FJ0"/>
+                                    <!-- <site name="MFJ0_site" size="1e-3" /> -->
                                     <geom name="mfdistal" type="mesh" material="plastic" mesh="F1_visual" class="visual" />
                                     <geom type="mesh" material="plastic" mesh="F1_collision" class="collision" />
                                     <body name="mftip" pos="0 0 0.026">
                                         <inertial pos="0 0 0" mass="0.001" diaginertia="0 0 0"/>
+                                        <!-- <site name="mftip_site" pos="0 -0.01 0"/> -->
                                     </body>
                                 </body>
                             </body>
@@ -536,17 +548,20 @@
                     <body name="rfknuckle" pos="-0.011 0 0.095">
                         <inertial pos="0 0 0" quat="0.5 0.5 -0.5 0.5" mass="0.008" diaginertia="3.2e-07 2.6e-07 2.6e-07" />
                         <joint name="RFJ3" class="FJ3" axis="0 1 0"/>
+                        <!-- <site name="RFJ3_site" size="1e-3" /> -->
                         <geom name="rfknuckle" type="mesh" material="metal" mesh="knuckle_visual" class="visual" />
                         <geom type="mesh" material="metal" mesh="knuckle_collision" class="collision" />
                         <body name="rfproximal">
                             <inertial pos="0 0 0.0225" quat="0.707107 0 0 0.707107" mass="0.03" diaginertia="1e-05 9.8e-06 1.8e-06"/>
                             <joint name="RFJ2" class="FJ2"/>
+                            <!-- <site name="RFJ2_site" size="1e-3" /> -->
                             <geom name="rfproximal" type="mesh" material="plastic" mesh="F3_visual" class="visual" />
                             <geom type="mesh" material="plastic" mesh="F3_collision_proximal" class="collision" />
                             <geom type="mesh" material="plastic" mesh="F3_collision_distal" class="collision" />
                             <body name="rfmiddle" pos="0 0 0.045">
                                 <inertial pos="0 0 0.0125" quat="0.707107 0 0 0.707107" mass="0.017" diaginertia="2.7e-06 2.6e-06 8.7e-07"/>
                                 <joint name="RFJ1" class="FJ1"/>
+                                <!-- <site name="RFJ1_site" size="1e-3" /> -->
                                 <geom name="rfmiddle" type="mesh" material="plastic" mesh="F2_visual" class="visual" />
                                 <geom type="mesh" material="plastic" mesh="F2_collision_proximal" class="collision" />
                                 <geom type="mesh" material="plastic" mesh="F2_collision_middle" class="collision" />
@@ -554,10 +569,12 @@
                                 <body name="rfdistal" pos="0 0 0.025">
                                     <inertial pos="0 0 0.012" quat="0.707107 0 0 0.707107" mass="0.012" diaginertia="1.1e-06 9.4e-07 5.3e-07"/>
                                     <joint name="RFJ0" class="FJ0"/>
+                                    <!-- <site name="RFJ0_site" size="1e-3" /> -->
                                     <geom name="rfdistal" type="mesh" material="plastic" mesh="F1_visual" class="visual" />
                                     <geom type="mesh" material="plastic" mesh="F1_collision" class="collision" />
                                     <body name="rftip" pos="0 0 0.026">
                                         <inertial pos="0 0 0" mass="0.001" diaginertia="0 0 0"/>
+                                        <!-- <site name="rftip_site" pos="0 -0.01 0"/> -->
                                     </body>
                                 </body>
                             </body>
@@ -567,6 +584,7 @@
                         <inertial pos="0 0 0.04" quat="0.707107 0 0 0.707107" mass="0.03" diaginertia="1.638e-05 1.45e-05 4.272e-06" />
                         <!-- <joint name="LFJ4" axis="0.573576 0 0.819152" range="0 0.785398"/> -->
                         <joint name="LFJ4" axis="0.573576 0 0.819152" range="0.000000 0.785398"/>
+                        <!-- <site name="LFJ4_site" size="1e-3" /> -->
                         <geom name="lfmetacarpal" type="mesh" material="plastic" mesh="lfmetacarpal_visual" class="visual" />
                         <geom type="mesh" material="plastic" mesh="lfmetacarpal_collision_0" class="collision" />
                         <geom type="mesh" material="plastic" mesh="lfmetacarpal_collision_1" class="collision" />
@@ -587,17 +605,20 @@
                         <body name="lfknuckle" pos="0 0 0.06579">
                             <inertial pos="0 0 0" quat="0.5 0.5 -0.5 0.5" mass="0.008" diaginertia="3.2e-07 2.6e-07 2.6e-07" />
                             <joint name="LFJ3" class="FJ3" axis="0 1 0"/>
+                            <!-- <site name="LFJ3_site" size="1e-3" /> -->
                             <geom name="lfknuckle" type="mesh" material="metal" mesh="knuckle_visual" class="visual" />
                             <geom type="mesh" material="metal" mesh="knuckle_collision" class="collision" />
                             <body name="lfproximal">
                                 <inertial pos="0 0 0.0225" quat="0.707107 0 0 0.707107" mass="0.03" diaginertia="1e-05 9.8e-06 1.8e-06"/>
                                 <joint name="LFJ2" class="FJ2"/>
+                                <!-- <site name="LFJ2_site" size="1e-3" /> -->
                                 <geom name="lfproximal" type="mesh" material="plastic" mesh="F3_visual" class="visual" />
                                 <geom type="mesh" material="plastic" mesh="F3_collision_proximal" class="collision" />
                                 <geom type="mesh" material="plastic" mesh="F3_collision_distal" class="collision" />
                                 <body name="lfmiddle" pos="0 0 0.045">
                                     <inertial pos="0 0 0.0125" quat="0.707107 0 0 0.707107" mass="0.017" diaginertia="2.7e-06 2.6e-06 8.7e-07"/>
                                     <joint name="LFJ1" class="FJ1"/>
+                                    <!-- <site name="LFJ1_site" size="1e-3" /> -->
                                     <geom name="lfmiddle" type="mesh" material="plastic" mesh="F2_visual" class="visual" />
                                     <geom type="mesh" material="plastic" mesh="F2_collision_proximal" class="collision" />
                                     <geom type="mesh" material="plastic" mesh="F2_collision_middle" class="collision" />
@@ -605,10 +626,12 @@
                                     <body name="lfdistal" pos="0 0 0.025">
                                         <inertial pos="0 0 0.012" quat="0.707107 0 0 0.707107" mass="0.012" diaginertia="1.1e-06 9.4e-07 5.3e-07"/>
                                         <joint name="LFJ0" class="FJ0"/>
+                                        <!-- <site name="LFJ0_site" size="1e-3" /> -->
                                         <geom name="lfdistal" type="mesh" material="plastic" mesh="F1_visual" class="visual" />
                                         <geom type="mesh" material="plastic" mesh="F1_collision" class="collision" />
                                         <body name="lftip" pos="0 0 0.026">
                                             <inertial pos="0 0 0" mass="0.001" diaginertia="0 0 0"/>
+                                            <!-- <site name="lftip_site" pos="0 -0.01 0"/> -->
                                         </body>
                                     </body>
                                 </body>
@@ -619,10 +642,12 @@
                         <inertial pos="0 0 0" mass="0.01" diaginertia="1.6e-07 1.6e-07 1.6e-07" />
                         <!-- <joint name="THJ4" axis="0 0 -1" range="-1.0472 1.0472" class="THJ4"/> -->
                         <joint name="THJ4" axis="0 0 -1" range="-1.047198 1.047198" class="THJ4"/>
+                        <!-- <site name="THJ4_site" size="1e-3" /> -->
                         <body name="thproximal">
                             <inertial pos="0 0 0.019" mass="0.04" diaginertia="1.36e-05 1.36e-05 3.13e-06" />
                             <!-- <joint name="THJ3" axis="1 0 0" range="0 1.22173" class="THJ3"/> -->
                             <joint name="THJ3" axis="1 0 0" range="0.000000 1.221730" class="THJ3"/>
+                            <!-- <site name="THJ3_site" size="1e-3" /> -->
                             <geom name="thproximal" type="mesh" material="plastic" mesh="TH3_visual" class="visual" />
                             <geom type="mesh" material="plastic" mesh="TH3_collision_proximal" class="collision" />
                             <geom type="mesh" material="plastic" mesh="TH3_collision_distal" class="collision" />
@@ -630,10 +655,12 @@
                                 <inertial pos="0 0 0" mass="0.005" diaginertia="1.0e-06 1.0e-06 3.0e-07" />
                                 <!-- <joint name="THJ2" axis="1 0 0" range="-0.20944 0.20944" class="THJ2"/> -->
                                 <joint name="THJ2" axis="1 0 0" range="-0.209440 0.209440" class="THJ2"/>
+                                <!-- <site name="THJ2_site" size="1e-3" /> -->
                                 <body name="thmiddle">
                                     <inertial pos="0 0 0.016" mass="0.02" diaginertia="5.1e-06 5.1e-06 1.21e-06" />
                                     <!-- <joint name="THJ1" axis="0 -1 0" range="-0.698132 0.698132" class="THJ1"/> -->
                                     <joint name="THJ1" axis="0 -1 0" range="-0.523599 0.523599" class="THJ1"/>
+                                    <!-- <site name="THJ1_site" size="1e-3" /> -->
                                     <geom name="thmiddle" type="mesh" material="plastic" mesh="TH2_visual" class="visual" />
                                     <geom type="mesh" material="plastic" mesh="TH2_collision_proximal" class="collision" />
                                     <geom type="mesh" material="plastic" mesh="TH2_collision_middle" class="collision" />
@@ -642,10 +669,12 @@
                                         <inertial pos="0 0 0.01375" quat="0.707107 0 0 0.707107" mass="0.016" diaginertia="2.2e-06 2.1e-06 1e-06" />
                                         <!-- <joint name="THJ0" axis="1 0 0" range="0 1.5708" class="THJ0"/> -->
                                         <joint name="THJ0" axis="1 0 0" range="0.000000 1.570796" class="THJ0"/>
+                                        <!-- <site name="THJ0_site" size="1e-3" /> -->
                                         <geom name="thdistal"  type="mesh" material="plastic" mesh="TH1_visual" class="visual"/>
                                         <geom type="mesh" material="plastic" mesh="TH1_collision" class="collision"/>
                                         <body name="thtip" pos="0 0 0.0275">
                                             <inertial pos="0 0 0" mass="0.001" diaginertia="0 0 0" />
+                                            <!-- <site name="thtip_site" pos="0 -0.01 0"/> -->
                                         </body>
                                     </body>
                                 </body>
@@ -655,7 +684,8 @@
                 </body>
             </body>
         </body>
-        <camera name="cam0" pos="0.0 -1 .6" xyaxes="1 0 0 0 1 2"/>
+        <camera name="cam0" pos="0 -1.0 0.6" xyaxes="1 0 0 0 1 2"/>
+        <camera name="cam1" pos="0 -0.25 0.35" xyaxes="1 0 0 0 0 1"/>
         <light ambient="0.2 0.2 0.2" castshadow="false" diffuse="0.8 0.8 0.8" dir="0 0 -1" directional="true" name="light0" pos="0 0 4" specular="0.3 0.3 0.3" />
     </worldbody>
 
@@ -687,4 +717,31 @@
         <exclude body1="thproximal" body2="thmiddle" />
         <exclude body1="thmiddle" body2="thdistal" />
     </contact>
+
+    <!-- <sensor>
+        <torque name="WRJ1_torque" site="WRJ1_site"/>
+        <torque name="WRJ0_torque" site="WRJ0_site"/>
+        <torque name="FFJ3_torque" site="FFJ3_site"/>
+        <torque name="FFJ2_torque" site="FFJ2_site"/>
+        <torque name="FFJ1_torque" site="FFJ1_site"/>
+        <torque name="FFJ0_torque" site="FFJ0_site"/>
+        <torque name="MFJ3_torque" site="MFJ3_site"/>
+        <torque name="MFJ2_torque" site="MFJ2_site"/>
+        <torque name="MFJ1_torque" site="MFJ1_site"/>
+        <torque name="MFJ0_torque" site="MFJ0_site"/>
+        <torque name="RFJ3_torque" site="RFJ3_site"/>
+        <torque name="RFJ2_torque" site="RFJ2_site"/>
+        <torque name="RFJ1_torque" site="RFJ1_site"/>
+        <torque name="RFJ0_torque" site="RFJ0_site"/>
+        <torque name="LFJ4_torque" site="LFJ4_site"/>
+        <torque name="LFJ3_torque" site="LFJ3_site"/>
+        <torque name="LFJ2_torque" site="LFJ2_site"/>
+        <torque name="LFJ1_torque" site="LFJ1_site"/>
+        <torque name="LFJ0_torque" site="LFJ0_site"/>
+        <torque name="THJ4_torque" site="THJ4_site"/>
+        <torque name="THJ3_torque" site="THJ3_site"/>
+        <torque name="THJ2_torque" site="THJ2_site"/>
+        <torque name="THJ1_torque" site="THJ1_site"/>
+        <torque name="THJ0_torque" site="THJ0_site"/>
+    </sensor> -->
 </mujoco>

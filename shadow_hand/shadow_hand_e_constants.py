@@ -388,6 +388,18 @@ ACTUATOR_TENDON_MAPPING: Dict[Actuators, Tendons] = {
     v: k for k, v in TENDON_ACTUATOR_MAPPING.items()
 }
 
+# ====================== #
+# Geoms of interest.
+# ====================== #
+
+FINGERTIP_NAMES = (
+    "fftip",
+    "mftip",
+    "rftip",
+    "lftip",
+    "thtip",
+)
+
 
 # ====================== #
 # Other constants
