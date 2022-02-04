@@ -9,6 +9,7 @@ setup(
     python_requires=">=3.8",
     install_requires=[
         "numpy",
+        "typing_extensions",
         "dm_control @ git+git://github.com/deepmind/dm_control.git",
     ],
     extras_require={
