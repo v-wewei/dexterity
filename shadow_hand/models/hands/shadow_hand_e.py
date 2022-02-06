@@ -5,8 +5,8 @@ import numpy as np
 from dm_control import mjcf
 
 from shadow_hand import hand
-from shadow_hand import shadow_hand_e_constants as consts
 from shadow_hand.hints import MjcfElement
+from shadow_hand.models.hands import shadow_hand_e_constants as consts
 
 
 # NOTE(kevin): There's a damping parameter at the <joint> level, which means we in fact

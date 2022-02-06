@@ -7,11 +7,21 @@ from typing import Dict, List, Tuple
 
 import numpy as np
 
+from shadow_hand import _SRC_ROOT
+
 # Path to the root of the src files, i.e. `shadow_hand/`.
-_SRC_ROOT: Path = Path(__file__).parent.parent / "shadow_hand"
+# _SRC_ROOT: Path = Path(__file__).parent.parent / "shadow_hand"
 
 # Path to the shadow hand E series XML file.
-SHADOW_HAND_E_XML: Path = _SRC_ROOT / "shadow_hand_series_e.xml"
+SHADOW_HAND_E_XML: Path = (
+    _SRC_ROOT
+    / "models"
+    / "vendor"
+    / "shadow_robot"
+    / "shadow_hand_description"
+    / "mjcf"
+    / "shadow_hand_series_e.xml"
+)
 
 EPSILON = 1e-6
 

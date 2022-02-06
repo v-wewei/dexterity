@@ -2,8 +2,8 @@ import numpy as np
 from absl.testing import absltest, parameterized
 from dm_control import mjcf
 
-from shadow_hand import shadow_hand_e
-from shadow_hand import shadow_hand_e_constants as consts
+from shadow_hand.models.hands import shadow_hand_e
+from shadow_hand.models.hands import shadow_hand_e_constants as consts
 
 
 class ShadowHandEConstantsTest(absltest.TestCase):

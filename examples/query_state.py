@@ -4,8 +4,8 @@ from dm_control import mjcf, mujoco
 from dm_control.mujoco.wrapper.mjbindings import enums
 
 from shadow_hand import mujoco_utils as utils
-from shadow_hand import shadow_hand_e
-from shadow_hand import shadow_hand_e_constants as consts
+from shadow_hand.models.hands import shadow_hand_e
+from shadow_hand.models.hands import shadow_hand_e_constants as consts
 
 
 def main() -> None:

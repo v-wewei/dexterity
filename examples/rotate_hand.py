@@ -4,9 +4,9 @@ from dm_control import mjcf, mujoco
 from dm_control.mujoco.wrapper.mjbindings import enums
 from dm_robotics.transformations import transformations as tr
 
-from shadow_hand import shadow_hand_e
-from shadow_hand import shadow_hand_e_constants as consts
 from shadow_hand.models.arenas.empty import Arena
+from shadow_hand.models.hands import shadow_hand_e
+from shadow_hand.models.hands import shadow_hand_e_constants as consts
 
 
 def render(physics: mjcf.Physics, cam_id: str = "fixed_viewer") -> np.ndarray:

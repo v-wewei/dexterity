@@ -1,5 +1,5 @@
 <mujoco>
-    <compiler angle='radian' coordinate="local" meshdir='./meshes' />
+    <compiler angle='radian' coordinate="local" meshdir='../meshes' />
 
     <!-- These settings affect the quality of the rendering. In general, larger values
         result in higher quality, but possibly slower speed.
