@@ -11,6 +11,7 @@ setup(
         "numpy",
         "typing_extensions",
         "dm_control @ git+git://github.com/deepmind/dm_control.git",
+        # TODO(kevin): Add dm_robotics-transformations and dm_robotics-geometry.
     ],
     extras_require={
         "testing": [

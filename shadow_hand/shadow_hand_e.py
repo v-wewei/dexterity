@@ -4,10 +4,14 @@ from typing import List
 import numpy as np
 from dm_control import mjcf
 
+from shadow_hand import hand
 from shadow_hand import shadow_hand_e_constants as consts
 from shadow_hand.hints import MjcfElement
 
 
+# NOTE(kevin): There's a damping parameter at the <joint> level, which means we in fact
+# have a PD-based position controller under the hood. So `kp` here is the proportional
+# gain and the damping parameter is related to the derivative gain.
 @dataclasses.dataclass
 class _ActuatorParams:
     # Position feedback gain.
@@ -49,10 +53,10 @@ _ACTUATOR_PARAMS = {
 }
 
 
-class ShadowHandSeriesE:
+class ShadowHandSeriesE(hand.Hand):
     """Shadow Dexterous Hand E Series."""
 
-    def __init__(
+    def _build(
         self,
         name: str = "shadow_hand_e",
         actuation: consts.Actuation = consts.Actuation.POSITION,
@@ -240,7 +244,8 @@ class ShadowHandSeriesE:
                 name=tip_name + "_site",
                 pos="0 0 0",
                 # NOTE(kevin): The kwargs below are for visualization purposes.
-                size=[2e-3],
+                size="0.001 0.001 0.001",
+                type="sphere",
                 rgba="1 0 0 1",
             )
             self._fingertip_sites.append(tip_site)
@@ -310,8 +315,11 @@ class ShadowHandSeriesE:
             joint_elem = self._joint_elem_mapping[joint]
             site_elem = joint_elem.parent.add(
                 "site",
-                size=[1e-3],
                 name=joint_elem.name + "_site",
+                # NOTE(kevin): The kwargs below are for visualization purposes.
+                size="0.001 0.001 0.001",
+                type="box",
+                rgba="0 1 0 1",
             )
             # Create a 3-axis torque sensor.
             torque_sensor_elem = joint_elem.root.sensor.add(
