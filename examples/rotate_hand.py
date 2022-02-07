@@ -1,12 +1,15 @@
 import imageio
 import numpy as np
 from dm_control import mjcf, mujoco
-from dm_control.mujoco.wrapper.mjbindings import enums
+from dm_control.mujoco.wrapper import mjbindings
 from dm_robotics.transformations import transformations as tr
 
 from shadow_hand.models.arenas.empty import Arena
 from shadow_hand.models.hands import shadow_hand_e
 from shadow_hand.models.hands import shadow_hand_e_constants as consts
+
+enums = mjbindings.enums
+mjlib = mjbindings.mjlib
 
 
 def render(physics: mjcf.Physics, cam_id: str = "fixed_viewer") -> np.ndarray:
@@ -31,6 +34,9 @@ def main() -> None:
     )
     hand = shadow_hand_e.ShadowHandSeriesE(actuation=consts.Actuation.POSITION)
     arena.attach(hand, attachment_site)
+
+    # TODO(kevin): Figure out how to draw axis of rotation.
+    # mjtGeom->mjGEOM_ARROW (rendering-only geom type)
 
     # Compile.
     physics = mjcf.Physics.from_mjcf_model(arena.mjcf_model)

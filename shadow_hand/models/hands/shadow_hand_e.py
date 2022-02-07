@@ -18,37 +18,44 @@ class _ActuatorParams:
     kp: float = 1.0
 
 
-# NOTE(kevin): The values of the constants below are not really tuned. At the moment,
-# I just loaded the model in the MuJoCo viewer and set the values manually to get
-# visually reasonable results.
+# NOTE(kevin): Some terminology:
+# little finger: metacarpal - knuckle - proximal - middle - distal
+# thumb: base - proximal - middle - distal
+# others: knuckle - proximal - middle - distal
+_WR_GAIN = 20.0
+_TH_GAIN = 3.0
+_KNUCKLE_GAIN = 3.0
+_PROXIMAL_GAIN = 3.0
+_MIDDLE_DISTAL_GAIN = 0.6
+_METACARPAL_GAIN = 3.0
 _ACTUATOR_PARAMS = {
     consts.Actuation.POSITION: {
         # Wrist.
-        consts.Actuators.A_WRJ1: _ActuatorParams(kp=20.0),
-        consts.Actuators.A_WRJ0: _ActuatorParams(kp=20.0),
+        consts.Actuators.A_WRJ1: _ActuatorParams(kp=_WR_GAIN),
+        consts.Actuators.A_WRJ0: _ActuatorParams(kp=_WR_GAIN),
         # First finger.
-        consts.Actuators.A_FFJ3: _ActuatorParams(kp=0.6),
-        consts.Actuators.A_FFJ2: _ActuatorParams(kp=0.6),
-        consts.Actuators.A_FFJ1: _ActuatorParams(kp=0.6),
+        consts.Actuators.A_FFJ3: _ActuatorParams(kp=_KNUCKLE_GAIN),
+        consts.Actuators.A_FFJ2: _ActuatorParams(kp=_PROXIMAL_GAIN),
+        consts.Actuators.A_FFJ1: _ActuatorParams(kp=_MIDDLE_DISTAL_GAIN),
         # Middle finger.
-        consts.Actuators.A_MFJ3: _ActuatorParams(kp=0.6),
-        consts.Actuators.A_MFJ2: _ActuatorParams(kp=0.6),
-        consts.Actuators.A_MFJ1: _ActuatorParams(kp=0.6),
+        consts.Actuators.A_MFJ3: _ActuatorParams(kp=_KNUCKLE_GAIN),
+        consts.Actuators.A_MFJ2: _ActuatorParams(kp=_PROXIMAL_GAIN),
+        consts.Actuators.A_MFJ1: _ActuatorParams(kp=_MIDDLE_DISTAL_GAIN),
         # Ring finger.
-        consts.Actuators.A_RFJ3: _ActuatorParams(kp=0.6),
-        consts.Actuators.A_RFJ2: _ActuatorParams(kp=0.6),
-        consts.Actuators.A_RFJ1: _ActuatorParams(kp=0.6),
+        consts.Actuators.A_RFJ3: _ActuatorParams(kp=_KNUCKLE_GAIN),
+        consts.Actuators.A_RFJ2: _ActuatorParams(kp=_PROXIMAL_GAIN),
+        consts.Actuators.A_RFJ1: _ActuatorParams(kp=_MIDDLE_DISTAL_GAIN),
         # Little finger.
-        consts.Actuators.A_LFJ4: _ActuatorParams(kp=0.6),
-        consts.Actuators.A_LFJ3: _ActuatorParams(kp=0.6),
-        consts.Actuators.A_LFJ2: _ActuatorParams(kp=0.6),
-        consts.Actuators.A_LFJ1: _ActuatorParams(kp=0.6),
+        consts.Actuators.A_LFJ4: _ActuatorParams(kp=_METACARPAL_GAIN),
+        consts.Actuators.A_LFJ3: _ActuatorParams(kp=_KNUCKLE_GAIN),
+        consts.Actuators.A_LFJ2: _ActuatorParams(kp=_PROXIMAL_GAIN),
+        consts.Actuators.A_LFJ1: _ActuatorParams(kp=_MIDDLE_DISTAL_GAIN),
         # Thumb.
-        consts.Actuators.A_THJ4: _ActuatorParams(kp=3.0),
-        consts.Actuators.A_THJ3: _ActuatorParams(kp=3.0),
-        consts.Actuators.A_THJ2: _ActuatorParams(kp=3.0),
-        consts.Actuators.A_THJ1: _ActuatorParams(kp=3.0),
-        consts.Actuators.A_THJ0: _ActuatorParams(kp=3.0),
+        consts.Actuators.A_THJ4: _ActuatorParams(kp=_TH_GAIN),
+        consts.Actuators.A_THJ3: _ActuatorParams(kp=_TH_GAIN),
+        consts.Actuators.A_THJ2: _ActuatorParams(kp=_TH_GAIN),
+        consts.Actuators.A_THJ1: _ActuatorParams(kp=_TH_GAIN),
+        consts.Actuators.A_THJ0: _ActuatorParams(kp=_TH_GAIN),
     }
 }
 
@@ -76,7 +83,7 @@ class ShadowHandSeriesE(hand.Hand):
         self._actuation = actuation
         self._randomize_color = randomize_color
 
-        self._add_mjcf_elements()
+        self._parse_mjcf_elements()
         self._add_tendons()
         self._add_actuators()
         self._add_sensors()
@@ -226,7 +233,8 @@ class ShadowHandSeriesE(hand.Hand):
     # Private methods.
     # ================= #
 
-    def _add_mjcf_elements(self) -> None:
+    def _parse_mjcf_elements(self) -> None:
+        """Parses MJCF elements that will be exposed as attributes."""
         # Parse joints.
         self._joints = []
         self._joint_elem_mapping = {}
@@ -330,6 +338,9 @@ class ShadowHandSeriesE(hand.Hand):
             self._joint_torque_sensors.append(torque_sensor_elem)
             self._joint_torque_sensor_elem_mapping[joint] = torque_sensor_elem
 
+    # TODO(kevin): I'll probably remove this method from this class and move it to a
+    # randomization module that takes in a MJCF model and dynamically applies
+    # randomizations, geom color being one possible randomization.
     def _color_hand(self) -> None:
         """Assigns a random RGB color to the hand."""
         for geom_name in consts.COLORED_GEOMS:

@@ -1,10 +1,13 @@
 import abc
+from typing import List
 
 from dm_control import composer, mjcf
 
+from shadow_hand.hints import MjcfElement
+
 
 class Hand(abc.ABC, composer.Entity):
-    """Composer abstract base class for a hand."""
+    """Abstract base class for a robotic hand."""
 
     @abc.abstractmethod
     def _build(self) -> None:
@@ -19,3 +22,12 @@ class Hand(abc.ABC, composer.Entity):
     @abc.abstractmethod
     def name(self) -> str:
         """The name of the hand."""
+
+    @property
+    @abc.abstractmethod
+    def actuators(self) -> List[MjcfElement]:
+        """List of actuator elements belonging to the hand."""
+
+    @property
+    def joints(self) -> List[MjcfElement]:
+        """List of joint elements belonging to the hand."""

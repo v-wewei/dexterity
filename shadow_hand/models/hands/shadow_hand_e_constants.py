@@ -9,9 +9,6 @@ import numpy as np
 
 from shadow_hand import _SRC_ROOT
 
-# Path to the root of the src files, i.e. `shadow_hand/`.
-# _SRC_ROOT: Path = Path(__file__).parent.parent / "shadow_hand"
-
 # Path to the shadow hand E series XML file.
 SHADOW_HAND_E_XML: Path = (
     _SRC_ROOT
@@ -23,7 +20,7 @@ SHADOW_HAND_E_XML: Path = (
     / "shadow_hand_series_e.xml"
 )
 
-EPSILON = 1e-6
+EPSILON: float = 1e-6
 
 
 class Components(enum.Enum):
@@ -96,6 +93,32 @@ NUM_JOINTS: int = len(Joints)
 
 # A list of joint names, as strings.
 JOINT_NAMES: List[str] = [j.name for j in Joints]
+
+# A mapping from `Components` to the list of `Joints` that belong to it.
+JOINT_GROUP: Dict[Components, Tuple[Joints, ...]] = {
+    # Wrist has 2 joints.
+    Components.WR: (Joints.WRJ1, Joints.WRJ0),
+    # First, middle and ring fingers have 4 joints.
+    Components.FF: (Joints.FFJ3, Joints.FFJ2, Joints.FFJ1, Joints.FFJ0),
+    Components.MF: (Joints.MFJ3, Joints.MFJ2, Joints.MFJ1, Joints.MFJ0),
+    Components.RF: (Joints.RFJ3, Joints.RFJ2, Joints.RFJ1, Joints.RFJ0),
+    # Little finger has 5 joints.
+    Components.LF: (
+        Joints.LFJ4,
+        Joints.LFJ3,
+        Joints.LFJ2,
+        Joints.LFJ1,
+        Joints.LFJ0,
+    ),
+    # Thumb has 5 actuators.
+    Components.TH: (
+        Joints.THJ4,
+        Joints.THJ3,
+        Joints.THJ2,
+        Joints.THJ1,
+        Joints.THJ0,
+    ),
+}
 
 # ====================== #
 # Actuation constants

@@ -18,3 +18,4 @@ This repository contains code related to my research involving the [Shadow Hand]
 1. Is it better to specify damping at the `<joint>` level or have an explicit velocity actuator with a damping gain?
 2. How do I tune the `<visual>`, `<option>` and `<size>` properties?
 3. How do I tune `<joint>` properties such as `<damping>`, `<armature>`, `<margin>` and `<frictionloss>`?
+4. How do I generate an XML file from a dynamically create MJCF model? `to_xml_string()` does not resolve asset paths.
