@@ -11,8 +11,17 @@ from shadow_hand.hints import MjcfElement
 
 mjlib = mjbindings.mjlib
 
-# Integration timestep used when solving the IK.
+# Integration timestep used to convert from joint velocities to joint positions.
 _INTEGRATION_TIMESTEP_SEC = 1.0
+
+# If the norm of the error divided by the magnitude of the joint position update is
+# greater than this value, then the solve is ended prematurely. This helps us avoid
+# getting stuck in local minima.
+_PROGRESS_THRESHOLD = 20.0
+
+# The maximum L2 norm of the update applied to the joint positions at each iteration.
+# The update vector will be scaled such that its magnitude never exceeds this value.
+_MAX_UPDATE_NORM = 2.0
 
 
 @dataclasses.dataclass
@@ -33,7 +42,6 @@ class DifferentialIK:
         site_name: str,
     ) -> None:
 
-        # self._physics = physics
         self._physics = mjcf.Physics.from_mjcf_model(model)
         self._controllable_joints = controllable_joints
         self._num_joints = len(self._controllable_joints)
@@ -56,6 +64,8 @@ class DifferentialIK:
         inital_joint_configuration: Optional[np.ndarray] = None,
         nullspace_reference: Optional[np.ndarray] = None,
         regularization_weight: float = 1e-3,
+        max_update_norm: float = _MAX_UPDATE_NORM,
+        progress_threshold: float = _PROGRESS_THRESHOLD,
     ) -> Optional[np.ndarray]:
         """Attempts to solve the IK problem."""
 
@@ -103,6 +113,8 @@ class DifferentialIK:
                 max_steps,
                 early_stop,
                 regularization_weight,
+                max_update_norm,
+                progress_threshold,
             )
 
             # Check if the attempt was successful. The solution is saved if the joints
@@ -131,6 +143,8 @@ class DifferentialIK:
         max_steps: int,
         early_stop: bool,
         regularization_weight: float,
+        max_update_norm: float,
+        progress_threshold: float,
     ) -> _Solution:
         # Convert site name to index.
         site_id = self._physics.model.name2id(self._site_name, "site")
@@ -143,7 +157,13 @@ class DifferentialIK:
 
         # Each iteration of this loop attempts to reduce the error between the site's
         # position and the target position.
-        for _ in range(max_steps):
+        for i in range(max_steps):
+            # Compute error.
+            linear_err = float(np.linalg.norm(site_xpos - target_position))
+
+            # Stop if close enough to target.
+            if early_stop and linear_err <= linear_tol:
+                break
 
             qdot_sol = np.zeros(self._physics.model.nv)
             joint_vel = self._compute_joint_velocities(
@@ -153,12 +173,24 @@ class DifferentialIK:
                 regularization_weight,
             )
 
-            if joint_vel is not None:
-                qdot_sol[self._joints_binding.dofadr] = joint_vel
-            else:
+            # Check whether we are still making enough progress.
+            update_norm = np.linalg.norm(joint_vel)
+            progress_criterion = linear_err / (update_norm + 1e-10)
+            if progress_criterion > progress_threshold:
+                print(
+                    f"Step {i}: err_norm / update_norm {progress_criterion} > "
+                    f"tolerance {progress_threshold}. Halting due to insufficient "
+                    "progress."
+                )
                 break
 
-            # The velocity is pased to mujoco to be integrated.
+            if update_norm > max_update_norm:
+                joint_vel *= max_update_norm / update_norm
+
+            # Write the entries for the specified joints into the full vector.
+            qdot_sol[self._joints_binding.dofadr] = joint_vel
+
+            # The velocity is passed to mujoco to be integrated.
             mjlib.mj_integratePos(
                 self._physics.model.ptr,
                 self._physics.data.qpos,
@@ -166,13 +198,6 @@ class DifferentialIK:
                 _INTEGRATION_TIMESTEP_SEC,
             )
             self._update_physics_data()
-
-            # Compute error.
-            linear_err = float(np.linalg.norm(site_xpos - target_position))
-
-            # Stop if close enough to target.
-            if early_stop and linear_err <= linear_tol:
-                break
 
         qpos = np.array(self._joints_binding.qpos)
         return _Solution(qpos=qpos, linear_err=linear_err)
@@ -183,7 +208,7 @@ class DifferentialIK:
         target_position: np.ndarray,
         site_xpos: np.ndarray,
         regularization_weight: float,
-    ) -> Optional[np.ndarray]:
+    ) -> np.ndarray:
         """Solves for joint velocities using damped least squares."""
         # Compute Jacobian.
         jacobian = np.empty((3, self._physics.model.nv))

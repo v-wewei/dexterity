@@ -5,6 +5,7 @@ import numpy as np
 from dm_control import mjcf, mujoco
 from dm_control.mujoco.wrapper.mjbindings import enums
 from dm_robotics.transformations import transformations as tr
+from matplotlib import pyplot as plt
 
 from shadow_hand.ik import differential_ik
 from shadow_hand.models.arenas.empty import Arena
@@ -28,6 +29,14 @@ def render(
     )
 
 
+def plot(image: np.ndarray) -> None:
+    plt.figure()
+    plt.imshow(image)
+    plt.axis("off")
+    plt.show()
+    plt.close()
+
+
 def animate(
     physics: mjcf.Physics,
     duration: float = 2.0,
@@ -37,7 +46,7 @@ def animate(
     while physics.data.time < duration:
         physics.step()
         if len(frames) < physics.data.time * framerate:
-            pixels = render(physics)
+            pixels = render(physics, transparent=True)
             frames.append(pixels)
     return frames
 
@@ -57,12 +66,12 @@ def main() -> None:
             name=f"{name}_target",
             type="sphere",
             pos=position,
-            rgba="0 0 1 1",
-            size="0.005",
+            rgba="0 0 1 .5",
+            size="0.001",
         )
         target_site_elems.append(site_elem)
 
-    axis_angle = np.pi * np.array([0, np.sqrt(2) / 2, -np.sqrt(2) / 2])
+    axis_angle = np.radians(180) * np.array([0, np.sqrt(2) / 2, -np.sqrt(2) / 2])
     quat = tr.axisangle_to_quat(axis_angle)
 
     # Load the hand and add it to the arena.
@@ -117,19 +126,10 @@ def main() -> None:
     qpos = controller.solve(
         target_position=target_position,
         linear_tol=1e-6,
-        max_steps=100,
-        early_stop=True,
-        num_attempts=30,
-        stop_on_first_successful_attempt=False,
         inital_joint_configuration=None,
         nullspace_reference=None,
         regularization_weight=1e-3,
     )
-
-    # # Directly set joint angles.
-    # physics_joints = physics.bind(controllable_joints)
-    # physics_joints.qpos[:] = qpos
-    # physics.step()
 
     # Command the actuators.
     joint_angles = np.zeros(len(hand.joints))
@@ -138,6 +138,12 @@ def main() -> None:
     hand.set_position_control(physics, ctrl)
     frames = animate(physics, duration=5.0)
     imageio.mimsave("temp/differential_kinematics.mp4", frames, fps=30)
+
+    # Directly set joint angles.
+    physics_joints = physics.bind(controllable_joints)
+    physics_joints.qpos[:] = qpos
+    physics.step()
+    plot(render(physics, transparent=True))
 
 
 if __name__ == "__main__":

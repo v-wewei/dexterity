@@ -22,12 +22,12 @@ class _ActuatorParams:
 # little finger: metacarpal - knuckle - proximal - middle - distal
 # thumb: base - proximal - middle - distal
 # others: knuckle - proximal - middle - distal
-_WR_GAIN = 20.0
+_WR_GAIN = 10.0
 _TH_GAIN = 3.0
-_KNUCKLE_GAIN = 1.5
-_PROXIMAL_GAIN = 1.5
-_MIDDLE_DISTAL_GAIN = 1.5  # 0.6
-_METACARPAL_GAIN = 1.5
+_KNUCKLE_GAIN = 1.6
+_PROXIMAL_GAIN = 1.6
+_MIDDLE_DISTAL_GAIN = 0.6
+_METACARPAL_GAIN = 1.6
 _ACTUATOR_PARAMS = {
     consts.Actuation.POSITION: {
         # Wrist.
