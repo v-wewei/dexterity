@@ -24,10 +24,10 @@ class _ActuatorParams:
 # others: knuckle - proximal - middle - distal
 _WR_GAIN = 20.0
 _TH_GAIN = 3.0
-_KNUCKLE_GAIN = 3.0
-_PROXIMAL_GAIN = 3.0
-_MIDDLE_DISTAL_GAIN = 0.6
-_METACARPAL_GAIN = 3.0
+_KNUCKLE_GAIN = 1.5
+_PROXIMAL_GAIN = 1.5
+_MIDDLE_DISTAL_GAIN = 1.5  # 0.6
+_METACARPAL_GAIN = 1.5
 _ACTUATOR_PARAMS = {
     consts.Actuation.POSITION: {
         # Wrist.
@@ -212,7 +212,6 @@ class ShadowHandSeriesE(hand.Hand):
             physics: A `mujoco.Physics` instance.
             control: The position control vector, of shape (20,).
         """
-        # TODO(kevin): Should we clip instead?
         if not self.is_position_control_valid(physics, control):
             raise ValueError("Position control command is invalid.")
 
@@ -228,6 +227,12 @@ class ShadowHandSeriesE(hand.Hand):
         lower_cond = bool(np.all(control >= ctrl_bounds[:, 0] - consts.EPSILON))
         upper_cond = bool(np.all(control <= ctrl_bounds[:, 1] + consts.EPSILON))
         return shape_cond and lower_cond and upper_cond
+
+    def add_gravity_compensation(self, physics: mjcf.Physics) -> None:
+        body_elements = self.mjcf_model.find_all("body")
+        gravity = np.hstack([physics.model.opt.gravity, [0, 0, 0]])
+        physics_bodies = physics.bind(body_elements)
+        physics_bodies.xfrc_applied[:] = -gravity * physics_bodies.mass[..., None]
 
     # ================= #
     # Private methods.
@@ -308,8 +313,11 @@ class ShadowHandSeriesE(hand.Hand):
             return actuator
 
         self._actuators = []
+        self._actuator_elem_mapping = {}
         for actuator, actuator_params in _ACTUATOR_PARAMS[self._actuation].items():
-            self._actuators.append(add_actuator(actuator, actuator_params))
+            actuator_elem = add_actuator(actuator, actuator_params)
+            self._actuator_elem_mapping[actuator] = actuator_elem
+            self._actuators.append(actuator_elem)
 
     def _add_sensors(self) -> None:
         """Add sensors to the mjcf model."""
@@ -338,9 +346,7 @@ class ShadowHandSeriesE(hand.Hand):
             self._joint_torque_sensors.append(torque_sensor_elem)
             self._joint_torque_sensor_elem_mapping[joint] = torque_sensor_elem
 
-    # TODO(kevin): I'll probably remove this method from this class and move it to a
-    # randomization module that takes in a MJCF model and dynamically applies
-    # randomizations, geom color being one possible randomization.
+    # TODO(kevin): Move this method to a randomization module.
     def _color_hand(self) -> None:
         """Assigns a random RGB color to the hand."""
         for geom_name in consts.COLORED_GEOMS:

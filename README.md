@@ -9,6 +9,9 @@ This repository contains code related to my research involving the [Shadow Hand]
 - [ ] Figure out joint torque and velocity limits. I submitted an [issue](https://github.com/shadow-robot/sr_core/issues/206).
 - [x] Add torque sensors and fingertip sites.
 - [ ] Implement inverse kinematics.
+    - [x] Differential IK. Only supports 1 finger.
+    - [ ] Add support for target rotation.
+    - [ ] Implement QP IK for multiple fingers.
 
 ## Changelog
 
