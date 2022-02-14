@@ -9,8 +9,7 @@ from dm_control import mjcf
 from dm_control.mujoco.wrapper import mjbindings
 from dm_robotics.geometry import geometry, mujoco_physics
 
-from shadow_hand import hints
-from shadow_hand.controllers import damped_least_squares
+from shadow_hand import controllers, hints
 from shadow_hand.utils import geometry_utils, mujoco_utils
 
 mjlib = mjbindings.mjlib
@@ -76,19 +75,18 @@ class IKSolver:
         self._object_type = mujoco_utils.get_element_type(self._element)
         self._object_name = self._element.full_identifier
 
-        params = damped_least_squares.DampedLeastSquaresParameters(
+        params = controllers.dls.DampedLeastSquaresParameters(
             model=self._physics.model,
             joint_ids=self._joints_binding.jntid,
             object_type=mujoco_utils.get_element_type(self._element),
             object_name=self._element.full_identifier,
-            integration_timestep=_INTEGRATION_TIMESTEP_SEC,
             regularization_weight=_REGULARIZATION_WEIGHT,
         )
-        self._mapper = damped_least_squares.DampedLeastSquaresMapper(params)
+        self._mapper = controllers.dls.DampedLeastSquaresMapper(params)
 
         self._joints_argsort = np.argsort(self._joints_binding.jntid)
 
-        # Default nullspace referrence is the mid-range of the joints.
+        # Default nullspace reference is the mid-range of the joints.
         self._nullspace_joint_position_reference = 0.5 * np.sum(
             self._joints_binding.range, axis=1
         )
@@ -109,18 +107,6 @@ class IKSolver:
         Returns None if no solution is found. If multiple solutions are found, returns
         the one where the joints are closer to the `nullspace_reference`. If no such
         `nullspace_reference` is provided, defaults to the center of the joint ranges.
-
-        Args:
-            target_position:
-            linear_tol:
-            max_steps:
-            early_stop:
-            num_attempts:
-            stop_on_first_successful_attempt:
-            inital_joint_configuration:
-            nullspace_reference:
-            max_update_norm:
-            progress_threshold:
         """
         if nullspace_reference is None:
             nullspace_reference = self._nullspace_joint_position_reference
@@ -193,9 +179,9 @@ class IKSolver:
     ) -> _Solution:
         """Solves for a joint configuration that brings element pose to target pose."""
         cur_frame = geometry.PoseStamped(pose=None, frame=self._element)
-        linear_err: float = np.inf
         cur_pose = cur_frame.get_world_pose(self._geometry_physics)
         previous_pose = copy.copy(cur_pose)
+        linear_err: float = np.inf
 
         # Each iteration of this loop attempts to reduce the error between the site's
         # position and the target position.
@@ -215,7 +201,7 @@ class IKSolver:
             qdot_sol = np.zeros(self._physics.model.nv)
             joint_vel = self._compute_joint_velocities(twist.linear)
 
-            # If we are unable to compute joint velocities we stop the iteration as the
+            # If we are unable to compute joint velocities, we stop the iteration as the
             # solver is stuck and cannot make any more progress.
             if joint_vel is not None:
                 qdot_sol[self._joints_binding.dofadr] = joint_vel

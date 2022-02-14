@@ -125,6 +125,7 @@ def main() -> None:
         )
         finger_controllable_joints[finger] = tuple(controllable_joints)
 
+    ik_start = time.time()
     joint_positions = {}
     for finger in [
         consts.Components.TH,
@@ -141,13 +142,16 @@ def main() -> None:
             target_position=target_position,
             max_steps=100,
             num_attempts=30,
+            early_stop=True,
             stop_on_first_successful_attempt=True,
-            linear_tol=1e-5,
+            linear_tol=1e-6,
         )
-        print(f"Solved {finger} IK in {time.time() - tic:.4f} seconds.")
-        joint_positions[finger] = qpos
+        print(f"\tSolved {finger} IK in {time.time() - tic:.4f} seconds.")
 
-    # Command the actuators.
+        joint_positions[finger] = qpos
+    print(f"Full IK solved in {time.time() - ik_start:.4f} seconds.")
+
+    # Command the actuators and animate.
     joint_angles = np.zeros(len(hand.joints))
     for finger, qpos in joint_positions.items():
         if qpos is not None:
@@ -156,9 +160,9 @@ def main() -> None:
     ctrl = hand.joint_positions_to_control(joint_angles)
     hand.set_position_control(physics, ctrl)
     frames = animate(physics, duration=5.0)
-    imageio.mimsave("temp/ik.mp4", frames, fps=30)
+    imageio.mimsave("temp/inverse_kinematics.mp4", frames, fps=30)
 
-    # Directly set joint angles.
+    # Directly set joint angles and visualize.
     joint_angles = np.zeros(len(hand.joints))
     for finger, qpos in joint_positions.items():
         if qpos is not None:
