@@ -218,6 +218,19 @@ class ShadowHandSeriesE(hand.Hand):
         physics_actuators = physics.bind(self._actuators)
         physics_actuators.ctrl[:] = control
 
+    def set_joint_angles(self, physics: mjcf.Physics, joint_angles: np.ndarray) -> None:
+        """Sets the joints of the hand to a given configuration.
+
+        Also sets the controller to prevent the hand from moving back to the previous
+        configuration.
+        """
+        physics_joints = physics.bind(self._joints)
+        physics_actuators = physics.bind(self._actuators)
+
+        physics_joints.qpos[:] = joint_angles
+        control = self.joint_positions_to_control(joint_angles)
+        physics_actuators.ctrl[:] = control
+
     def is_position_control_valid(
         self, physics: mjcf.Physics, control: np.ndarray
     ) -> bool:

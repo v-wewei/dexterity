@@ -1,6 +1,7 @@
 import time
 from typing import Dict, List, Tuple
 
+import imageio
 import numpy as np
 from dm_control import mjcf, mujoco
 from dm_control.mujoco.wrapper.mjbindings import enums
@@ -146,13 +147,25 @@ def main() -> None:
         print(f"Solved {finger} IK in {time.time() - tic:.4f} seconds.")
         joint_positions[finger] = qpos
 
-    # Directly set joint angles.
+    # Command the actuators.
+    joint_angles = np.zeros(len(hand.joints))
     for finger, qpos in joint_positions.items():
         if qpos is not None:
             physics_joints = physics.bind(finger_controllable_joints[finger])
-            physics_joints.qpos[:] = qpos
-    physics.step()
+            joint_angles[physics_joints.dofadr] = qpos
+    ctrl = hand.joint_positions_to_control(joint_angles)
+    hand.set_position_control(physics, ctrl)
+    frames = animate(physics, duration=5.0)
+    imageio.mimsave("temp/ik.mp4", frames, fps=30)
 
+    # Directly set joint angles.
+    joint_angles = np.zeros(len(hand.joints))
+    for finger, qpos in joint_positions.items():
+        if qpos is not None:
+            physics_joints = physics.bind(finger_controllable_joints[finger])
+            joint_angles[physics_joints.dofadr] = qpos
+    hand.set_joint_angles(physics, joint_angles)
+    physics.step()
     im0 = render(physics, transparent=False)
     im1 = render(physics, transparent=True)
     plot(np.hstack([im0, im1]))
