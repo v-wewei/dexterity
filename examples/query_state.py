@@ -3,9 +3,9 @@ import numpy as np
 from dm_control import mjcf, mujoco
 from dm_control.mujoco.wrapper.mjbindings import enums
 
-from shadow_hand import mujoco_utils as utils
 from shadow_hand.models.hands import shadow_hand_e
 from shadow_hand.models.hands import shadow_hand_e_constants as consts
+from shadow_hand.utils import mujoco_utils
 
 
 def main() -> None:
@@ -31,7 +31,7 @@ def main() -> None:
     # Fingertip poses.
     poses = []
     for fingertip_site in hand._fingertip_sites:
-        poses.append(utils.get_site_pose(physics, fingertip_site))
+        poses.append(mujoco_utils.get_site_pose(physics, fingertip_site))
     # # Print fingertip positions in world frame.
     # for pose in poses:
     #     print(pose[:3, 3])
@@ -39,7 +39,7 @@ def main() -> None:
     # Fingertip velocities.
     velocities = []
     for fingertip_site in hand._fingertip_sites:
-        velocities.append(utils.get_site_velocity(physics, fingertip_site))
+        velocities.append(mujoco_utils.get_site_velocity(physics, fingertip_site))
     # # Print fingertip velocities in world frame.
     # for velocity in velocities:
     #     print(velocity)
@@ -47,7 +47,7 @@ def main() -> None:
     # Sanity check relative pose calculation.
     for fingertip_site in hand._fingertip_sites:
         # Get pose of fingertip relative to itself. This should be the 4x4 identity.
-        pose = utils.get_site_relative_pose(
+        pose = mujoco_utils.get_site_relative_pose(
             physics,
             fingertip_site,
             fingertip_site,

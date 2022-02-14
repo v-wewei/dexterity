@@ -12,22 +12,22 @@ from shadow_hand.models.hands import shadow_hand_e_constants as consts
 # NOTE(kevin): There's a damping parameter at the <joint> level, which means we in fact
 # have a PD-based position controller under the hood. So `kp` here is the proportional
 # gain and the damping parameter is related to the derivative gain.
-@dataclasses.dataclass
+@dataclasses.dataclass(frozen=True)
 class _ActuatorParams:
-    # Position feedback gain.
     kp: float = 1.0
+    """Position feedback gain for the MuJoCo actuator."""
 
 
 # NOTE(kevin): Some terminology:
 # little finger: metacarpal - knuckle - proximal - middle - distal
 # thumb: base - proximal - middle - distal
 # others: knuckle - proximal - middle - distal
-_WR_GAIN = 10.0
-_TH_GAIN = 3.0
-_KNUCKLE_GAIN = 1.6
-_PROXIMAL_GAIN = 1.6
-_MIDDLE_DISTAL_GAIN = 0.6
-_METACARPAL_GAIN = 1.6
+_WR_GAIN = 20.0
+_TH_GAIN = 1.0
+_KNUCKLE_GAIN = 1.2
+_PROXIMAL_GAIN = 1.2
+_MIDDLE_DISTAL_GAIN = 0.8
+_METACARPAL_GAIN = 1.0
 _ACTUATOR_PARAMS = {
     consts.Actuation.POSITION: {
         # Wrist.
@@ -56,7 +56,7 @@ _ACTUATOR_PARAMS = {
         consts.Actuators.A_THJ2: _ActuatorParams(kp=_TH_GAIN),
         consts.Actuators.A_THJ1: _ActuatorParams(kp=_TH_GAIN),
         consts.Actuators.A_THJ0: _ActuatorParams(kp=_TH_GAIN),
-    }
+    },
 }
 
 
@@ -322,6 +322,7 @@ class ShadowHandSeriesE(hand.Hand):
     def _add_sensors(self) -> None:
         """Add sensors to the mjcf model."""
         self._add_torque_sensors()
+        # self._add_tendon_position_sensors()
 
     def _add_torque_sensors(self) -> None:
         """Adds torque sensors to the joints of the hand."""
@@ -345,6 +346,10 @@ class ShadowHandSeriesE(hand.Hand):
             )
             self._joint_torque_sensors.append(torque_sensor_elem)
             self._joint_torque_sensor_elem_mapping[joint] = torque_sensor_elem
+
+    def _add_tendon_position_sensors(self) -> None:
+        """Adds tendon position sensors to the hand."""
+        ...
 
     # TODO(kevin): Move this method to a randomization module.
     def _color_hand(self) -> None:

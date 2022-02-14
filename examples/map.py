@@ -1,18 +1,21 @@
 from typing import Dict, List, Tuple
 
-import imageio
 import numpy as np
 from dm_control import mjcf, mujoco
 from dm_control.mujoco.wrapper.mjbindings import enums
 from dm_robotics.transformations import transformations as tr
 from matplotlib import pyplot as plt
 
-from shadow_hand.ik import differential_ik
+from shadow_hand.controllers.pseudoinverse import (
+    PseudoInverseMapper,
+    PseudoInverseParameters,
+)
 from shadow_hand.models.arenas.empty import Arena
 from shadow_hand.models.hands import shadow_hand_e
 from shadow_hand.models.hands import shadow_hand_e_constants as consts
 
 TARGET_POSITIONS: Dict[consts.Components, Tuple[float, float, float]] = {
+    consts.Components.LF: (0.03, -0.41, 0.16),
     consts.Components.RF: (0.01, -0.41, 0.16),
     consts.Components.MF: (-0.01, -0.41, 0.16),
     consts.Components.FF: (-0.03, -0.41, 0.16),
@@ -87,7 +90,7 @@ def main() -> None:
     arena.attach(hand, attachment_site)
 
     # Get elem associated with fingertip.
-    finger = consts.Components.FF
+    finger = consts.Components.LF
     fingertip_name = finger.name.lower() + "tip"
     fingertip_site_name = f"{hand.mjcf_model.model}/{fingertip_name}_site"
     fingertip_site_elem = arena.mjcf_model.find("site", fingertip_site_name)
@@ -113,37 +116,28 @@ def main() -> None:
     assert len(controllable_actuators) == len(actuators)
 
     physics = mjcf.Physics.from_mjcf_model(arena.mjcf_model)
-    physics_joints = physics.bind(controllable_joints)
 
-    controller = differential_ik.DifferentialIK(
-        model=arena.mjcf_model,
-        controllable_joints=controllable_joints,
-        site_name=fingertip_site_name,
+    joint_binding = physics.bind(controllable_joints)
+    joint_ids = joint_binding.jntid
+
+    params = PseudoInverseParameters(
+        model=physics.model,
+        joint_ids=joint_ids,
+        object_type=enums.mjtObj.mjOBJ_SITE,
+        object_name=fingertip_site_name,
+        integration_timestep=1.0,
     )
 
-    # Solve.
+    controller = PseudoInverseMapper(params)
+
     target_position = np.array(TARGET_POSITIONS[finger])
-    qpos = controller.solve(
-        target_position=target_position,
-        linear_tol=1e-6,
-        inital_joint_configuration=None,
-        nullspace_reference=None,
-        regularization_weight=1e-3,
-    )
+    current_position = physics.named.data.site_xpos[fingertip_site_name]
+    linear_velocity = target_position - current_position
+    angular_velocity = np.zeros(3)
+    target_velocity = np.concatenate([linear_velocity, angular_velocity])
 
-    # Command the actuators.
-    joint_angles = np.zeros(len(hand.joints))
-    joint_angles[physics_joints.dofadr] = qpos
-    ctrl = hand.joint_positions_to_control(joint_angles)
-    hand.set_position_control(physics, ctrl)
-    frames = animate(physics, duration=5.0)
-    imageio.mimsave("temp/differential_kinematics.mp4", frames, fps=30)
-
-    # Directly set joint angles.
-    physics_joints = physics.bind(controllable_joints)
-    physics_joints.qpos[:] = qpos
-    physics.step()
-    plot(render(physics, transparent=True))
+    qpos = controller.compute_joint_velocities(physics.data, target_velocity)
+    print(qpos)
 
 
 if __name__ == "__main__":

@@ -276,13 +276,13 @@
                 <joint range="-0.349066 0.349066" />
             </default>
             <default class="FJ2">
-                <joint/>
+                <joint />
             </default>
             <default class="FJ1">
-                <joint/>
+                <joint />
             </default>
             <default class="FJ0">
-                <joint/>
+                <joint />
             </default>
         </default>
 
