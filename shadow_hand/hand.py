@@ -1,6 +1,7 @@
 import abc
 from typing import List
 
+import numpy as np
 from dm_control import composer, mjcf
 
 from shadow_hand.hints import MjcfElement
@@ -31,3 +32,7 @@ class Hand(abc.ABC, composer.Entity):
     @property
     def joints(self) -> List[MjcfElement]:
         """List of joint elements belonging to the hand."""
+
+    @abc.abstractmethod
+    def set_joint_angles(self, physics: mjcf.Physics, joint_angles: np.ndarray) -> None:
+        """Sets the joints of the hand to a given configuration."""
