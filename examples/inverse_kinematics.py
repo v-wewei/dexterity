@@ -1,7 +1,10 @@
-import time
-from typing import Dict, List
+"""Placing fingertip locations at target sites using inverse kinematics."""
 
-import imageio
+import dataclasses
+import time
+from typing import Dict, List, Optional
+
+import dcargs
 import numpy as np
 from dm_control import mjcf, mujoco
 from dm_control.mujoco.wrapper.mjbindings import enums
@@ -14,16 +17,16 @@ from shadow_hand.models.arenas.empty import Arena
 from shadow_hand.models.hands import shadow_hand_e
 from shadow_hand.models.hands import shadow_hand_e_constants as consts
 
-TARGET_POSITIONS: Dict[consts.Components, np.ndarray] = {
-    consts.Components.LF: np.array([0.03, -0.38, 0.16]),
-    consts.Components.RF: np.array([0.01, -0.38, 0.16]),
-    consts.Components.MF: np.array([-0.01, -0.38, 0.16]),
-    consts.Components.FF: np.array([-0.03, -0.38, 0.16]),
-    consts.Components.TH: np.array([-0.05, -0.345, 0.13]),
+_SITE_COMPONENT_MAP = {
+    "fftip_site": consts.Components.FF,
+    "mftip_site": consts.Components.MF,
+    "rftip_site": consts.Components.RF,
+    "lftip_site": consts.Components.LF,
+    "thtip_site": consts.Components.TH,
 }
 
 
-def render(
+def render_scene(
     physics: mjcf.Physics, cam_id: str = "fixed_viewer1", transparent: bool = False
 ) -> np.ndarray:
     scene_option = mujoco.wrapper.core.MjvOption()
@@ -33,8 +36,8 @@ def render(
     )
 
 
-def plot(image: np.ndarray) -> None:
-    plt.figure()
+def plot(image: np.ndarray, window: str = "") -> None:
+    plt.figure(window)
     plt.imshow(image)
     plt.axis("off")
     plt.show()
@@ -50,7 +53,7 @@ def animate(
     while physics.data.time < duration:
         physics.step()
         if len(frames) < physics.data.time * framerate:
-            pixels = render(physics, transparent=True)
+            pixels = render_scene(physics, transparent=True)
             frames.append(pixels)
     return frames
 
@@ -70,30 +73,18 @@ def merge_solutions(
     return joint_configuration
 
 
-def main() -> None:
-    # Build the arena.
-    arena = Arena("hand_arena")
-    arena.mjcf_model.option.gravity = (0.0, 0.0, 0.0)  # Disable gravity.
+def _build_arena(name: str, disable_gravity: bool = True) -> Arena:
+    arena = Arena(name)
+    if disable_gravity:
+        arena.mjcf_model.option.gravity = (0.0, 0.0, 0.0)
     arena.mjcf_model.size.nconmax = 1_000
     arena.mjcf_model.size.njmax = 2_000
+    return arena
 
-    # Create sites for target fingertip positions.
-    target_site_elems = []
-    for name, position in TARGET_POSITIONS.items():
-        site_elem = arena.mjcf_model.worldbody.add(
-            "site",
-            name=f"{name}_target",
-            type="sphere",
-            pos=position,
-            rgba="0 0 1 .5",
-            size="0.001",
-        )
-        target_site_elems.append(site_elem)
 
+def _add_hand(arena: Arena):
     axis_angle = np.radians(180) * np.array([0, np.sqrt(2) / 2, -np.sqrt(2) / 2])
     quat = tr.axisangle_to_quat(axis_angle)
-
-    # Load the hand and add it to the arena.
     attachment_site = arena.mjcf_model.worldbody.add(
         "site",
         type="sphere",
@@ -104,44 +95,105 @@ def main() -> None:
     )
     hand = shadow_hand_e.ShadowHandSeriesE(actuation=consts.Actuation.POSITION)
     arena.attach(hand, attachment_site)
+    return hand
 
-    solver = ik_solver.IKSolver(arena.mjcf_model, hand.mjcf_model.model)
 
-    physics = mjcf.Physics.from_mjcf_model(arena.mjcf_model)
-    plot(render(physics, transparent=False))
+@dataclasses.dataclass
+class Args:
+    seed: Optional[int] = None
+    num_solves: int = 1
+    linear_tol: float = 1e-3
+    disable_plot: bool = False
 
-    ik_start = time.time()
-    joint_configurations = solver.solve(
-        target_positions=TARGET_POSITIONS,
-        linear_tol=1e-6,
-        max_steps=100,
-        early_stop=True,
-        num_attempts=30,
-        stop_on_first_successful_attempt=True,
-    )
-    print(f"Full IK solved in {time.time() - ik_start:.4f} seconds.")
 
-    if joint_configurations is not None:
-        joint_configuration = merge_solutions(
-            physics,
-            hand.joints,
-            joint_configurations,
-            solver,
+def main(args: Args) -> None:
+    if args.seed is not None:
+        np.random.seed(args.seed)
+
+    successes: int = 0
+    for _ in range(args.num_solves):
+        # Build the scene.
+        arena = _build_arena("hand_ik")
+        hand = _add_hand(arena)
+
+        # Randomly sample a joint configuration.
+        physics = mjcf.Physics.from_mjcf_model(arena.mjcf_model)
+        joint_binding = physics.bind(hand.joints)
+        rand_qpos = np.random.uniform(
+            joint_binding.range[:, 0], joint_binding.range[:, 1]
         )
+        rand_qpos[:2] = 0.0  # Disable wrist movement.
 
-        # Command the actuators and animate.
-        ctrl = hand.joint_positions_to_control(joint_configuration)
-        hand.set_position_control(physics, ctrl)
-        frames = animate(physics, duration=5.0)
-        imageio.mimsave("temp/inverse_kinematics.mp4", frames, fps=30)
+        # Set the configuration and query fingertip sites.
+        physics.bind(hand.joints).qpos = rand_qpos
+        target_positions = {}
+        for fingertip_site in hand._fingertip_sites:
+            target_positions[_SITE_COMPONENT_MAP[fingertip_site.name]] = physics.bind(
+                fingertip_site
+            ).xpos.copy()
+        im_desired = render_scene(physics, transparent=False)
 
-        # Directly set joint angles and visualize.
-        hand.set_joint_angles(physics, joint_configuration)
-        physics.step()
-        im0 = render(physics, transparent=False)
-        im1 = render(physics, transparent=True)
-        plot(np.hstack([im0, im1]))
+        # Add the target sites to the MJCF model for visualization purposes.
+        for name, position in target_positions.items():
+            arena.mjcf_model.worldbody.add(
+                "site",
+                name=f"{name}_target",
+                type="sphere",
+                pos=position,
+                rgba="0 0 1 .7",
+                size="0.001",
+            )
+
+        # Recreate physics instance since we changed the MJCF.
+        physics = mjcf.Physics.from_mjcf_model(arena.mjcf_model)
+        im_initial = render_scene(physics, transparent=False)
+
+        solver = ik_solver.IKSolver(arena.mjcf_model, hand.mjcf_model.model)
+
+        ik_start = time.time()
+        joint_configurations = solver.solve(
+            target_positions=target_positions,
+            linear_tol=args.linear_tol,
+            max_steps=100,
+            early_stop=True,
+            num_attempts=30,
+            stop_on_first_successful_attempt=True,
+        )
+        ik_end = time.time()
+
+        if joint_configurations is not None:
+            print(f"Full IK solved in {ik_end - ik_start:.4f} seconds.")
+
+            joint_configuration = merge_solutions(
+                physics,
+                hand.joints,
+                joint_configurations,
+                solver,
+            )
+
+            # Directly set joint angles and visualize.
+            hand.set_joint_angles(physics, joint_configuration)
+            physics.step()
+            im_actual = render_scene(physics, transparent=True)
+
+            if not args.disable_plot:
+                fig, axes = plt.subplots(1, 3, figsize=(12, 4))
+                axes[0].imshow(im_initial)
+                axes[0].set_title("Initial")
+                axes[1].imshow(im_desired)
+                axes[1].set_title("Desired")
+                axes[2].imshow(im_actual)
+                axes[2].set_title("Actual")
+                for ax in axes:
+                    ax.axis("off")
+                plt.show()
+
+            successes += 1
+        else:
+            plot(im_desired, "failed")
+
+    print(f"solve success rate: {successes}/{args.num_solves}.")
 
 
 if __name__ == "__main__":
-    main()
+    main(dcargs.parse(Args, description=__doc__))

@@ -31,12 +31,12 @@ _ANGULAR_VELOCITY_GAIN = 0.95
 _INTEGRATION_TIMESTEP_SEC = 1.0
 
 # Damping factor.
-_REGULARIZATION_WEIGHT = 1e-3
+_REGULARIZATION_WEIGHT = 1e-5
 
 # If the norm of the error divided by the magnitude of the joint position update is
 # greater than this value, then the solve is ended prematurely. This helps us avoid
 # getting stuck in local minima.
-_PROGRESS_THRESHOLD = 20.0
+_PROGRESS_THRESHOLD = 200.0
 
 
 @dataclasses.dataclass
