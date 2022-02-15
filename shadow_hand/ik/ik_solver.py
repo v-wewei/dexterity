@@ -129,6 +129,7 @@ class IKSolver:
         num_attempts: int = 30,
         stop_on_first_successful_attempt: bool = False,
     ) -> Dict[consts.Components, Optional[np.ndarray]]:
+        """ "Attempts to solve the inverse kinematics."""
         # Set the initial wrist and finger configurations to zero.
         initial_wrist_configuration = np.zeros(self._wrist_num_joints)
         inital_joint_configuration = {}
@@ -143,9 +144,10 @@ class IKSolver:
 
         nullspace_jnt_qpos_min_err: float = np.inf
 
+        # Each iteration of this loop attempts to solve the IK problem.
         for attempt in range(num_attempts):
-            # At the start of each attempt, we first randomize the configuration of the
-            # wrist.
+            # Randomize the initial joint configuration so that the IK can find
+            # different solutions.
             if attempt == 0:
                 wrist_configuration = initial_wrist_configuration
                 for finger, joint_binding in self._joint_bindings.items():
@@ -163,7 +165,7 @@ class IKSolver:
 
             # Solve each finger separately.
             finger_solutions: Dict[consts.Components, _Solution] = {}
-            all_success = True
+            all_success: bool = True
             for finger, target_position in target_positions.items():
                 solution = self._solve_ik(
                     finger,
@@ -172,15 +174,13 @@ class IKSolver:
                     max_steps,
                     early_stop,
                 )
-                if solution.linear_err <= linear_tol:
-                    all_success &= True
-                else:
-                    all_success &= False
+                if solution.linear_err > linear_tol:
+                    all_success = False
                 finger_solutions[finger] = solution
 
             # Save the solution if closer to nullspace reference.
             if all_success:
-                nullspace_jnt_qpos_err = 0.0
+                nullspace_jnt_qpos_err: float = 0.0
                 for finger, solution in finger_solutions.items():
                     nullspace_jnt_qpos_err += float(
                         np.linalg.norm(

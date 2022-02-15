@@ -19,7 +19,7 @@ TARGET_POSITIONS: Dict[consts.Components, np.ndarray] = {
     consts.Components.RF: np.array([0.01, -0.38, 0.16]),
     consts.Components.MF: np.array([-0.01, -0.38, 0.16]),
     consts.Components.FF: np.array([-0.03, -0.38, 0.16]),
-    consts.Components.TH: np.array([-0.03, -0.345, 0.13]),
+    consts.Components.TH: np.array([-0.05, -0.345, 0.16]),
 }
 
 
@@ -119,7 +119,7 @@ def main() -> None:
         max_steps=100,
         early_stop=True,
         num_attempts=30,
-        stop_on_first_successful_attempt=False,
+        stop_on_first_successful_attempt=True,
     )
     print(f"Full IK solved in {time.time() - ik_start:.4f} seconds.")
 
