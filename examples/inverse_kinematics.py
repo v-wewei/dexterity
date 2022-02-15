@@ -1,5 +1,5 @@
 import time
-from typing import Dict, List, Tuple
+from typing import Dict, List, Optional
 
 import imageio
 import numpy as np
@@ -8,17 +8,18 @@ from dm_control.mujoco.wrapper.mjbindings import enums
 from dm_robotics.transformations import transformations as tr
 from matplotlib import pyplot as plt
 
+from shadow_hand import hints
+from shadow_hand.ik import ik_solver
 from shadow_hand.models.arenas.empty import Arena
 from shadow_hand.models.hands import shadow_hand_e
 from shadow_hand.models.hands import shadow_hand_e_constants as consts
-from shadow_hand.utils import ik_solver
 
-TARGET_POSITIONS: Dict[consts.Components, Tuple[float, float, float]] = {
-    consts.Components.LF: (0.03, -0.38, 0.16),
-    consts.Components.RF: (0.01, -0.38, 0.16),
-    consts.Components.MF: (-0.01, -0.38, 0.16),
-    consts.Components.FF: (-0.03, -0.38, 0.16),
-    consts.Components.TH: (-0.03, -0.345, 0.13),
+TARGET_POSITIONS: Dict[consts.Components, np.ndarray] = {
+    consts.Components.LF: np.array([0.03, -0.38, 0.16]),
+    consts.Components.RF: np.array([0.01, -0.38, 0.16]),
+    consts.Components.MF: np.array([-0.01, -0.38, 0.16]),
+    consts.Components.FF: np.array([-0.03, -0.38, 0.16]),
+    consts.Components.TH: np.array([-0.03, -0.345, 0.13]),
 }
 
 
@@ -52,6 +53,23 @@ def animate(
             pixels = render(physics, transparent=True)
             frames.append(pixels)
     return frames
+
+
+def merge_solutions(
+    physics: mjcf.Physics,
+    joints: List[hints.MjcfElement],
+    solutions: Dict[consts.Components, Optional[np.ndarray]],
+    solver: ik_solver.IKSolver,
+) -> np.ndarray:
+    joint_configuration = physics.bind(joints).qpos.copy()
+    for finger, qpos in solutions.items():
+        if finger == consts.Components.WR:
+            if qpos is not None:
+                joint_configuration[solver._wirst_joint_bindings.dofadr] = qpos
+        else:
+            if qpos is not None:
+                joint_configuration[solver._joint_bindings[finger].dofadr] = qpos
+    return joint_configuration
 
 
 def main() -> None:
@@ -89,86 +107,37 @@ def main() -> None:
     hand = shadow_hand_e.ShadowHandSeriesE(actuation=consts.Actuation.POSITION)
     arena.attach(hand, attachment_site)
 
+    solver = ik_solver.IKSolver(arena.mjcf_model, hand.mjcf_model.model)
+
     physics = mjcf.Physics.from_mjcf_model(arena.mjcf_model)
     plot(render(physics, transparent=False))
 
-    ik_solvers = {}
-    finger_controllable_joints = {}
-    for finger in [
-        consts.Components.TH,
-        consts.Components.FF,
-        consts.Components.MF,
-        consts.Components.RF,
-        consts.Components.LF,
-    ]:
-        # Get elem associated with fingertip.
-        fingertip_name = finger.name.lower() + "tip"
-        fingertip_site_name = f"{hand.mjcf_model.model}/{fingertip_name}_site"
-        fingertip_site_elem = arena.mjcf_model.find("site", fingertip_site_name)
-        assert fingertip_site_elem is not None
-
-        # Get controllable joints for the hand given finger pose.
-        finger_joints = consts.JOINT_GROUP[finger]
-        joints = finger_joints
-        controllable_joints = []
-        for joint, joint_elem in hand._joint_elem_mapping.items():
-            if joint in joints:
-                controllable_joints.append(joint_elem)
-        assert len(controllable_joints) == len(joints)
-
-        physics_joints = physics.bind(controllable_joints)
-
-        ik_solvers[finger] = ik_solver.IKSolver(
-            model=arena.mjcf_model,
-            controllable_joints=controllable_joints,
-            element=fingertip_site_elem,
-        )
-        finger_controllable_joints[finger] = tuple(controllable_joints)
-
     ik_start = time.time()
-    joint_positions = {}
-    for finger in [
-        consts.Components.TH,
-        consts.Components.FF,
-        consts.Components.MF,
-        consts.Components.RF,
-        consts.Components.LF,
-    ]:
-        # Solve.
-        target_position = np.array(TARGET_POSITIONS[finger])
-
-        tic = time.time()
-        qpos = ik_solvers[finger].solve(
-            target_position=target_position,
-            max_steps=100,
-            num_attempts=30,
-            early_stop=True,
-            stop_on_first_successful_attempt=True,
-            linear_tol=1e-6,
-        )
-        print(f"\tSolved {finger} IK in {time.time() - tic:.4f} seconds.")
-
-        joint_positions[finger] = qpos
+    solutions = solver.solve(
+        target_positions=TARGET_POSITIONS,
+        linear_tol=1e-6,
+        max_steps=100,
+        early_stop=True,
+        num_attempts=30,
+        stop_on_first_successful_attempt=False,
+    )
     print(f"Full IK solved in {time.time() - ik_start:.4f} seconds.")
 
+    joint_configuration = merge_solutions(
+        physics,
+        hand.joints,
+        solutions,
+        solver,
+    )
+
     # Command the actuators and animate.
-    joint_angles = np.zeros(len(hand.joints))
-    for finger, qpos in joint_positions.items():
-        if qpos is not None:
-            physics_joints = physics.bind(finger_controllable_joints[finger])
-            joint_angles[physics_joints.dofadr] = qpos
-    ctrl = hand.joint_positions_to_control(joint_angles)
+    ctrl = hand.joint_positions_to_control(joint_configuration)
     hand.set_position_control(physics, ctrl)
     frames = animate(physics, duration=5.0)
     imageio.mimsave("temp/inverse_kinematics.mp4", frames, fps=30)
 
     # Directly set joint angles and visualize.
-    joint_angles = np.zeros(len(hand.joints))
-    for finger, qpos in joint_positions.items():
-        if qpos is not None:
-            physics_joints = physics.bind(finger_controllable_joints[finger])
-            joint_angles[physics_joints.dofadr] = qpos
-    hand.set_joint_angles(physics, joint_angles)
+    hand.set_joint_angles(physics, joint_configuration)
     physics.step()
     im0 = render(physics, transparent=False)
     im1 = render(physics, transparent=True)
