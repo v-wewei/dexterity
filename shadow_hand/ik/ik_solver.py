@@ -58,6 +58,9 @@ class IKSolver:
             prefix: The prefix assigned to the hand model in case it is attached to
                 another entity.
         """
+        if prefix:
+            prefix += "/"
+
         self._physics = mjcf.Physics.from_mjcf_model(model)
         self._geometry_physics = mujoco_physics.wrap(self._physics)
 
@@ -66,7 +69,7 @@ class IKSolver:
         self._elements = {}
         for finger in _FINGERS:
             fingertip_name = finger.name.lower() + "tip"
-            fingertip_site_name = f"{prefix}/{fingertip_name}_site"
+            fingertip_site_name = f"{prefix}{fingertip_name}_site"
             fingertip_site_elem = model.find("site", fingertip_site_name)
             assert fingertip_site_elem is not None
             self._elements[finger] = fingertip_site_elem
@@ -74,7 +77,7 @@ class IKSolver:
             joint_names = [j.name for j in consts.JOINT_GROUP[finger]]
             controllable_joints = []
             for joint_name in joint_names:
-                joint_elem = model.find("joint", f"{prefix}/{joint_name}")
+                joint_elem = model.find("joint", f"{prefix}{joint_name}")
                 controllable_joints.append(joint_elem)
             assert len(controllable_joints) == len(joint_names)
             self._controllable_joints[finger] = controllable_joints
@@ -89,7 +92,7 @@ class IKSolver:
         wrist_joint_names = [j.name for j in consts.JOINT_GROUP[consts.Components.WR]]
         self._wrist_controllable_joints = []
         for joint_name in wrist_joint_names:
-            joint_elem = model.find("joint", f"{prefix}/{joint_name}")
+            joint_elem = model.find("joint", f"{prefix}{joint_name}")
             self._wrist_controllable_joints.append(joint_elem)
         assert len(self._wrist_controllable_joints) == len(wrist_joint_names)
         self._wrist_num_joints = len(wrist_joint_names)
