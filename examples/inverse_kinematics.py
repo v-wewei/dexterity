@@ -1,5 +1,5 @@
 import time
-from typing import Dict, List, Optional
+from typing import Dict, List
 
 import imageio
 import numpy as np
@@ -19,7 +19,7 @@ TARGET_POSITIONS: Dict[consts.Components, np.ndarray] = {
     consts.Components.RF: np.array([0.01, -0.38, 0.16]),
     consts.Components.MF: np.array([-0.01, -0.38, 0.16]),
     consts.Components.FF: np.array([-0.03, -0.38, 0.16]),
-    consts.Components.TH: np.array([-0.05, -0.345, 0.16]),
+    consts.Components.TH: np.array([-0.05, -0.345, 0.13]),
 }
 
 
@@ -58,17 +58,15 @@ def animate(
 def merge_solutions(
     physics: mjcf.Physics,
     joints: List[hints.MjcfElement],
-    solutions: Dict[consts.Components, Optional[np.ndarray]],
+    solutions: Dict[consts.Components, np.ndarray],
     solver: ik_solver.IKSolver,
 ) -> np.ndarray:
     joint_configuration = physics.bind(joints).qpos.copy()
     for finger, qpos in solutions.items():
         if finger == consts.Components.WR:
-            if qpos is not None:
-                joint_configuration[solver._wirst_joint_bindings.dofadr] = qpos
+            joint_configuration[solver._wirst_joint_bindings.dofadr] = qpos
         else:
-            if qpos is not None:
-                joint_configuration[solver._joint_bindings[finger].dofadr] = qpos
+            joint_configuration[solver._joint_bindings[finger].dofadr] = qpos
     return joint_configuration
 
 
@@ -113,7 +111,7 @@ def main() -> None:
     plot(render(physics, transparent=False))
 
     ik_start = time.time()
-    solutions = solver.solve(
+    joint_configurations = solver.solve(
         target_positions=TARGET_POSITIONS,
         linear_tol=1e-6,
         max_steps=100,
@@ -123,25 +121,26 @@ def main() -> None:
     )
     print(f"Full IK solved in {time.time() - ik_start:.4f} seconds.")
 
-    joint_configuration = merge_solutions(
-        physics,
-        hand.joints,
-        solutions,
-        solver,
-    )
+    if joint_configurations is not None:
+        joint_configuration = merge_solutions(
+            physics,
+            hand.joints,
+            joint_configurations,
+            solver,
+        )
 
-    # Command the actuators and animate.
-    ctrl = hand.joint_positions_to_control(joint_configuration)
-    hand.set_position_control(physics, ctrl)
-    frames = animate(physics, duration=5.0)
-    imageio.mimsave("temp/inverse_kinematics.mp4", frames, fps=30)
+        # Command the actuators and animate.
+        ctrl = hand.joint_positions_to_control(joint_configuration)
+        hand.set_position_control(physics, ctrl)
+        frames = animate(physics, duration=5.0)
+        imageio.mimsave("temp/inverse_kinematics.mp4", frames, fps=30)
 
-    # Directly set joint angles and visualize.
-    hand.set_joint_angles(physics, joint_configuration)
-    physics.step()
-    im0 = render(physics, transparent=False)
-    im1 = render(physics, transparent=True)
-    plot(np.hstack([im0, im1]))
+        # Directly set joint angles and visualize.
+        hand.set_joint_angles(physics, joint_configuration)
+        physics.step()
+        im0 = render(physics, transparent=False)
+        im1 = render(physics, transparent=True)
+        plot(np.hstack([im0, im1]))
 
 
 if __name__ == "__main__":

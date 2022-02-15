@@ -94,8 +94,8 @@ class IKSolver:
         assert len(self._wrist_controllable_joints) == len(wrist_joint_names)
         self._wrist_num_joints = len(wrist_joint_names)
         self._wirst_joint_bindings = self._physics.bind(self._wrist_controllable_joints)
-        self._wrist_nullspace_joint_position_reference = 0.5 * np.sum(
-            self._wirst_joint_bindings.range, axis=1
+        self._wrist_nullspace_joint_position_reference = np.zeros(
+            self._wrist_num_joints
         )
 
         self._create_mappers()
@@ -116,8 +116,8 @@ class IKSolver:
             self._joints_argsort[finger] = np.argsort(
                 self._joint_bindings[finger].jntid
             )
-            self._nullspace_joint_position_reference[finger] = 0.5 * np.sum(
-                self._joint_bindings[finger].range, axis=1
+            self._nullspace_joint_position_reference[finger] = np.zeros(
+                self._num_joints[finger]
             )
 
     def solve(
@@ -128,20 +128,37 @@ class IKSolver:
         early_stop: bool = False,
         num_attempts: int = 30,
         stop_on_first_successful_attempt: bool = False,
-    ) -> Dict[consts.Components, Optional[np.ndarray]]:
-        """ "Attempts to solve the inverse kinematics."""
+    ) -> Optional[Dict[consts.Components, np.ndarray]]:
+        """Attempts to solve the inverse kinematics.
+
+        Returns a mapping from finger to joint positions that achieve the desired
+        target position. If one of the fingers does not find a solution, then returns
+        None.
+
+        Args:
+            target_positions: A mapping from finger to desired controlled finger element
+                target pose in the world frame.
+            linear_tol: The linear tolerance, in meters, that determines if the IK
+                solution is valid.
+            max_steps: Maximum number of integration steps that can be used. The larger
+                this value is, the more likely a solution will be found, at the
+                expense of computation time.
+            early_stop: If true, stops the attempt as soon as the configuration is
+                within the linear tolerance. If false, it will always run `max_steps`
+                iterations per attempt.
+            num_attempts: The number of different attempts the solver should do. More
+                attemps increase the probability of finding a solution that is closer
+                to the nullspace reference. By default, this is set to all zeros.
+            stop_on_first_successful_attempt: If true, the method will return the
+                first solution where all finger solutions meet the tolerance criterion.
+        """
         # Set the initial wrist and finger configurations to zero.
         initial_wrist_configuration = np.zeros(self._wrist_num_joints)
         inital_joint_configuration = {}
         for finger, num_joints in self._num_joints.items():
             inital_joint_configuration[finger] = np.zeros(num_joints)
 
-        # Set initial solutions to None.
-        solutions: Dict[consts.Components, Optional[np.ndarray]] = {}
-        for finger in target_positions.keys():
-            solutions[finger] = None
-        solutions[consts.Components.WR] = None
-
+        solutions: Dict[consts.Components, np.ndarray] = {}
         nullspace_jnt_qpos_min_err: float = np.inf
 
         # Each iteration of this loop attempts to solve the IK problem.
@@ -203,6 +220,10 @@ class IKSolver:
 
             if all_success and stop_on_first_successful_attempt:
                 break
+
+        if not solutions:
+            print(f"{self.__class__.__name__} failed to find a solution.")
+            return None
 
         return solutions
 
