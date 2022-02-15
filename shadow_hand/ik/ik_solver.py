@@ -223,6 +223,12 @@ class IKSolver:
 
         if not solutions:
             print(f"{self.__class__.__name__} failed to find a solution.")
+            # Uncomment to see best solve attempt.
+            # best_try = {}
+            # for finger, solution in finger_solutions.items():
+            #     best_try[finger] = solution.qpos
+            # best_try[consts.Components.WR] = wrist_configuration
+            # return best_try
             return None
 
         return solutions

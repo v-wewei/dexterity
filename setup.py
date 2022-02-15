@@ -11,8 +11,8 @@ setup(
         "numpy",
         "typing_extensions",
         "dm_control @ git+git://github.com/deepmind/dm_control.git",
-        "dm_robotics-geometry == 0.3.0",
-        "dm_robotics-transformations == 0.3.0",
+        "dm_robotics-geometry",
+        "dm_robotics-transformations",
     ],
     extras_require={
         "testing": [

@@ -102,7 +102,7 @@ def _add_hand(arena: Arena):
 class Args:
     seed: Optional[int] = None
     num_solves: int = 1
-    linear_tol: float = 1e-3
+    linear_tol: float = 1e-4
     disable_plot: bool = False
 
 
@@ -156,7 +156,7 @@ def main(args: Args) -> None:
             linear_tol=args.linear_tol,
             max_steps=100,
             early_stop=True,
-            num_attempts=30,
+            num_attempts=200,
             stop_on_first_successful_attempt=True,
         )
         ik_end = time.time()
@@ -177,7 +177,7 @@ def main(args: Args) -> None:
             im_actual = render_scene(physics, transparent=True)
 
             if not args.disable_plot:
-                fig, axes = plt.subplots(1, 3, figsize=(12, 4))
+                _, axes = plt.subplots(1, 3, figsize=(12, 4))
                 axes[0].imshow(im_initial)
                 axes[0].set_title("Initial")
                 axes[1].imshow(im_desired)
@@ -186,6 +186,8 @@ def main(args: Args) -> None:
                 axes[2].set_title("Actual")
                 for ax in axes:
                     ax.axis("off")
+                plt.subplots_adjust(wspace=0, hspace=0)
+                plt.tight_layout()
                 plt.show()
 
             successes += 1
