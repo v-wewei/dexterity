@@ -8,6 +8,9 @@ from shadow_hand import hand
 from shadow_hand.hints import MjcfElement
 from shadow_hand.models.hands import shadow_hand_e_constants as consts
 
+# NOTE(kevin): See if we can use the cached_property to speed up property access.
+# from dm_control.composer import cached_property
+
 
 # NOTE(kevin): There's a damping parameter at the <joint> level, which means we in fact
 # have a PD-based position controller under the hood. So `kp` here is the proportional
@@ -192,7 +195,7 @@ class ShadowHandSeriesE(hand.Hand):
         """Clips the position control vector to the supported range.
 
         Args:
-            physics: A `mujoco.Physics` instance.
+            physics: An `mjcf.Physics` instance.
             control: The position control vector, of shape (20,).
         """
         bounds = self.actuator_ctrl_range(physics)
@@ -209,7 +212,7 @@ class ShadowHandSeriesE(hand.Hand):
         joint angles for coupled joints.
 
         Args:
-            physics: A `mujoco.Physics` instance.
+            physics: An `mjcf.Physics` instance.
             control: The position control vector, of shape (20,).
         """
         if not self.is_position_control_valid(physics, control):
@@ -228,8 +231,7 @@ class ShadowHandSeriesE(hand.Hand):
         physics_actuators = physics.bind(self._actuators)
 
         physics_joints.qpos[:] = joint_angles
-        control = self.joint_positions_to_control(joint_angles)
-        physics_actuators.ctrl[:] = control
+        physics_actuators.ctrl[:] = self.joint_positions_to_control(joint_angles)
 
     def is_position_control_valid(
         self, physics: mjcf.Physics, control: np.ndarray
@@ -241,7 +243,17 @@ class ShadowHandSeriesE(hand.Hand):
         upper_cond = bool(np.all(control <= ctrl_bounds[:, 1] + consts.EPSILON))
         return shape_cond and lower_cond and upper_cond
 
-    def add_gravity_compensation(self, physics: mjcf.Physics) -> None:
+    def compensate_gravity(self, physics: mjcf.Physics) -> None:
+        """Applies Cartesian forces to the bodies of the hand in order to counteract
+        gravity.
+
+        This will affect the output of pressure, force, or torque sensors within the
+        kinematic chain leading from the worldbody to the bodies that are being
+        compensated.
+
+        Args:
+            physics: An `mjcf.Physics` instance.
+        """
         body_elements = self.mjcf_model.find_all("body")
         gravity = np.hstack([physics.model.opt.gravity, [0, 0, 0]])
         physics_bodies = physics.bind(body_elements)

@@ -34,6 +34,14 @@ class Components(enum.Enum):
     TH = "thumb"
 
 
+FINGERS: Tuple[Components, ...] = (
+    Components.FF,
+    Components.MF,
+    Components.RF,
+    Components.LF,
+    Components.TH,
+)
+
 # ====================== #
 # Joint constants
 # ====================== #
@@ -44,8 +52,8 @@ class Joints(enum.Enum):
 
     There are a total of 24 joints:
         * 2 joints for the wrist
-        * 4 joints for the first, middle and ring fingers
-        * 5 joints for the little finger and thumb
+        * 4 joints for the first, middle and ring fingers (4 * 3 = 12)
+        * 5 joints for the little finger and thumb (5 * 2 = 10)
 
     The joint numbering is increasing from fingertip to palm, i.e. FFJ0 is the first
     knuckle of the first finger, FFJ3 is the last knuckle of the first finger, etc.
@@ -422,10 +430,19 @@ ACTUATOR_TENDON_MAPPING: Dict[Actuators, Tendons] = {
 }
 
 # ====================== #
-# Geoms of interest.
+# Fingertip constants
 # ====================== #
 
-FINGERTIP_NAMES = (
+# Mapping from finger `Components` to its associated fingertip body name.
+FINGER_FINGERTIP_MAPPING: Dict[Components, str] = {
+    Components.FF: "fftip",
+    Components.MF: "mftip",
+    Components.RF: "rftip",
+    Components.LF: "lftip",
+    Components.TH: "thtip",
+}
+
+FINGERTIP_NAMES: Tuple[str, ...] = (
     "fftip",
     "mftip",
     "rftip",
@@ -437,7 +454,6 @@ FINGERTIP_NAMES = (
 # ====================== #
 # Other constants
 # ====================== #
-
 
 # Names of the <geom> tags in the XML file whose color can be changed. This is useful
 # for dynamically changing the colors of the hand components.

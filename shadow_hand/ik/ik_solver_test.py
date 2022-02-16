@@ -18,3 +18,7 @@ class IKSolverTest(absltest.TestCase):
         }
         qpos_sol = solver.solve(target_positions)
         self.assertIsNone(qpos_sol)
+
+
+if __name__ == "__main__":
+    absltest.main()

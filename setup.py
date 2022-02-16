@@ -13,6 +13,7 @@ setup(
         "dm_control @ git+git://github.com/deepmind/dm_control.git",
         "dm_robotics-geometry",
         "dm_robotics-transformations",
+        "dm_robotics-agentflow",
     ],
     extras_require={
         "testing": [

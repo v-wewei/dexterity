@@ -1,7 +1,8 @@
 from typing import Sequence, Tuple
 
 import numpy as np
-from dm_control import mjcf, specs
+from dm_control import mjcf
+from dm_env import specs
 
 from shadow_hand import effector, hints
 
@@ -14,11 +15,13 @@ class MujocoEffector(effector.Effector):
         actuators: Sequence[hints.MjcfElement],
         prefix: str = "",
     ) -> None:
-        """Constructor."""
-
         self._actuators = actuators
         self._prefix = prefix
         self._action_spec = None
+
+    @property
+    def prefix(self) -> str:
+        return self._prefix
 
     def action_spec(self, physics: mjcf.Physics) -> specs.BoundedArray:
         if self._action_spec is None:
@@ -30,8 +33,16 @@ class MujocoEffector(effector.Effector):
         return self._action_spec
 
     def set_control(self, physics: mjcf.Physics, command: np.ndarray) -> None:
-        # TODO(kevin): Validate the command??
+        self.action_spec(physics).validate(command)
         physics.bind(self._actuators).ctrl = command
+
+    def after_compile(self, mjcf_model: mjcf.RootElement) -> None:
+        pass
+
+    def initialize_episode(
+        self, physics: mjcf.Physics, random_state: np.random.RandomState
+    ) -> None:
+        pass
 
 
 def create_action_spec(
@@ -39,13 +50,7 @@ def create_action_spec(
     actuators: Sequence[hints.MjcfElement],
     prefix: str = "",
 ) -> specs.BoundedArray:
-    """Creates an action range for the given actuators.
-
-    Args:
-        physics:
-        actuators:
-        prefix: A name prefix to prepend to each actuator name.
-    """
+    """Creates an action range for the given actuators."""
     num_actuators = len(actuators)
     actuator_names = [f"{prefix}{i}" for i in range(num_actuators)]
     action_min, action_max = _action_range_from_actuators(physics, actuators)
