@@ -18,6 +18,9 @@ This repository contains code related to my research involving the [Shadow Hand]
 
 ## Changelog
 
+## Notes
+
+See [NOTES.md](NOTES.md) for more information.
 
 ## Questions
 
