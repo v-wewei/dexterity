@@ -3,6 +3,8 @@
     <option timestep="0.002" impratio="1" iterations="20" apirate="200"/>
     <size njmax="500" nconmax="200" nstack="600000"/>
     <visual>
+        <map fogstart="1.5" fogend="5" force="0.1" znear="0.1"/>
+        <quality shadowsize="4096" offsamples="4"/>
     </visual>
 
     <asset>
@@ -15,9 +17,13 @@
     <statistic center='0 0 0'/>
 
     <worldbody>
+        <camera name="cam0" pos="0 -1.0 0.6" xyaxes="1 0 0 0 1 2"/>
+        <camera name="cam1" pos="0 -0.25 0.35" xyaxes="1 0 0 0 0 1"/>
         <camera name="fixed_viewer" pos="0 -1.0 0.6" xyaxes="1 0 0 0 1 2"/>
-        <camera name="fixed_viewer1" pos="0 -0.55 0.25" xyaxes="1 0 0 0 0.5 1"/>
+        <camera name="closeup" pos="0 -0.55 0.25" xyaxes="1 0 0 0 0.5 1"/>
         <geom name="ground" type="plane" size="2 2 2" material="groundplane" friction="0.4"/>
-        <light ambient="0.4 0.4 0.4" castshadow="false" diffuse="0.8 0.8 0.8" dir="0 0 -1" directional="false" name="light0" pos="0 0 4" specular="0.3 0.3 0.3" />
+        <light directional="true" diffuse="0.3 0.3 0.3" specular="0.3 0.3 0.3" pos="-1 -1 1" dir="1 1 -1"/>
+        <light directional="true" diffuse="0.3 0.3 0.3" specular="0.3 0.3 0.3" pos="1 -1 1" dir="-1 1 -1"/>
+        <light directional="true" diffuse="0.3 0.3 0.3" specular="0.3 0.3 0.3" pos="0 1 1" dir="0 -1 -1"/>
     </worldbody>
 </mujoco>

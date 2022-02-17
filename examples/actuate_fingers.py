@@ -34,6 +34,25 @@ def main() -> None:
         rgb1="1 1 1",
         rgb2="1 1 1",
     )
+    # Add camera.
+    hand.mjcf_model.worldbody.add(
+        "camera",
+        name="cam0",
+        pos="0 -1.0 0.6",
+        xyaxes="1 0 0 0 1 2",
+    )
+    # Add light.
+    hand.mjcf_model.worldbody.add(
+        "light",
+        ambient="0.4 0.4 0.4",
+        castshadow="false",
+        diffuse="0.8 0.8 0.8",
+        dir="0 0 -1",
+        directional="true",
+        name="light0",
+        pos="0 0 4",
+        specular="0.3 0.3 0.3",
+    )
 
     physics = mjcf.Physics.from_mjcf_model(hand.mjcf_model)
 

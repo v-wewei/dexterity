@@ -27,7 +27,7 @@ _SITE_COMPONENT_MAP = {
 
 
 def render_scene(
-    physics: mjcf.Physics, cam_id: str = "fixed_viewer1", transparent: bool = False
+    physics: mjcf.Physics, cam_id: str = "closeup", transparent: bool = False
 ) -> np.ndarray:
     scene_option = mujoco.wrapper.core.MjvOption()
     scene_option.flags[enums.mjtVisFlag.mjVIS_TRANSPARENT] = transparent
