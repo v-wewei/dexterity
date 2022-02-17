@@ -6,15 +6,17 @@ This repository contains code related to my research involving the [Shadow Hand]
 
 ## Todos
 
+- [ ] Improve all unit tests.
 - [ ] Figure out joint torque and velocity limits. I submitted an [issue](https://github.com/shadow-robot/sr_core/issues/206).
 - [x] Add torque sensors and fingertip sites.
 - [x] Implement inverse kinematics.
     - [ ] Add support for disabling wrist pitch joint (as in OpenAI's [Learning Dexterity](https://arxiv.org/abs/1808.00177)).
     - [ ] Speed up with C++ implementation.
+- [x] Implement pseudoinverse `CartesianVelocitytoJointVelocityMapper`.
 - [ ] Implement LSQP `CartesianVelocitytoJointVelocityMapper`.
-- [ ] Optimize light settings in XML file.
+- [ ] Optimize scene light settings in XML file.
 - [ ] Add props to place objects in the palm of the hand.
-    - [ ] Load YCB and EGAD objects. Potentially with
+    - [ ] Load YCB and EGAD objects.
 
 ## Changelog
 

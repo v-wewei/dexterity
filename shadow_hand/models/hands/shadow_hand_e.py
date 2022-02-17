@@ -265,6 +265,8 @@ class ShadowHandSeriesE(hand.Hand):
         physics_bodies = physics.bind(body_elements)
         physics_bodies.xfrc_applied[:] = -gravity * physics_bodies.mass[..., None]
 
+    # TODO(kevin): Add method to remove gravity compensation.
+
     # ================= #
     # Private methods.
     # ================= #
