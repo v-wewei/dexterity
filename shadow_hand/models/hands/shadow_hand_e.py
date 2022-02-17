@@ -1,5 +1,5 @@
 import dataclasses
-from typing import List
+from typing import Dict, List
 
 import numpy as np
 from dm_control import mjcf
@@ -87,6 +87,7 @@ class ShadowHandSeriesE(hand.Hand):
         self._randomize_color = randomize_color
 
         self._parse_mjcf_elements()
+        self._add_fingertip_sites()
         self._add_tendons()
         self._add_actuators()
         self._add_sensors()
@@ -125,6 +126,11 @@ class ShadowHandSeriesE(hand.Hand):
     def joint_torque_sensors(self) -> List[MjcfElement]:
         """List of joint torque sensor elements belonging to the hand."""
         return self._joint_torque_sensors
+
+    @property
+    def fingertip_sites(self) -> List[MjcfElement]:
+        """List of fingertip site elements belonging to the hand."""
+        return self._fingertip_sites
 
     # ================= #
     # Public methods.
@@ -266,17 +272,23 @@ class ShadowHandSeriesE(hand.Hand):
     def _parse_mjcf_elements(self) -> None:
         """Parses MJCF elements that will be exposed as attributes."""
         # Parse joints.
-        self._joints = []
-        self._joint_elem_mapping = {}
+        self._joints: List[mjcf.Element] = []
+        self._joint_elem_mapping: Dict[consts.Joints, mjcf.Element] = {}
         for joint in consts.Joints:
             joint_elem = self._mjcf_root.find("joint", joint.name)
+            if joint_elem is None:
+                raise ValueError(f"Could not find joint {joint.name} in MJCF model.")
             self._joints.append(joint_elem)
             self._joint_elem_mapping[joint] = joint_elem
 
-        # Parse fingertip sites.
+    def _add_fingertip_sites(self) -> None:
+        """Adds sites to the tips of the fingers of the hand."""
         self._fingertip_sites: List[mjcf.Element] = []
-        for tip_name in consts.FINGERTIP_NAMES:
+        self._fingertip_site_elem_mapping: Dict[consts.Components, mjcf.Element] = {}
+        for finger, tip_name in consts.FINGER_FINGERTIP_MAPPING.items():
             tip_elem = self._mjcf_root.find("body", tip_name)
+            if tip_elem is None:
+                raise ValueError(f"Could not find fingertip {tip_name} in MJCF model.")
             tip_site = tip_elem.add(
                 "site",
                 name=tip_name + "_site",
@@ -287,11 +299,12 @@ class ShadowHandSeriesE(hand.Hand):
                 rgba="1 0 0 1",
             )
             self._fingertip_sites.append(tip_site)
+            self._fingertip_site_elem_mapping[finger] = tip_site
 
     def _add_tendons(self) -> None:
         """Add tendons to the hand."""
-        self._tendons = []
-        self._tendon_elem_mapping = {}
+        self._tendons: List[mjcf.Element] = []
+        self._tendon_elem_mapping: Dict[consts.Tendons, mjcf.Element] = {}
         for tendon, joints in consts.TENDON_JOINT_MAPPING.items():
             tendon_elem = self._mjcf_root.tendon.add("fixed", name=tendon.name)
             for joint in joints:
@@ -304,7 +317,9 @@ class ShadowHandSeriesE(hand.Hand):
     def _add_actuators(self) -> None:
         """Adds actuators to the hand."""
         if self._actuation not in consts.Actuation:
-            raise ValueError(f"Actuation {self._actuation} is not a valid actuation.")
+            raise ValueError(
+                f"Actuation {self._actuation} is not a valid actuation mode."
+            )
 
         if self._actuation == consts.Actuation.POSITION:
             self._add_position_actuators()
@@ -337,8 +352,8 @@ class ShadowHandSeriesE(hand.Hand):
 
             return actuator
 
-        self._actuators = []
-        self._actuator_elem_mapping = {}
+        self._actuators: List[mjcf.Element] = []
+        self._actuator_elem_mapping: Dict[consts.Actuators, mjcf.Element] = {}
         for actuator, actuator_params in _ACTUATOR_PARAMS[self._actuation].items():
             actuator_elem = add_actuator(actuator, actuator_params)
             self._actuator_elem_mapping[actuator] = actuator_elem
@@ -347,7 +362,6 @@ class ShadowHandSeriesE(hand.Hand):
     def _add_sensors(self) -> None:
         """Add sensors to the mjcf model."""
         self._add_torque_sensors()
-        # self._add_tendon_position_sensors()
 
     def _add_torque_sensors(self) -> None:
         """Adds torque sensors to the joints of the hand."""
@@ -371,10 +385,6 @@ class ShadowHandSeriesE(hand.Hand):
             )
             self._joint_torque_sensors.append(torque_sensor_elem)
             self._joint_torque_sensor_elem_mapping[joint] = torque_sensor_elem
-
-    def _add_tendon_position_sensors(self) -> None:
-        """Adds tendon position sensors to the hand."""
-        ...
 
     # TODO(kevin): Move this method to a randomization module.
     def _color_hand(self) -> None:

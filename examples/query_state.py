@@ -9,7 +9,7 @@ from shadow_hand.utils import mujoco_utils
 
 
 def main() -> None:
-    hand = shadow_hand_e.ShadowHandSeriesE(actuation=consts.Actuation.POSITION)
+    hand = shadow_hand_e.ShadowHandSeriesE()
     physics = mjcf.Physics.from_mjcf_model(hand.mjcf_model)
 
     # Joint positions.
@@ -28,24 +28,21 @@ def main() -> None:
     joint_torques = np.einsum("ij,ij->i", torques.reshape(-1, 3), joint_axes)
     assert joint_torques.shape == (consts.NUM_JOINTS,)
 
-    # Fingertip poses.
+    # Fingertip poses, in the world frame.
     poses = []
-    for fingertip_site in hand._fingertip_sites:
-        poses.append(mujoco_utils.get_site_pose(physics, fingertip_site))
-    # # Print fingertip positions in world frame.
-    # for pose in poses:
-    #     print(pose[:3, 3])
+    for fingertip_site in hand.fingertip_sites:
+        pose = mujoco_utils.get_site_pose(physics, fingertip_site)
+        poses.append(pose)
+        print(f"{fingertip_site.name} position", pose[:3, 3])
 
-    # Fingertip velocities.
+    # Fingertip velocities, in the world frame.
     velocities = []
-    for fingertip_site in hand._fingertip_sites:
-        velocities.append(mujoco_utils.get_site_velocity(physics, fingertip_site))
-    # # Print fingertip velocities in world frame.
-    # for velocity in velocities:
-    #     print(velocity)
+    for fingertip_site in hand.fingertip_sites:
+        velocity = mujoco_utils.get_site_velocity(physics, fingertip_site)
+        velocities.append(velocity)
+        print(f"{fingertip_site.name} velocity", velocity)
 
-    # Sanity check relative pose calculation.
-    for fingertip_site in hand._fingertip_sites:
+    for fingertip_site in hand.fingertip_sites:
         # Get pose of fingertip relative to itself. This should be the 4x4 identity.
         pose = mujoco_utils.get_site_relative_pose(
             physics,
@@ -55,10 +52,15 @@ def main() -> None:
         assert np.allclose(pose, np.eye(4))
 
     # Render and visualize sites by making model transparent.
+    # Fingertip sites are red.
+    # Joint torque sensors are green.
     scene_option = mujoco.wrapper.core.MjvOption()
     scene_option.flags[enums.mjtVisFlag.mjVIS_TRANSPARENT] = True
     pixels = physics.render(
-        width=640, height=480, camera_id="cam1", scene_option=scene_option
+        width=640,
+        height=480,
+        camera_id="cam1",
+        scene_option=scene_option,
     )
     plt.imshow(pixels)
     plt.show()

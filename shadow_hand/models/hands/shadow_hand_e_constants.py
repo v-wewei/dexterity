@@ -433,15 +433,6 @@ ACTUATOR_TENDON_MAPPING: Dict[Actuators, Tendons] = {
 # Fingertip constants
 # ====================== #
 
-# Mapping from finger `Components` to its associated fingertip body name.
-FINGER_FINGERTIP_MAPPING: Dict[Components, str] = {
-    Components.FF: "fftip",
-    Components.MF: "mftip",
-    Components.RF: "rftip",
-    Components.LF: "lftip",
-    Components.TH: "thtip",
-}
-
 FINGERTIP_NAMES: Tuple[str, ...] = (
     "fftip",
     "mftip",
@@ -450,6 +441,14 @@ FINGERTIP_NAMES: Tuple[str, ...] = (
     "thtip",
 )
 
+# Mapping from finger `Components` to its associated fingertip body name.
+FINGER_FINGERTIP_MAPPING: Dict[Components, str] = {
+    Components.FF: "fftip",
+    Components.MF: "mftip",
+    Components.RF: "rftip",
+    Components.LF: "lftip",
+    Components.TH: "thtip",
+}
 
 # ====================== #
 # Other constants

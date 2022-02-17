@@ -122,12 +122,13 @@ def main(args: Args) -> None:
         rand_qpos = np.random.uniform(
             joint_binding.range[:, 0], joint_binding.range[:, 1]
         )
-        rand_qpos[:2] = 0.0  # Disable wrist movement.
+        # Disable wrist pitch joint.
+        # rand_qpos[1] = 0.0
 
         # Set the configuration and query fingertip sites.
         physics.bind(hand.joints).qpos = rand_qpos
         target_positions = {}
-        for fingertip_site in hand._fingertip_sites:
+        for fingertip_site in hand.fingertip_sites:
             target_positions[_SITE_COMPONENT_MAP[fingertip_site.name]] = physics.bind(
                 fingertip_site
             ).xpos.copy()

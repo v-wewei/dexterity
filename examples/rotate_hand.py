@@ -6,7 +6,6 @@ from dm_robotics.transformations import transformations as tr
 
 from shadow_hand.models.arenas.empty import Arena
 from shadow_hand.models.hands import shadow_hand_e
-from shadow_hand.models.hands import shadow_hand_e_constants as consts
 
 enums = mjbindings.enums
 mjlib = mjbindings.mjlib
@@ -32,11 +31,8 @@ def main() -> None:
         rgba="0 0 0 0",
         size="0.01",
     )
-    hand = shadow_hand_e.ShadowHandSeriesE(actuation=consts.Actuation.POSITION)
+    hand = shadow_hand_e.ShadowHandSeriesE()
     arena.attach(hand, attachment_site)
-
-    # TODO(kevin): Figure out how to draw axis of rotation.
-    # mjtGeom->mjGEOM_ARROW (rendering-only geom type)
 
     # Compile.
     physics = mjcf.Physics.from_mjcf_model(arena.mjcf_model)

@@ -22,7 +22,7 @@ def render(
 
 
 def main() -> None:
-    hand = shadow_hand_e.ShadowHandSeriesE(actuation=consts.Actuation.POSITION)
+    hand = shadow_hand_e.ShadowHandSeriesE()
 
     # Make the sky white. Must be done before the physics object is initialized.
     hand.mjcf_model.asset.add(

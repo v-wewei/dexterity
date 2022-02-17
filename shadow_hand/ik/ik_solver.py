@@ -175,6 +175,7 @@ class IKSolver:
                     joint_binding.qpos[:] = np.random.uniform(
                         joint_binding.range[:, 0], joint_binding.range[:, 1]
                     )
+            # wrist_configuration[1] = 0.0  # Disable wrist pitch joint.
             self._wirst_joint_bindings.qpos[:] = wrist_configuration
 
             # Solve each finger separately.
@@ -220,7 +221,7 @@ class IKSolver:
 
         if not solutions:
             print(f"{self.__class__.__name__} failed to find a solution.")
-            # Uncomment to see best solve attempt.
+            # # Uncomment to see best solve attempt.
             # best_try = {}
             # for finger, solution in finger_solutions.items():
             #     best_try[finger] = solution.qpos
