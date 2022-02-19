@@ -19,6 +19,9 @@ mjlib = mjbindings.mjlib
 _LINEAR_VELOCITY_GAIN = 0.95
 _ANGULAR_VELOCITY_GAIN = 0.95
 
+# Nullspace gain.
+_NULLSPACE_GAIN = 0.4
+
 # Integration timestep used to convert from joint velocities to joint positions.
 _INTEGRATION_TIMESTEP_SEC = 1.0
 
@@ -42,13 +45,19 @@ class _Solution:
 class IKSolver:
     """Inverse kinematics solver for a dexterous hand."""
 
-    def __init__(self, model: mjcf.RootElement, prefix: str = "") -> None:
+    def __init__(
+        self,
+        model: mjcf.RootElement,
+        prefix: str = "",
+    ) -> None:
         """Constructor.
 
         Args:
             model: The MJCF model root.
             prefix: The prefix assigned to the hand model in case it is attached to
                 another entity.
+            nullspace_gain: Scales the nullspace velocity bias. If the gain is set to 0,
+                there will be no nullspace optimization during the solve process.
         """
         self._physics = mjcf.Physics.from_mjcf_model(model)
         self._geometry_physics = mujoco_physics.wrap(self._physics)
@@ -98,7 +107,9 @@ class IKSolver:
         self._create_mappers()
 
     def _create_mappers(self) -> None:
-        self._mappers = {}
+        self._mappers: Dict[
+            consts.Components, controllers.CartesianVelocitytoJointVelocityMapper
+        ] = {}
         self._joints_argsort = {}
         self._nullspace_joint_position_reference = {}
         for finger in consts.FINGERS:
@@ -125,6 +136,7 @@ class IKSolver:
         early_stop: bool = False,
         num_attempts: int = 30,
         stop_on_first_successful_attempt: bool = False,
+        disable_wrist: bool = False,
     ) -> Optional[Dict[consts.Components, np.ndarray]]:
         """Attempts to solve the inverse kinematics.
 
@@ -167,15 +179,17 @@ class IKSolver:
                 for finger, joint_binding in self._joint_bindings.items():
                     joint_binding.qpos[:] = inital_joint_configuration[finger]
             else:
-                wrist_configuration = np.random.uniform(
-                    self._wirst_joint_bindings.range[:, 0],
-                    self._wirst_joint_bindings.range[:, 1],
-                )
+                if disable_wrist:
+                    wrist_configuration = initial_wrist_configuration
+                else:
+                    wrist_configuration = np.random.uniform(
+                        self._wirst_joint_bindings.range[:, 0],
+                        self._wirst_joint_bindings.range[:, 1],
+                    )
                 for finger, joint_binding in self._joint_bindings.items():
                     joint_binding.qpos[:] = np.random.uniform(
                         joint_binding.range[:, 0], joint_binding.range[:, 1]
                     )
-            # wrist_configuration[1] = 0.0  # Disable wrist pitch joint.
             self._wirst_joint_bindings.qpos[:] = wrist_configuration
 
             # Solve each finger separately.
@@ -192,6 +206,8 @@ class IKSolver:
                 if solution.linear_err > linear_tol:
                     all_success = False
                 finger_solutions[finger] = solution
+
+            # print(f"attempt {attempt} - success {all_success}")
 
             # Save the solution if closer to nullspace reference.
             if all_success:
@@ -217,11 +233,12 @@ class IKSolver:
                     solutions[consts.Components.WR] = wrist_configuration
 
             if all_success and stop_on_first_successful_attempt:
+                # print("Found a solution on first attempt, exiting...")
                 break
 
         if not solutions:
             print(f"{self.__class__.__name__} failed to find a solution.")
-            # # Uncomment to see best solve attempt.
+            # Uncomment to see best solve attempt.
             # best_try = {}
             # for finger, solution in finger_solutions.items():
             #     best_try[finger] = solution.qpos
@@ -263,12 +280,7 @@ class IKSolver:
             qdot_sol = np.zeros(self._physics.model.nv)
             joint_vel = self._compute_joint_velocities(finger, twist.linear)
 
-            # If we are unable to compute joint velocities, we stop the iteration as the
-            # solver is stuck and cannot make any more progress.
-            if joint_vel is not None:
-                qdot_sol[self._joint_bindings[finger].dofadr] = joint_vel
-            else:
-                break
+            qdot_sol[self._joint_bindings[finger].dofadr] = joint_vel
 
             mjbindings.mjlib.mj_integratePos(
                 self._physics.model.ptr,
@@ -285,12 +297,14 @@ class IKSolver:
 
             # Stop if the pose is close enough to the target pose.
             if early_stop and (linear_err <= linear_tol):
+                # print("Early stopping since pose is close enough.")
                 break
 
             # We measure the progress made during this step. If the error is not reduced
             # fast enough the solve is stopped to save computation time.
             linear_change = np.linalg.norm(cur_pose.position - previous_pose.position)
             if linear_err / (linear_change + 1e-10) > _PROGRESS_THRESHOLD:
+                # print("Early stopping since progress is not reducing fast enough.")
                 break
 
             previous_pose = copy.copy(cur_pose)
@@ -300,18 +314,16 @@ class IKSolver:
 
     def _compute_joint_velocities(
         self, finger: consts.Components, cartesian_6d_target: np.ndarray
-    ) -> Optional[np.ndarray]:
+    ) -> np.ndarray:
         """Maps a Cartesian 6D target velocity to joint velocities."""
-        try:
-            joint_velocities = np.empty(self._num_joints[finger])
-            jvel = self._mappers[finger].compute_joint_velocities(
-                self._physics.data,
-                cartesian_6d_target,
-            )
-            joint_velocities[self._joints_argsort[finger]] = jvel
-            return joint_velocities
-        except Exception:
-            return None
+        joint_velocities = np.empty(self._num_joints[finger])
+        jvel = self._mappers[finger].compute_joint_velocities(
+            data=self._physics.data,
+            target_velocity=cartesian_6d_target,
+        )
+        joint_velocities[self._joints_argsort[finger]] = jvel
+
+        return joint_velocities
 
     def _update_physics_data(self, finger: consts.Components) -> None:
         """Updates the physics data following the integration of velocities."""

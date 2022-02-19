@@ -122,8 +122,8 @@ def main(args: Args) -> None:
         rand_qpos = np.random.uniform(
             joint_binding.range[:, 0], joint_binding.range[:, 1]
         )
-        # Disable wrist pitch joint.
-        # rand_qpos[1] = 0.0
+        # Disable wrist movement.
+        rand_qpos[:2] = 0.0
 
         # Set the configuration and query fingertip sites.
         physics.bind(hand.joints).qpos = rand_qpos
@@ -147,7 +147,6 @@ def main(args: Args) -> None:
 
         # Recreate physics instance since we changed the MJCF.
         physics = mjcf.Physics.from_mjcf_model(arena.mjcf_model)
-        im_initial = render_scene(physics, transparent=False)
 
         solver = ik_solver.IKSolver(arena.mjcf_model, hand.mjcf_model.model)
 
@@ -159,6 +158,7 @@ def main(args: Args) -> None:
             early_stop=True,
             num_attempts=200,
             stop_on_first_successful_attempt=True,
+            disable_wrist=True,
         )
         ik_end = time.time()
 
@@ -175,16 +175,17 @@ def main(args: Args) -> None:
             # Directly set joint angles and visualize.
             hand.set_joint_angles(physics, joint_configuration)
             physics.step()
-            im_actual = render_scene(physics, transparent=True)
+            im_actual = render_scene(physics, transparent=False)
+            im_actual_tr = render_scene(physics, transparent=True)
 
             if not args.disable_plot:
                 _, axes = plt.subplots(1, 3, figsize=(12, 4))
-                axes[0].imshow(im_initial)
-                axes[0].set_title("Initial")
-                axes[1].imshow(im_desired)
-                axes[1].set_title("Desired")
-                axes[2].imshow(im_actual)
-                axes[2].set_title("Actual")
+                axes[0].imshow(im_desired)
+                axes[0].set_title("Desired")
+                axes[1].imshow(im_actual)
+                axes[1].set_title("Actual")
+                axes[2].imshow(im_actual_tr)
+                axes[2].set_title("Actual (transparent)")
                 for ax in axes:
                     ax.axis("off")
                 plt.subplots_adjust(wspace=0, hspace=0)

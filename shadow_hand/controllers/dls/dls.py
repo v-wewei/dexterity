@@ -60,14 +60,18 @@ class DampedLeastSquaresMapper(mapper.CartesianVelocitytoJointVelocityMapper):
         )
 
         # Only grab the Jacobian values for the controllable joints.
-        jacobian_joints = jacobian[:, self.params.joint_ids]
+        # We're also ignoring the angular values for now.
+        jacobian_joints = jacobian[:3, self.params.joint_ids]
 
-        # TODO(kevin): Add rotation component.
-        jacobian_joints = jacobian_joints[:3]
-
-        # Solve!
         hess_approx = jacobian_joints.T @ jacobian_joints
         joint_delta = jacobian_joints.T @ target_velocity
         hess_approx += np.eye(hess_approx.shape[0]) * self.params.regularization_weight
-        solution = np.linalg.solve(hess_approx, joint_delta)
-        return solution
+        return np.linalg.solve(hess_approx, joint_delta)
+
+        # jacobian_pinv = np.linalg.pinv(jacobian_joints)
+        # solution = jacobian_pinv @ target_velocity
+        # if nullspace_bias is not None:
+        #     solution += (
+        #         np.eye(jacobian_pinv.shape[0]) - jacobian_pinv @ jacobian_joints
+        #     ) @ nullspace_bias
+        # return solution
