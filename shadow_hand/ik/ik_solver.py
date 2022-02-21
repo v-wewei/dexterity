@@ -239,38 +239,38 @@ class IKSolver:
             )
             self._update_physics_data()
 
-            # Get the distance and the angle between the current pose and the target
-            # pose.
-            all_close: bool = True
-            all_exit: bool = False
             avg_linear_err: float = 0.0
-            for finger, target_position in target_positions.items():
-                cur_pose = cur_frames[finger].get_world_pose(self._geometry_physics)
-                previous_pose = previous_poses[finger]
+            close_enough: bool = True
+            not_enough_progress: bool = False
 
+            for finger, target_position in target_positions.items():
+                # Get the distance between the current pose and the target pose.
+                cur_pose = cur_frames[finger].get_world_pose(self._geometry_physics)
                 linear_err = float(np.linalg.norm(target_position - cur_pose.position))
                 avg_linear_err += linear_err
-                if linear_err > linear_tol:
-                    all_close = False
 
+                # Stop if the pose is close enough to the target pose.
+                if linear_err > linear_tol:
+                    close_enough = False
+
+                # Stop the solve if not enough progress is being made.
+                previous_pose = previous_poses[finger]
                 linear_change = np.linalg.norm(
                     cur_pose.position - previous_pose.position
                 )
                 if linear_err / (linear_change + 1e-10) > _PROGRESS_THRESHOLD:
-                    all_exit = True
+                    not_enough_progress = True
 
                 previous_poses[finger] = copy.copy(cur_pose)
                 cur_poses[finger] = cur_pose
 
+            # Average out the linear error.
             avg_linear_err /= len(target_positions)
 
-            # Stop if the pose is close enough to the target pose.
-            if early_stop and all_close:
+            # Break conditions.
+            if early_stop and close_enough:
                 break
-
-            # We measure the progress made during this step. If the error is not reduced
-            # fast enough the solve is stopped to save computation time.
-            if all_exit:
+            if not_enough_progress:
                 break
 
         qpos = np.array(self._physics.data.qpos)

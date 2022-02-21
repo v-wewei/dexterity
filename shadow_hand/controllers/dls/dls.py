@@ -36,10 +36,10 @@ class DampedLeastSquaresMapper(mapper.CartesianVelocitytoJointVelocityMapper):
     Specifically, it maps the desired Cartesian velocity V to desired joint velocities
     v using the relationship:
 
-    `v = [J^T @ J + lambda * I] @ V`
+    `J^T v = [J^T @ J + λI] @ V`
 
-    where @ denotes the matrix product, J is the end-effector Jacobian and lambda is
-    a damping factor.
+    where @ denotes the matrix product, J is the end-effector Jacobian, λ is a damping
+    factor and I is the identity matrix.
     """
 
     params: DampedLeastSquaresParameters
@@ -60,13 +60,12 @@ class DampedLeastSquaresMapper(mapper.CartesianVelocitytoJointVelocityMapper):
             self.params.object_types, self.params.object_names
         ):
             jacobian = mujoco_utils.compute_object_6d_jacobian(
-                self.params.model,
-                data,
-                obj_type,
-                self.params.model.name2id(obj_name, obj_type),
+                model=self.params.model,
+                data=data,
+                object_type=obj_type,
+                object_id=self.params.model.name2id(obj_name, obj_type),
             )
-            jacobian_joints = jacobian[:3]
-            jacobians.append(jacobian_joints)
+            jacobians.append(jacobian[:3])
         jacobian = np.concatenate(jacobians, axis=0)
         twist = np.concatenate(target_velocities, axis=0)
 
