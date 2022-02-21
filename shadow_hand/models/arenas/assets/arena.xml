@@ -20,7 +20,7 @@
         <camera name="cam0" pos="0 -1.0 0.6" xyaxes="1 0 0 0 1 2"/>
         <camera name="cam1" pos="0 -0.25 0.35" xyaxes="1 0 0 0 0 1"/>
         <camera name="fixed_viewer" pos="0 -1.0 0.6" xyaxes="1 0 0 0 1 2"/>
-        <camera name="closeup" pos="0 -0.55 0.25" xyaxes="1 0 0 0 0.5 1"/>
+        <camera name="closeup" pos="0 -0.6 0.25" xyaxes="1 0 0 0 0.5 1"/>
         <geom name="ground" type="plane" size="2 2 2" material="groundplane" friction="0.4"/>
         <light directional="true" diffuse="0.3 0.3 0.3" specular="0.3 0.3 0.3" pos="-1 -1 1" dir="1 1 -1"/>
         <light directional="true" diffuse="0.3 0.3 0.3" specular="0.3 0.3 0.3" pos="1 -1 1" dir="-1 1 -1"/>

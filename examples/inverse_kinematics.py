@@ -92,9 +92,11 @@ def main(args: Args) -> None:
         arena = _build_arena("shadow_hand_inverse_kinematics")
         hand = _add_hand(arena)
 
+        # The fingers we'd like to control.
         fingers = (
             consts.Components.FF,
             consts.Components.MF,
+            consts.Components.LF,
         )
 
         solver = ik_solver.IKSolver(
@@ -114,7 +116,7 @@ def main(args: Args) -> None:
         for finger, fingertip_site in hand._fingertip_site_elem_mapping.items():
             if finger in fingers:
                 target_positions[finger] = physics.bind(fingertip_site).xpos.copy()
-        assert tuple(target_positions.keys()) == fingers
+        assert set(tuple(target_positions.keys())) == set(fingers)
         im_desired = render_scene(physics, transparent=False)
 
         # Add the target sites to the MJCF model for visualization purposes.
@@ -132,24 +134,19 @@ def main(args: Args) -> None:
         physics = mjcf.Physics.from_mjcf_model(arena.mjcf_model)
 
         ik_start = time.time()
-        joint_configurations = solver.solve(
+        qpos = solver.solve(
             target_positions=target_positions,
             linear_tol=args.linear_tol,
             max_steps=1_000,
             early_stop=True,
-            num_attempts=50,
+            num_attempts=30,
             stop_on_first_successful_attempt=True,
         )
         ik_end = time.time()
 
-        if joint_configurations is not None:
+        if qpos is not None:
             solve_time_ms = (ik_end - ik_start) * 1000
             print(f"Full IK solved in {solve_time_ms} ms.")
-
-            qpos = np.zeros(physics.model.nv)
-            for finger, joint_config in joint_configurations.items():
-                joint_binding = physics.bind(solver._controllable_joints[finger])
-                qpos[joint_binding.jntid] = joint_config
 
             # Directly set joint angles and visualize.
             hand.set_joint_angles(physics, qpos)

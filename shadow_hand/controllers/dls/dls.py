@@ -1,4 +1,5 @@
 import dataclasses
+from typing import Optional, Sequence
 
 import numpy as np
 from dm_control.mujoco.wrapper import mjbindings
@@ -49,30 +50,28 @@ class DampedLeastSquaresMapper(mapper.CartesianVelocitytoJointVelocityMapper):
     def compute_joint_velocities(
         self,
         data: hints.MjData,
-        target_velocity: np.ndarray,
-        # nullspace_bias: np.ndarray,
+        target_velocities: Sequence[np.ndarray],
+        nullspace_bias: Optional[np.ndarray] = None,
     ) -> np.ndarray:
-        # Compute the Jacobian.
-        jacobian = mujoco_utils.compute_object_6d_jacobian(
-            self.params.model,
-            data,
-            self.params.object_type,
-            self.params.model.name2id(self.params.object_name, self.params.object_type),
-        )
+        del nullspace_bias
 
-        # Only grab the Jacobian values for the controllable joints.
-        # We're also ignoring the angular values for now.
-        jacobian_joints = jacobian[:3, self.params.joint_ids]
+        jacobians = []
+        for obj_type, obj_name in zip(
+            self.params.object_types, self.params.object_names
+        ):
+            jacobian = mujoco_utils.compute_object_6d_jacobian(
+                self.params.model,
+                data,
+                obj_type,
+                self.params.model.name2id(obj_name, obj_type),
+            )
+            jacobian_joints = jacobian[:3]
+            jacobians.append(jacobian_joints)
+        jacobian = np.concatenate(jacobians, axis=0)
+        twist = np.concatenate(target_velocities, axis=0)
 
-        hess_approx = jacobian_joints.T @ jacobian_joints
-        joint_delta = jacobian_joints.T @ target_velocity
+        # Solve!
+        hess_approx = jacobian.T @ jacobian
+        joint_delta = jacobian.T @ twist
         hess_approx += np.eye(hess_approx.shape[0]) * self.params.regularization_weight
         return np.linalg.solve(hess_approx, joint_delta)
-
-        # jacobian_pinv = np.linalg.pinv(jacobian_joints)
-        # solution = jacobian_pinv @ target_velocity
-        # if nullspace_bias is not None:
-        #     solution += (
-        #         np.eye(jacobian_pinv.shape[0]) - jacobian_pinv @ jacobian_joints
-        #     ) @ nullspace_bias
-        # return solution

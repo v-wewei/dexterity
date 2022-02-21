@@ -7,3 +7,4 @@ from typing_extensions import TypeAlias
 MjcfElement: TypeAlias = mjcf.element._ElementImpl
 MujocoModel: TypeAlias = MjModel
 MujocoData: TypeAlias = MjData
+MujocoObjectType: TypeAlias = int

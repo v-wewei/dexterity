@@ -1,12 +1,13 @@
+from __future__ import annotations
+
 import abc
 import dataclasses
-from typing import Sequence
+from typing import Optional, Sequence
 
 import numpy as np
 from dm_control.mujoco.wrapper import mjbindings
 
 from shadow_hand import hints
-from shadow_hand.utils import mujoco_utils
 
 mjlib = mjbindings.mjlib
 enums = mjbindings.enums
@@ -36,7 +37,8 @@ class CartesianVelocitytoJointVelocityMapper(abc.ABC):
     def compute_joint_velocities(
         self,
         data: hints.MjData,
-        target_velocity: np.ndarray,
+        target_velocities: Sequence[np.ndarray],
+        nullspace_bias: Optional[np.ndarray] = None,
     ) -> np.ndarray:
         """Maps the Cartesian target velocity to joint velocities."""
 
@@ -48,48 +50,30 @@ class Parameters:
     model: hints.MjModel
     """MuJoCo `MjModel` instance."""
 
-    joint_ids: Sequence[int]
-    """MuJoCo joint IDs being controlled. Only 1 DoF joints are currently supported."""
-
-    object_type: mjbindings.enums.mjtObj
+    object_types: Sequence[hints.MujocoObjectType]
     """MuJoCo type of the object being controlled. Only bodies, geoms and sites are
     currently supported."""
 
-    object_name: str
+    object_names: Sequence[str]
     """MuJoCo name of the object being controlled."""
 
     def validate_parameters(self) -> None:
         """Validates the parameters."""
 
-        if len(self.joint_ids) == 0:
-            raise ValueError("At least one joint must be controlled.")
-
-        for joint_id in self.joint_ids:
-            if joint_id < 0 or joint_id >= self.model.njnt:
+        for object_type in self.object_types:
+            if object_type not in [
+                enums.mjtObj.mjOBJ_BODY,
+                enums.mjtObj.mjOBJ_GEOM,
+                enums.mjtObj.mjOBJ_SITE,
+            ]:
                 raise ValueError(
-                    f"Provided joint_id {joint_id} is invalid for the provided model, "
-                    f"which has {self.model.njnt} joints."
+                    f"Objects of type {object_type} are not supported. Only bodies, "
+                    "geoms and sites are supported."
                 )
 
-        ndof = len(mujoco_utils.joint_ids_to_dof_ids(self.model, self.joint_ids))
-        if ndof != len(self.joint_ids):
-            raise ValueError(
-                f"`joint_ids` must only contain 1 DoF joints. "
-                f"Number of joints: {len(self.joint_ids)}, number of dof: {ndof}."
-            )
-
-        if self.object_type not in [
-            enums.mjtObj.mjOBJ_BODY,
-            enums.mjtObj.mjOBJ_GEOM,
-            enums.mjtObj.mjOBJ_SITE,
-        ]:
-            raise ValueError(
-                f"Objects of type {self.object_type} are not supported. Only bodies, "
-                "geoms and sites are supported."
-            )
-
-        if self.model.name2id(self.object_name, self.object_type) < 0:
-            raise ValueError(
-                f"Could not find MuJoCo object with name {self.object_name} and type "
-                f"{self.object_type} in the provided model."
-            )
+        for object_name, object_type in zip(self.object_names, self.object_types):
+            if self.model.name2id(object_name, object_type) < 0:
+                raise ValueError(
+                    f"Could not find MuJoCo object with name {object_name} and type "
+                    f"{object_type} in the provided model."
+                )
