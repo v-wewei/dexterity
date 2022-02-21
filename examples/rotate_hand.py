@@ -19,9 +19,24 @@ def render(physics: mjcf.Physics, cam_id: str = "fixed_viewer") -> np.ndarray:
     )
 
 
+def _build_arena(name: str, disable_gravity: bool = False) -> Arena:
+    arena = Arena(name)
+    arena.mjcf_model.option.timestep = 0.001
+    if disable_gravity:
+        arena.mjcf_model.option.gravity = (0.0, 0.0, 0.0)
+    else:
+        arena.mjcf_model.option.gravity = (0.0, 0.0, -9.81)
+    arena.mjcf_model.size.nconmax = 1_000
+    arena.mjcf_model.size.njmax = 2_000
+    arena.mjcf_model.visual.__getattr__("global").offheight = 480
+    arena.mjcf_model.visual.__getattr__("global").offwidth = 640
+    arena.mjcf_model.visual.map.znear = 5e-4
+    return arena
+
+
 def main() -> None:
     # Build the arena.
-    arena = Arena("hand_arena")
+    arena = _build_arena("hand_arena")
 
     # Load the hand and add it to the arena.
     attachment_site = arena.mjcf_model.worldbody.add(
@@ -43,7 +58,7 @@ def main() -> None:
         hand.set_pose(physics, quaternion=tr.axisangle_to_quat(mag * axis_angle))
         physics.step()
         frames.append(render(physics))
-    imageio.mimsave("temp/scene.gif", frames, fps=30)
+    imageio.mimsave("temp/rotate_hand.mp4", frames, fps=30)
 
 
 if __name__ == "__main__":

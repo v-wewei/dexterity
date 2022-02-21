@@ -49,12 +49,18 @@ def animate(
     return frames
 
 
-def _build_arena(name: str, disable_gravity: bool = True) -> Arena:
+def _build_arena(name: str, disable_gravity: bool = False) -> Arena:
     arena = Arena(name)
+    arena.mjcf_model.option.timestep = 0.001
     if disable_gravity:
         arena.mjcf_model.option.gravity = (0.0, 0.0, 0.0)
+    else:
+        arena.mjcf_model.option.gravity = (0.0, 0.0, -9.81)
     arena.mjcf_model.size.nconmax = 1_000
     arena.mjcf_model.size.njmax = 2_000
+    arena.mjcf_model.visual.__getattr__("global").offheight = 480
+    arena.mjcf_model.visual.__getattr__("global").offwidth = 640
+    arena.mjcf_model.visual.map.znear = 5e-4
     return arena
 
 
@@ -143,7 +149,7 @@ def main(args: Args) -> None:
             max_steps=200,
             early_stop=True,
             num_attempts=30,
-            stop_on_first_successful_attempt=True,
+            stop_on_first_successful_attempt=False,
         )
         ik_end = time.time()
 

@@ -26,7 +26,7 @@ class _ActuatorParams:
 # thumb: base - proximal - middle - distal
 # others: knuckle - proximal - middle - distal
 _WR_GAIN = 20.0
-_TH_GAIN = 1.2
+_TH_GAIN = 3.0
 _KNUCKLE_GAIN = 1.2
 _PROXIMAL_GAIN = 1.2
 _MIDDLE_DISTAL_GAIN = 0.8

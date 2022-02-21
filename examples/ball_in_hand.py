@@ -1,5 +1,7 @@
+import dataclasses
 from typing import List
 
+import dcargs
 import imageio
 import numpy as np
 from dm_control import mjcf, mujoco
@@ -9,6 +11,11 @@ from matplotlib import pyplot as plt
 
 from shadow_hand.models.arenas.empty import Arena
 from shadow_hand.models.hands import shadow_hand_e
+
+
+@dataclasses.dataclass
+class Args:
+    compensate_gravity: bool = False
 
 
 def render_scene(
@@ -43,12 +50,18 @@ def animate(
     return frames
 
 
-def _build_arena(name: str, disable_gravity: bool = True) -> Arena:
+def _build_arena(name: str, disable_gravity: bool = False) -> Arena:
     arena = Arena(name)
+    arena.mjcf_model.option.timestep = 0.001
     if disable_gravity:
         arena.mjcf_model.option.gravity = (0.0, 0.0, 0.0)
+    else:
+        arena.mjcf_model.option.gravity = (0.0, 0.0, -9.81)
     arena.mjcf_model.size.nconmax = 1_000
     arena.mjcf_model.size.njmax = 2_000
+    arena.mjcf_model.visual.__getattr__("global").offheight = 480
+    arena.mjcf_model.visual.__getattr__("global").offwidth = 640
+    arena.mjcf_model.visual.map.znear = 5e-4
     return arena
 
 
@@ -68,7 +81,7 @@ def _add_hand(arena: Arena) -> shadow_hand_e.ShadowHandSeriesE:
     return hand
 
 
-def main() -> None:
+def main(args: Args) -> None:
     # Build the scene.
     arena = _build_arena("hand_ik", disable_gravity=False)
     hand = _add_hand(arena)
@@ -79,11 +92,12 @@ def main() -> None:
     ball.add("geom", type="sphere", size="0.028", group="0", mass="0.043", condim="4")
 
     physics = mjcf.Physics.from_mjcf_model(arena.mjcf_model)
-    hand.compensate_gravity(physics)
+    if args.compensate_gravity:
+        hand.compensate_gravity(physics)
 
     frames = animate(physics, duration=2.0)
-    imageio.mimsave("temp/ball.mp4", frames, fps=30)
+    imageio.mimsave("temp/ball_in_hand.mp4", frames, fps=30)
 
 
 if __name__ == "__main__":
-    main()
+    main(dcargs.parse(Args))

@@ -1,10 +1,12 @@
 <mujoco model="arena">
-    <compiler angle="radian"/>
-    <option timestep="0.002" impratio="1" iterations="20" apirate="200"/>
-    <size njmax="500" nconmax="200" nstack="600000"/>
+    <compiler coordinate="local" angle="radian" eulerseq="xyz" boundmass="1e-5" boundinertia="1e-11"/>
+
+    <option cone="elliptic" noslip_iterations="5" noslip_tolerance="0" timestep="0.002"/>
+
     <visual>
-        <map fogstart="1.5" fogend="5" force="0.1" znear="0.1"/>
-        <quality shadowsize="4096" offsamples="4"/>
+        <map znear="0.01"/>
+        <!-- <headlight diffuse=".6 .6 .6" ambient=".3 .3 .3" specular="0 0 0"/> -->
+        <!-- <scale forcewidth="0.01" contactwidth="0.06" contactheight="0.01" jointwidth="0.01" framewidth="0.01" framelength=".3"/> -->
     </visual>
 
     <asset>
@@ -14,7 +16,7 @@
     </asset>
 
     <!-- Always initialize the free camera to point at the origin. -->
-    <statistic center='0 0 0'/>
+    <statistic center="0 0 0"/>
 
     <worldbody>
         <camera name="cam0" pos="0 -1.0 0.6" xyaxes="1 0 0 0 1 2"/>
@@ -22,8 +24,6 @@
         <camera name="fixed_viewer" pos="0 -1.0 0.6" xyaxes="1 0 0 0 1 2"/>
         <camera name="closeup" pos="0 -0.6 0.25" xyaxes="1 0 0 0 0.5 1"/>
         <geom name="ground" type="plane" size="2 2 2" material="groundplane" friction="0.4"/>
-        <light directional="true" diffuse="0.3 0.3 0.3" specular="0.3 0.3 0.3" pos="-1 -1 1" dir="1 1 -1"/>
-        <light directional="true" diffuse="0.3 0.3 0.3" specular="0.3 0.3 0.3" pos="1 -1 1" dir="-1 1 -1"/>
-        <light directional="true" diffuse="0.3 0.3 0.3" specular="0.3 0.3 0.3" pos="0 1 1" dir="0 -1 -1"/>
+        <light directional="true" diffuse=".7 .7 .7" pos="0 0 1.5" dir="0 0 -1" specular=".3 .3 .3" castshadow="true"/>
     </worldbody>
 </mujoco>
