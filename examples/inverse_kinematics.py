@@ -78,7 +78,7 @@ def _add_hand(arena: Arena):
 class Args:
     seed: Optional[int] = None
     num_solves: int = 1
-    linear_tol: float = 1e-4
+    linear_tol: float = 1e-3
     disable_plot: bool = False
 
 
@@ -96,7 +96,9 @@ def main(args: Args) -> None:
         fingers = (
             consts.Components.FF,
             consts.Components.MF,
+            consts.Components.RF,
             consts.Components.LF,
+            consts.Components.TH,
         )
 
         solver = ik_solver.IKSolver(
@@ -132,6 +134,7 @@ def main(args: Args) -> None:
 
         # Recreate physics instance since we changed the MJCF.
         physics = mjcf.Physics.from_mjcf_model(arena.mjcf_model)
+        im_start = render_scene(physics, transparent=False)
 
         ik_start = time.time()
         qpos = solver.solve(
@@ -155,13 +158,15 @@ def main(args: Args) -> None:
             im_actual_tr = render_scene(physics, transparent=True)
 
             if not args.disable_plot:
-                _, axes = plt.subplots(1, 3, figsize=(12, 4))
-                axes[0].imshow(im_desired)
-                axes[0].set_title("Desired")
-                axes[1].imshow(im_actual)
-                axes[1].set_title("Actual")
-                axes[2].imshow(im_actual_tr)
-                axes[2].set_title("Actual (transparent)")
+                _, axes = plt.subplots(1, 4, figsize=(12, 4))
+                axes[0].imshow(im_start)
+                axes[0].set_title("Starting")
+                axes[1].imshow(im_desired)
+                axes[1].set_title("Desired")
+                axes[2].imshow(im_actual)
+                axes[2].set_title("Actual")
+                axes[3].imshow(im_actual_tr)
+                axes[3].set_title("Actual (transparent)")
                 for ax in axes:
                     ax.axis("off")
                 plt.subplots_adjust(wspace=0, hspace=0)
