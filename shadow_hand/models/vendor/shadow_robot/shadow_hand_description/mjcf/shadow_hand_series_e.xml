@@ -319,6 +319,7 @@
                 <geom type="mesh" material="metal" mesh="wrist_collision_6" class="collision" />
                 <geom type="mesh" material="metal" mesh="wrist_collision_7" class="collision" />
                 <body name="palm" pos="0 0 0.034">
+                    <!-- <site name="palm_site" size="0.001 0.001 0.001" pos="0 0 0.0475" type="sphere" rgba="1 0 0 1"/> -->
                     <inertial pos="0 0 0.035" quat="0.707107 0 0 0.707107" mass="0.3" diaginertia="0.0005287 0.0003581 0.000191" />
                     <!-- <joint name="WRJ0" axis="1 0 0" range="-0.698132 0.488692" damping="1.0" frictionloss="0.1"/> -->
                     <joint name="WRJ0" axis="1 0 0" range="-0.698132 0.488692" damping="1.0" frictionloss="0.1"/>
@@ -686,7 +687,7 @@
         </body>
         <!-- <camera name="cam0" pos="0 -1.0 0.6" xyaxes="1 0 0 0 1 2"/> -->
         <!-- <camera name="cam1" pos="0 -0.25 0.35" xyaxes="1 0 0 0 0 1"/> -->
-        <!-- <light ambient="0.2 0.2 0.2" castshadow="false" diffuse="0.8 0.8 0.8" dir="0 0 -1" directional="true" name="light0" pos="0 0 4" specular="0.3 0.3 0.3" /> -->
+        <light ambient="0.2 0.2 0.2" castshadow="false" diffuse="0.8 0.8 0.8" dir="0 0 -1" directional="true" name="light0" pos="0 0 4" specular="0.3 0.3 0.3" />
     </worldbody>
 
     <contact>

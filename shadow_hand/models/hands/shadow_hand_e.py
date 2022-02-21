@@ -283,6 +283,20 @@ class ShadowHandSeriesE(hand.Hand):
             self._joints.append(joint_elem)
             self._joint_elem_mapping[joint] = joint_elem
 
+    def _add_palm_site(self) -> None:
+        """Adds a site to the palm of the hand."""
+        palm_elem = self._mjcf_root.find("body", "palm")
+        if palm_elem is None:
+            raise ValueError("Could not find palm in MJCF model.")
+        self._palm_site: mjcf.Element = palm_elem.add(
+            "site",
+            name="palm_site",
+            pos="0 0 0.0475",
+            size="0.001 0.001 0.001",
+            type="sphere",
+            rgba="1 0 0 1",
+        )
+
     def _add_fingertip_sites(self) -> None:
         """Adds sites to the tips of the fingers of the hand."""
         self._fingertip_sites: List[mjcf.Element] = []

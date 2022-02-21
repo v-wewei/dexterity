@@ -50,6 +50,7 @@ class DampedLeastSquaresMapper(mapper.CartesianVelocitytoJointVelocityMapper):
         self,
         data: hints.MjData,
         target_velocity: np.ndarray,
+        # nullspace_bias: np.ndarray,
     ) -> np.ndarray:
         # Compute the Jacobian.
         jacobian = mujoco_utils.compute_object_6d_jacobian(
