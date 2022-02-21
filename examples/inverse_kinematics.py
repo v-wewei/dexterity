@@ -140,7 +140,7 @@ def main(args: Args) -> None:
         qpos = solver.solve(
             target_positions=target_positions,
             linear_tol=args.linear_tol,
-            max_steps=1_000,
+            max_steps=200,
             early_stop=True,
             num_attempts=30,
             stop_on_first_successful_attempt=True,
