@@ -1,11 +1,12 @@
 <mujoco>
-    <compiler angle='radian' coordinate="local" meshdir='../meshes' />
+    <compiler angle="radian" coordinate="local" meshdir="../meshes" />
 
     <!-- These settings affect the quality of the rendering. In general, larger values
         result in higher quality, but possibly slower speed.
      -->
     <visual>
         <!-- <map fogstart="3" fogend="5" force="0.1" znear="0.1"/> -->
+        <!-- <global offwidth="1280" offheight="720"/> -->
         <!-- <quality shadowsize="2048"/> -->
     </visual>
 
@@ -31,7 +32,8 @@
 
     <asset>
         <material name="metal" reflectance="1.0" rgba="0.6 0.6 0.6 1.0" shininess="0.5" specular="1.0"/>
-        <material name="plastic" rgba="0.2 0.2 0.2 1.0" shininess="0.5"/>
+        <!-- <material name="plastic" rgba="0.2 0.2 0.2 1.0" shininess="0.5"/> -->
+        <material name="plastic" specular="0.75" shininess=".1" reflectance="0.5" rgba=".15 .15 .15 1"/>
         <material name="rubber" rgba="0.3 0.3 0.3 1.0" shininess="0.0"/>
 
         <mesh name="F1_visual" file="visual/F1.stl"/>
@@ -305,6 +307,14 @@
             <geom name="forearm" type="mesh" material="plastic" mesh="forearm_visual" class="visual" />
             <geom type="mesh" material="plastic" mesh="forearm_collision" class="collision" />
             <geom type="mesh" material="plastic" mesh="forearm_collision_wrist" class="collision" />
+
+            <!-- <geom name="forearm" type="mesh" material="plastic" mesh="forearm_plus_visual" class="visual" /> -->
+            <!-- <geom type="mesh" material="plastic" mesh="forearm_plus_collision_1" class="collision" /> -->
+            <!-- <geom type="mesh" material="plastic" mesh="forearm_plus_collision_2" class="collision" /> -->
+            <!-- <geom type="mesh" material="plastic" mesh="forearm_plus_collision_3" class="collision" /> -->
+            <!-- <geom type="mesh" material="plastic" mesh="forearm_plus_collision_4" class="collision" /> -->
+            <!-- <geom type="mesh" material="plastic" mesh="forearm_plus_collision_5" class="collision" /> -->
+
             <body name="wrist" pos="0 -0.01 0.213">
                 <inertial pos="0 0 0.029" quat="0.5 0.5 0.5 0.5" mass="0.1" diaginertia="6.4e-05 4.38e-05 3.5e-05" />
                 <!-- <joint name="WRJ1" axis="0 1 0" range="-0.523599 0.174533" damping="1.0" frictionloss="0.1"/> -->

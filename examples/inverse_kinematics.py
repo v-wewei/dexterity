@@ -71,6 +71,8 @@ def _add_hand(arena: Arena):
         "site",
         type="sphere",
         pos=[0, 0, 0.1],
+        # pos="0 -.4 0.2",
+        # euler="-1.57 0 0",
         quat=quat,
         rgba="0 0 0 0",
         size="0.01",
@@ -108,7 +110,9 @@ def main(args: Args) -> None:
         )
 
         solver = ik_solver.IKSolver(
-            model=arena.mjcf_model, fingers=fingers, prefix=hand.mjcf_model.model
+            model=arena.mjcf_model,
+            fingers=fingers,
+            prefix=hand.mjcf_model.model,
         )
 
         # Set the configuration and query fingertip sites.
@@ -146,10 +150,10 @@ def main(args: Args) -> None:
         qpos = solver.solve(
             target_positions=target_positions,
             linear_tol=args.linear_tol,
-            max_steps=200,
+            max_steps=1_000,
             early_stop=True,
-            num_attempts=30,
-            stop_on_first_successful_attempt=False,
+            num_attempts=15,
+            stop_on_first_successful_attempt=True,
         )
         ik_end = time.time()
 
