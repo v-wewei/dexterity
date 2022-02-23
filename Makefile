@@ -1,6 +1,6 @@
 SHELL := /bin/bash
 
-.PHONY: help check format typecheck test all
+.PHONY: help check format test all
 .DEFAULT: help
 
 help:
@@ -8,8 +8,7 @@ help:
 	@echo
 	@echo "Available targets:"
 	@echo "  check: Run type checking and code styling *without* modifying files"
-	@echo "  format: Run code styling inplace"
-	@echo "  typecheck: Run mypy type checking"
+	@echo "  format: Run type checking and code styling inplace"
 	@echo "  all: Run both type checking and code styling"
 	@echo "  test: Run all tests"
 
@@ -17,17 +16,16 @@ check:
 	isort --check .
 	black --check .
 	flake8 --show-source .
+	mypy .
 
 format:
 	isort .
 	black .
 	flake8 .
-
-typecheck:
 	mypy .
 
 test:
 	pytest .
 
 all:
-	make format typecheck test
+	make format test
