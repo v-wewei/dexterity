@@ -7,6 +7,12 @@ setup(
     author="Kevin Zakka",
     license_files=("LICENSE",),
     packages=find_packages(),
+    package_data={
+        "shadow_hand": [
+            "models/*.xml",
+            "models/*.stl",
+        ],
+    },
     python_requires=">=3.8",
     install_requires=[
         "numpy",
