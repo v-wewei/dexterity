@@ -23,9 +23,7 @@ def prefix_identifier(identifier: str, prefix: str) -> str:
     return f"{prefix}/{identifier}"
 
 
-def get_site_pose(
-    physics: mjcf.Physics, site_elem: hints.MjcfElement
-) -> np.ndarray:
+def get_site_pose(physics: mjcf.Physics, site_elem: hints.MjcfElement) -> np.ndarray:
     """Returns the world pose of the site as a 4x4 transform.
 
     Args:
@@ -75,9 +73,7 @@ def get_site_velocity(
         world_frame: Whether to return the velocity in the world frame.
     """
     flg_local = 0 if world_frame else 1
-    idx = physics.model.name2id(
-        site_elem.full_identifier, enums.mjtObj.mjOBJ_SITE
-    )
+    idx = physics.model.name2id(site_elem.full_identifier, enums.mjtObj.mjOBJ_SITE)
     site_vel = np.empty(6)
     mjlib.mj_objectVelocity(
         physics.model.ptr,
@@ -112,16 +108,12 @@ def get_joint_dof_size(model: hints.MjModel, joint_id: int) -> int:
         return -1
 
 
-def joint_ids_to_dof_ids(
-    model: hints.MjModel, joint_ids: Sequence[int]
-) -> List[int]:
+def joint_ids_to_dof_ids(model: hints.MjModel, joint_ids: Sequence[int]) -> List[int]:
     dof_ids = []
     for joint_id in joint_ids:
         dof = get_joint_dof_size(model, joint_id)
         if dof == -1:
-            raise ValueError(
-                f"joint_id {joint_id} is not a recognized joint type."
-            )
+            raise ValueError(f"joint_id {joint_id} is not a recognized joint type.")
         for i in range(dof):
             dof_ids.append(model.jnt_dofadr[joint_id] + i)
     return dof_ids

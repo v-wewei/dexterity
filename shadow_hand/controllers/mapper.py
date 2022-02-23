@@ -72,9 +72,7 @@ class Parameters:
                     " bodies, geoms and sites are supported."
                 )
 
-        for object_name, object_type in zip(
-            self.object_names, self.object_types
-        ):
+        for object_name, object_type in zip(self.object_names, self.object_types):
             if self.model.name2id(object_name, object_type) < 0:
                 raise ValueError(
                     f"Could not find MuJoCo object with name {object_name} and"

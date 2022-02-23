@@ -21,9 +21,7 @@ class ShadowHandEConstantsTest(absltest.TestCase):
     },
 )
 class ShadowHandSeriesETest(parameterized.TestCase):
-    def test_can_compile_and_step_model(
-        self, actuation: consts.Actuation
-    ) -> None:
+    def test_can_compile_and_step_model(self, actuation: consts.Actuation) -> None:
         hand = shadow_hand_e.ShadowHandSeriesE(actuation=actuation)
         physics = mjcf.Physics.from_mjcf_model(hand.mjcf_model)
         physics.step()
@@ -90,9 +88,7 @@ class ShadowHandSeriesETest(parameterized.TestCase):
         np.testing.assert_array_equal(actual, expected)
         self.assertEqual(actual.shape, (consts.NUM_JOINTS,))
 
-    def test_raises_when_control_wrong_len(
-        self, actuation: consts.Actuation
-    ) -> None:
+    def test_raises_when_control_wrong_len(self, actuation: consts.Actuation) -> None:
         hand = shadow_hand_e.ShadowHandSeriesE(actuation=actuation)
         control = np.array([0.0])
         with self.assertRaises(ValueError):
@@ -142,9 +138,7 @@ class ShadowHandSeriesETest(parameterized.TestCase):
         np.testing.assert_array_equal(actual, expected)
         self.assertEqual(actual.shape, (consts.NUM_ACTUATORS,))
 
-    def test_raises_when_qpos_wrong_len(
-        self, actuation: consts.Actuation
-    ) -> None:
+    def test_raises_when_qpos_wrong_len(self, actuation: consts.Actuation) -> None:
         hand = shadow_hand_e.ShadowHandSeriesE(actuation=actuation)
         qpos = np.array([0.0])
         with self.assertRaises(ValueError):

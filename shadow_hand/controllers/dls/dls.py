@@ -72,7 +72,5 @@ class DampedLeastSquaresMapper(mapper.CartesianVelocitytoJointVelocityMapper):
 
         # Solve!
         hess_approx = jacobian.T @ jacobian
-        hess_approx += (
-            np.eye(hess_approx.shape[0]) * self.params.regularization_weight
-        )
+        hess_approx += np.eye(hess_approx.shape[0]) * self.params.regularization_weight
         return np.linalg.solve(hess_approx, jacobian.T @ twist)

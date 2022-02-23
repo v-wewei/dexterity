@@ -167,8 +167,7 @@ class ShadowHandSeriesE(hand.Hand):
         """
         if qpos.shape != (consts.NUM_JOINTS,):
             raise ValueError(
-                f"Expected qpos of shape ({consts.NUM_JOINTS}), got"
-                f" {qpos.shape}"
+                f"Expected qpos of shape ({consts.NUM_JOINTS}), got {qpos.shape}"
             )
         return consts.POSITION_TO_CONTROL @ qpos
 
@@ -214,9 +213,7 @@ class ShadowHandSeriesE(hand.Hand):
             a_max=bounds[:, 1],
         )
 
-    def set_position_control(
-        self, physics: mjcf.Physics, control: np.ndarray
-    ) -> None:
+    def set_position_control(self, physics: mjcf.Physics, control: np.ndarray) -> None:
         """Sets the positions of the joints to the given control command.
 
         Each coordinate in the control vector is the desired joint angle, or sum of
@@ -232,9 +229,7 @@ class ShadowHandSeriesE(hand.Hand):
         physics_actuators = physics.bind(self._actuators)
         physics_actuators.ctrl[:] = control
 
-    def set_joint_angles(
-        self, physics: mjcf.Physics, joint_angles: np.ndarray
-    ) -> None:
+    def set_joint_angles(self, physics: mjcf.Physics, joint_angles: np.ndarray) -> None:
         """Sets the joints of the hand to a given configuration.
 
         Also sets the controller to prevent the hand from moving back to the previous
@@ -244,9 +239,7 @@ class ShadowHandSeriesE(hand.Hand):
         physics_actuators = physics.bind(self._actuators)
 
         physics_joints.qpos[:] = joint_angles
-        physics_actuators.ctrl[:] = self.joint_positions_to_control(
-            joint_angles
-        )
+        physics_actuators.ctrl[:] = self.joint_positions_to_control(joint_angles)
 
     def is_position_control_valid(
         self, physics: mjcf.Physics, control: np.ndarray
@@ -272,9 +265,7 @@ class ShadowHandSeriesE(hand.Hand):
         body_elements = self.mjcf_model.find_all("body")
         gravity = np.hstack([physics.model.opt.gravity, [0, 0, 0]])
         physics_bodies = physics.bind(body_elements)
-        physics_bodies.xfrc_applied[:] = (
-            -gravity * physics_bodies.mass[..., None]
-        )
+        physics_bodies.xfrc_applied[:] = -gravity * physics_bodies.mass[..., None]
 
     # TODO(kevin): Add method to remove gravity compensation.
 
@@ -290,9 +281,7 @@ class ShadowHandSeriesE(hand.Hand):
         for joint in consts.Joints:
             joint_elem = self._mjcf_root.find("joint", joint.name)
             if joint_elem is None:
-                raise ValueError(
-                    f"Could not find joint {joint.name} in MJCF model."
-                )
+                raise ValueError(f"Could not find joint {joint.name} in MJCF model.")
             self._joints.append(joint_elem)
             self._joint_elem_mapping[joint] = joint_elem
 
@@ -313,15 +302,11 @@ class ShadowHandSeriesE(hand.Hand):
     def _add_fingertip_sites(self) -> None:
         """Adds sites to the tips of the fingers of the hand."""
         self._fingertip_sites: List[mjcf.Element] = []
-        self._fingertip_site_elem_mapping: Dict[
-            consts.Components, mjcf.Element
-        ] = {}
+        self._fingertip_site_elem_mapping: Dict[consts.Components, mjcf.Element] = {}
         for finger, tip_name in consts.FINGER_FINGERTIP_MAPPING.items():
             tip_elem = self._mjcf_root.find("body", tip_name)
             if tip_elem is None:
-                raise ValueError(
-                    f"Could not find fingertip {tip_name} in MJCF model."
-                )
+                raise ValueError(f"Could not find fingertip {tip_name} in MJCF model.")
             tip_site = tip_elem.add(
                 "site",
                 name=tip_name + "_site",
@@ -360,9 +345,7 @@ class ShadowHandSeriesE(hand.Hand):
     def _add_position_actuators(self) -> None:
         """Adds position actuators to the mjcf model."""
 
-        def add_actuator(
-            act: consts.Actuators, params: _ActuatorParams
-        ) -> MjcfElement:
+        def add_actuator(act: consts.Actuators, params: _ActuatorParams) -> MjcfElement:
             # Create a position actuator mjcf elem.
             actuator = self._mjcf_root.actuator.add(
                 "position",
@@ -389,9 +372,7 @@ class ShadowHandSeriesE(hand.Hand):
 
         self._actuators: List[mjcf.Element] = []
         self._actuator_elem_mapping: Dict[consts.Actuators, mjcf.Element] = {}
-        for actuator, actuator_params in _ACTUATOR_PARAMS[
-            self._actuation
-        ].items():
+        for actuator, actuator_params in _ACTUATOR_PARAMS[self._actuation].items():
             actuator_elem = add_actuator(actuator, actuator_params)
             self._actuator_elem_mapping[actuator] = actuator_elem
             self._actuators.append(actuator_elem)
