@@ -1,6 +1,6 @@
 SHELL := /bin/bash
 
-.PHONY: help check format test all
+.PHONY: help check format test explore
 .DEFAULT: help
 
 help:
@@ -9,8 +9,8 @@ help:
 	@echo "Available targets:"
 	@echo "  check: Run type checking and code styling *without* modifying files"
 	@echo "  format: Run type checking and code styling inplace"
-	@echo "  all: Run both type checking and code styling"
 	@echo "  test: Run all tests"
+	@echo "  explore: Run the inhand_manipulation application"
 
 check:
 	isort --check .
@@ -27,5 +27,5 @@ format:
 test:
 	pytest .
 
-all:
-	make format test
+explore:
+	python shadow_hand/tasks/inhand_manipulation/explore.py

@@ -40,7 +40,7 @@ _HAND_QUAT = tr.axisangle_to_quat(
 )
 
 # Alpha value of the visual goal hint.
-_HINT_ALPHA = 0.5
+_HINT_ALPHA = 0.4
 # Position of the hint in the world frame, in meters.
 _HINT_POS = (0.12, 0.0, 0.15)
 
@@ -83,6 +83,7 @@ class _Common(composer.Task):
         obs_settings: observations.ObservationSettings,
         workspace: Workspace,
         control_timestep: float,
+        physics_timestep: float,
     ) -> None:
 
         self._arena = arena
@@ -142,7 +143,7 @@ class _Common(composer.Task):
         )
 
         # Add angular difference between prop and target prop as an observable.
-        angular_diff_observable = observable.Generic(self._get_quaterion_difference)
+        angular_diff_observable = observable.Generic(self._get_quaternion_difference)
         angular_diff_observable.configure(**dataclasses.asdict(obs_settings.prop_pose))
         self._task_observables["angular_difference"] = angular_diff_observable
 
@@ -158,10 +159,10 @@ class _Common(composer.Task):
 
         self.set_timesteps(
             control_timestep=control_timestep,
-            physics_timestep=constants.PHYSICS_TIMESTEP,
+            physics_timestep=physics_timestep,
         )
 
-    def _get_quaterion_difference(self, physics: mujoco.Physics) -> np.ndarray:
+    def _get_quaternion_difference(self, physics: mujoco.Physics) -> np.ndarray:
         """Returns the quaternion difference between the prop and the target prop."""
         prop_quat = physics.bind(self._prop.orientation).sensordata
         target_prop_quat = physics.bind(self._hint_prop.orientation).sensordata
@@ -193,8 +194,11 @@ class ReOrientSO3(_Common):
         obs_settings: observations.ObservationSettings,
         workspace: Workspace,
         control_timestep: float,
+        physics_timestep: float,
     ) -> None:
-        super().__init__(arena, hand, obs_settings, workspace, control_timestep)
+        super().__init__(
+            arena, hand, obs_settings, workspace, control_timestep, physics_timestep
+        )
 
         self._prop_orientation_sampler = rotations.UniformQuaternion()
 
@@ -224,8 +228,11 @@ class ReOrientZ(_Common):
         obs_settings: observations.ObservationSettings,
         workspace: Workspace,
         control_timestep: float,
+        physics_timestep: float,
     ) -> None:
-        super().__init__(arena, hand, obs_settings, workspace, control_timestep)
+        super().__init__(
+            arena, hand, obs_settings, workspace, control_timestep, physics_timestep
+        )
 
         self._prop_orientation_sampler = workspaces.uniform_z_rotation
 
@@ -301,6 +308,7 @@ def _reorient_SO3(obs_settings: observations.ObservationSettings) -> _Common:
         obs_settings=obs_settings,
         workspace=_WORKSPACE,
         control_timestep=constants.CONTROL_TIMESTEP,
+        physics_timestep=constants.PHYSICS_TIMESTEP,
     )
 
 
@@ -316,6 +324,7 @@ def _reorient_Z(obs_settings: observations.ObservationSettings) -> _Common:
         obs_settings=obs_settings,
         workspace=_WORKSPACE,
         control_timestep=constants.CONTROL_TIMESTEP,
+        physics_timestep=constants.PHYSICS_TIMESTEP,
     )
 
 

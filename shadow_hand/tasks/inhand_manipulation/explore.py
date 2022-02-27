@@ -1,11 +1,10 @@
 """A standalone app for visualizing in-hand manipulation tasks."""
 
 import dataclasses
+import functools
 from typing import Optional, Sequence
 
 import dcargs
-import dm_env
-import numpy as np
 from dm_control import viewer
 
 from shadow_hand.tasks import inhand_manipulation
@@ -37,20 +36,10 @@ def main(args: Args) -> None:
     else:
         environment_name = args.environment_name
 
-    env = inhand_manipulation.load(environment_name=environment_name)
-    spec = env.action_spec()
-
-    def random_policy(timestep: dm_env.TimeStep) -> np.ndarray:
-        del timestep  # Unused.
-        action = np.random.uniform(spec.minimum, spec.maximum, size=spec.shape)
-        action[:2] = 0.0  # Disable wrist movement.
-        return action
-
-    viewer.launch(env, policy=random_policy)
-
-    timestep = env.reset()
-    for key, value in timestep.observation.items():
-        print(f"{key}: {value.shape}")
+    loader = functools.partial(
+        inhand_manipulation.load, environment_name=environment_name
+    )
+    viewer.launch(loader)
 
 
 if __name__ == "__main__":
