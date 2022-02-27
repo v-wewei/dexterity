@@ -142,7 +142,7 @@ class _Common(composer.Task):
         )
 
         # Add angular difference between prop and target prop as an observable.
-        angular_diff_observable = observable.Generic(self._get_angular_difference)
+        angular_diff_observable = observable.Generic(self._get_quaterion_difference)
         angular_diff_observable.configure(**dataclasses.asdict(obs_settings.prop_pose))
         self._task_observables["angular_difference"] = angular_diff_observable
 
@@ -161,8 +161,8 @@ class _Common(composer.Task):
             physics_timestep=constants.PHYSICS_TIMESTEP,
         )
 
-    def _get_angular_difference(self, physics: mujoco.Physics) -> np.ndarray:
-        """Returns the angular difference between the prop and the target prop."""
+    def _get_quaterion_difference(self, physics: mujoco.Physics) -> np.ndarray:
+        """Returns the quaternion difference between the prop and the target prop."""
         prop_quat = physics.bind(self._prop.orientation).sensordata
         target_prop_quat = physics.bind(self._hint_prop.orientation).sensordata
         return geometry_utils.get_orientation_error(

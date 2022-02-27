@@ -7,3 +7,9 @@ profile = "black"
 skip_gitignore = true
 force_single_line = true  # Google style.
 single_line_exclusions = ["typing"]
+
+[tool.mypy]
+ignore_missing_imports = true
+
+[tool.pytest.ini_options]
+addopts = "-sv"

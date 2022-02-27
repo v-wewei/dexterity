@@ -40,10 +40,6 @@ def main(args: Args) -> None:
     env = inhand_manipulation.load(environment_name=environment_name)
     spec = env.action_spec()
 
-    from ipdb import set_trace
-
-    set_trace()
-
     def random_policy(timestep: dm_env.TimeStep) -> np.ndarray:
         del timestep  # Unused.
         action = np.random.uniform(spec.minimum, spec.maximum, size=spec.shape)
