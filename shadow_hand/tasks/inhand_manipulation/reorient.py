@@ -83,10 +83,7 @@ _HAND_OBSERVABLES = observations.ObservableNames(
 
 
 class ReOrient(composer.Task):
-    """Manipulate an object to a goal orientation.
-
-    The goal orientation is sampled from SO(3) or
-    """
+    """Manipulate an object to a goal orientation."""
 
     def __init__(
         self,
@@ -98,10 +95,20 @@ class ReOrient(composer.Task):
         control_timestep: float = constants.CONTROL_TIMESTEP,
         physics_timestep: float = constants.PHYSICS_TIMESTEP,
     ) -> None:
+        """Construct a new `ReOrient` task.
 
+        Args:
+            arena: The arena to use.
+            hand: The hand to use.
+            obs_settings: The observation settings to use.
+            workspace: The workspace to use.
+            restrict_orientation: If True, the goal orientation is restricted about the
+                Z-axis. Otherwise, it is fully sampled from SO(3).
+            control_timestep: The control timestep, in seconds.
+            physics_timestep: The physics timestep, in seconds.
+        """
         self._arena = arena
         self._hand = hand
-        self._restrict_orientation = restrict_orientation
 
         # Attach the hand to the arena.
         hand_attachment_site = arena.mjcf_model.worldbody.add(
