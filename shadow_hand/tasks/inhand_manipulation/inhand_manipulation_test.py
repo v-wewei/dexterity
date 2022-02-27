@@ -1,4 +1,4 @@
-"""Tests for `dm_control.manipulation_suite`."""
+"""Tests for inhand_manipulation."""
 
 import collections
 from typing import Mapping

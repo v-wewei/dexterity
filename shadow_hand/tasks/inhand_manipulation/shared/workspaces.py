@@ -10,7 +10,8 @@ from dm_control.composer.variation import rotations
 from shadow_hand import hints
 from shadow_hand.tasks.inhand_manipulation.shared import constants
 
-_MIN_SITE_DIMENSION = 1e-6  # Ensures that all site dimensions are positive.
+# Ensures that all site dimensions are positive.
+_MIN_SITE_DIMENSION = 1e-6
 
 
 @dataclasses.dataclass(frozen=True)
