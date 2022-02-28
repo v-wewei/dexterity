@@ -13,13 +13,16 @@ from dm_robotics.transformations import transformations as tr
 from matplotlib import pyplot as plt
 
 from shadow_hand.ik import ik_solver
-from shadow_hand.models.arenas.empty import Arena
 from shadow_hand.models.hands import shadow_hand_e
 from shadow_hand.models.hands import shadow_hand_e_constants as consts
+from shadow_hand.tasks.inhand_manipulation.shared import arenas
+from shadow_hand.tasks.inhand_manipulation.shared import cameras
 
 
 def render_scene(
-    physics: mjcf.Physics, cam_id: str = "closeup", transparent: bool = False
+    physics: mjcf.Physics,
+    transparent: bool = False,
+    cam_id: str = cameras.FRONT_CLOSE.name,
 ) -> np.ndarray:
     scene_option = mujoco.wrapper.core.MjvOption()
     scene_option.flags[enums.mjtVisFlag.mjVIS_TRANSPARENT] = transparent
@@ -53,8 +56,8 @@ def animate(
     return frames
 
 
-def _build_arena(name: str, disable_gravity: bool = False) -> Arena:
-    arena = Arena(name)
+def _build_arena(name: str, disable_gravity: bool = False) -> arenas.Standard:
+    arena = arenas.Standard(name)
     arena.mjcf_model.option.timestep = 0.001
     if disable_gravity:
         arena.mjcf_model.option.gravity = (0.0, 0.0, 0.0)
@@ -68,19 +71,11 @@ def _build_arena(name: str, disable_gravity: bool = False) -> Arena:
     return arena
 
 
-def _add_hand(arena: Arena):
+def _add_hand(arena: arenas.Standard):
     axis_angle = np.radians(180) * np.array([0, np.sqrt(2) / 2, -np.sqrt(2) / 2])
     quat = tr.axisangle_to_quat(axis_angle)
-    attachment_site = arena.mjcf_model.worldbody.add(
-        "site",
-        type="sphere",
-        pos=[0, 0, 0.1],
-        quat=quat,
-        rgba="0 0 0 0",
-        size="0.01",
-    )
-    hand = shadow_hand_e.ShadowHandSeriesE(actuation=consts.Actuation.POSITION)
-    arena.attach(hand, attachment_site)
+    hand = shadow_hand_e.ShadowHandSeriesE()
+    arena.attach_offset(hand, position=(0, 0.2, 0.1), quaternion=quat)
     return hand
 
 
@@ -88,7 +83,7 @@ def _add_hand(arena: Arena):
 class Args:
     seed: Optional[int] = None
     num_solves: int = 1
-    linear_tol: float = 1e-3
+    linear_tol: float = 1e-4
     disable_plot: bool = False
 
 
@@ -101,6 +96,14 @@ def main(args: Args) -> None:
         # Build the scene.
         arena = _build_arena("shadow_hand_inverse_kinematics")
         hand = _add_hand(arena)
+
+        # Add camera.
+        arena.mjcf_model.worldbody.add(
+            "camera",
+            name=cameras.FRONT_CLOSE.name,
+            pos=cameras.FRONT_CLOSE.pos,
+            xyaxes=cameras.FRONT_CLOSE.xyaxes,
+        )
 
         # The fingers we'd like to control.
         fingers = (
@@ -141,7 +144,7 @@ def main(args: Args) -> None:
                 type="sphere",
                 pos=position,
                 rgba="0 0 1 .7",
-                size="0.001",
+                size="0.01",
             )
 
         # Recreate physics instance since we changed the MJCF.
