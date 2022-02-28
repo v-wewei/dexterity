@@ -2,7 +2,7 @@
 
 import collections
 import dataclasses
-from typing import Optional
+from typing import Dict, Optional
 
 import numpy as np
 from dm_control import composer
@@ -235,7 +235,7 @@ class ReOrient(composer.Task):
             prop_quat=physics.bind(self._prop.orientation).sensordata,
             goal_quat=self._goal_quat,
         )
-        return shaped_reward.weighted_average
+        return rewards.weight_average(shaped_reward)
 
     def should_terminate_episode(self, physics: mjcf.Physics) -> bool:
         """Returns true if episode termination criteria are met.
@@ -281,7 +281,7 @@ def _get_shaped_reorientation_reward(
     physics: mjcf.Physics,
     prop_quat: np.ndarray,
     goal_quat: np.ndarray,
-) -> rewards.ShapedReward:
+) -> Dict[str, rewards.Reward]:
     """Returns a tuple of shaping reward components, as defined in [1].
 
     The reward is a weighted sum of the following components:
@@ -301,7 +301,7 @@ def _get_shaped_reorientation_reward(
         [1]: A System for General In-Hand Object Re-Orientation,
         https://arxiv.org/abs/2111.03043
     """
-    shaped_reward = rewards.ShapedReward()
+    shaped_reward = {}
 
     # Orientation component.
     angular_error = np.linalg.norm(
@@ -309,10 +309,8 @@ def _get_shaped_reorientation_reward(
     )
     angular_error_abs = np.abs(angular_error)
     orientation_reward = 1.0 / (angular_error_abs + _ORIENTATION_EPS)
-    shaped_reward = shaped_reward.add(
-        name="orientation",
-        value=orientation_reward,
-        weight=_ORIENTATION_WEIGHT,
+    shaped_reward["orientation"] = rewards.Reward(
+        value=orientation_reward, weight=_ORIENTATION_WEIGHT
     )
 
     # Success bonus component.
@@ -322,8 +320,7 @@ def _get_shaped_reorientation_reward(
         margin=0.0,
     )
     assert isinstance(success_bonus_reward, float)
-    shaped_reward = shaped_reward.add(
-        name="success_bonus",
+    shaped_reward["success_bonus"] = rewards.Reward(
         value=success_bonus_reward,
         weight=_SUCCESS_BONUS_WEIGHT,
     )
@@ -331,8 +328,7 @@ def _get_shaped_reorientation_reward(
     # Action smoothing component.
     action_smoothing_reward = np.linalg.norm(physics.data.ctrl) ** 2
     assert isinstance(action_smoothing_reward, float)
-    shaped_reward = shaped_reward.add(
-        name="action_smoothing",
+    shaped_reward["action_smoothing"] = rewards.Reward(
         value=action_smoothing_reward,
         weight=_ACTION_SMOOTHING_WEIGHT,
     )
@@ -398,14 +394,14 @@ def _reorient(
 
 
 @registry.add(tags.FEATURES)
-def reorient_so3():
+def reorient_so3() -> composer.Task:
     return _reorient(
         obs_settings=observations.PERFECT_FEATURES, restrict_orientation=False
     )
 
 
 @registry.add(tags.FEATURES, tags.EASY)
-def reorient_z():
+def reorient_z() -> composer.Task:
     return _reorient(
         obs_settings=observations.PERFECT_FEATURES, restrict_orientation=True
     )
