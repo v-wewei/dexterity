@@ -288,6 +288,7 @@ def _get_shaped_reorientation_reward(
         bounds=(0, _ORIENTATION_THRESHOLD),
         margin=0.0,
     )
+    assert isinstance(success_bonus_reward, float)
     shaped_reward = shaped_reward.add(
         name="success_bonus",
         value=success_bonus_reward,
@@ -296,6 +297,7 @@ def _get_shaped_reorientation_reward(
 
     # Action smoothing component.
     action_smoothing_reward = np.linalg.norm(physics.data.ctrl) ** 2
+    assert isinstance(action_smoothing_reward, float)
     shaped_reward = shaped_reward.add(
         name="action_smoothing",
         value=action_smoothing_reward,

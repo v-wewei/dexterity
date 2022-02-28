@@ -2,6 +2,7 @@ import dataclasses
 from typing import Dict, List
 
 import numpy as np
+from dm_control import composer
 from dm_control import mjcf
 
 from shadow_hand import hand
@@ -309,6 +310,8 @@ class ShadowHandSeriesE(hand.Hand):
                 size="0.001 0.001 0.001",
                 type="sphere",
                 rgba="1 0 0 1",
+                # TODO(kevin): Do I need this here?
+                # group=composer.SENSOR_SITES_GROUP,
             )
             self._fingertip_sites.append(tip_site)
             self._fingertip_site_elem_mapping[finger] = tip_site
@@ -388,6 +391,7 @@ class ShadowHandSeriesE(hand.Hand):
                 size="0.001 0.001 0.001",
                 type="box",
                 rgba="0 1 0 1",
+                group=composer.SENSOR_SITES_GROUP,
             )
             # Create a 3-axis torque sensor.
             torque_sensor_elem = joint_elem.root.sensor.add(
