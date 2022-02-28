@@ -115,16 +115,6 @@ class ReOrient(composer.Task):
         # Attach the hand to the arena.
         self._arena.attach_offset(hand, position=_HAND_POS, quaternion=_HAND_QUAT)
 
-        # Add custom cameras obserbables.
-        self._task_observables = cameras.add_camera_observables(
-            arena,
-            obs_settings,
-            cameras.FRONT_CLOSE,
-            cameras.TOP_DOWN,
-            cameras.LEFT_CLOSE,
-            cameras.RIGHT_CLOSE,
-        )
-
         # Add prop.
         prop_obs_options = observations.make_options(
             obs_settings, _FREEPROP_OBSERVABLES
@@ -157,16 +147,35 @@ class ReOrient(composer.Task):
             quaternion=rotations.UniformQuaternion(),
             settle_physics=False,
         )
+        if restrict_orientation:
+            self._prop_orientation_sampler = workspaces.uniform_z_rotation
+        else:
+            self._prop_orientation_sampler = rotations.UniformQuaternion()
+
+        # Add custom cameras obserbables.
+        self._task_observables = cameras.add_camera_observables(
+            arena,
+            obs_settings,
+            cameras.FRONT_CLOSE,
+            cameras.TOP_DOWN,
+            cameras.LEFT_CLOSE,
+            cameras.RIGHT_CLOSE,
+        )
 
         # Add angular difference between prop and target prop as an observable.
         angular_diff_observable = observable.Generic(self._get_quaternion_difference)
         angular_diff_observable.configure(**dataclasses.asdict(obs_settings.prop_pose))
         self._task_observables["angular_difference"] = angular_diff_observable
 
-        # Add action as an observable.
+        # Add action taken at the previous timestep as an observable.
         self._action_observable = observable.Generic(self._get_action)
         self._action_observable.configure(**dataclasses.asdict(obs_settings.prop_pose))
         self._task_observables["action"] = self._action_observable
+
+        self.set_timesteps(
+            control_timestep=control_timestep,
+            physics_timestep=physics_timestep,
+        )
 
         # Visual debugging.
         workspaces.add_bbox_site(
@@ -177,16 +186,6 @@ class ReOrient(composer.Task):
             name="prop_spawn_area",
             visible=False,
         )
-
-        self.set_timesteps(
-            control_timestep=control_timestep,
-            physics_timestep=physics_timestep,
-        )
-
-        if restrict_orientation:
-            self._prop_orientation_sampler = workspaces.uniform_z_rotation
-        else:
-            self._prop_orientation_sampler = rotations.UniformQuaternion()
 
     def _get_quaternion_difference(self, physics: mjcf.Physics) -> np.ndarray:
         """Returns the quaternion difference between the prop and the target prop."""
