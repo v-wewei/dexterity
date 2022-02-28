@@ -113,14 +113,7 @@ class ReOrient(composer.Task):
         self._hand = hand
 
         # Attach the hand to the arena.
-        hand_attachment_site = arena.mjcf_model.worldbody.add(
-            "site",
-            type="sphere",
-            pos=_HAND_POS,
-            quat=_HAND_QUAT,
-            size="0.01",
-        )
-        self._arena.attach(hand, hand_attachment_site)
+        self._arena.attach_offset(hand, position=_HAND_POS, quaternion=_HAND_QUAT)
 
         # Add custom cameras obserbables.
         self._task_observables = cameras.add_camera_observables(
@@ -152,7 +145,7 @@ class ReOrient(composer.Task):
             name="target_prop",
         )
         _hintify(self._hint_prop, _HINT_ALPHA)
-        arena.attach_offset(self._hint_prop, offset=_HINT_POS)
+        arena.attach_offset(self._hint_prop, position=_HINT_POS)
 
         # Place the prop slightly above the hand.
         self._prop_placer = initializers.PropPlacer(
