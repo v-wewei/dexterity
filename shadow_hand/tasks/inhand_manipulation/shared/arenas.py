@@ -3,6 +3,7 @@
 from typing import Optional
 
 from shadow_hand import arena
+from shadow_hand import hints
 
 
 class Standard(arena.Arena):
@@ -46,7 +47,7 @@ class Standard(arena.Arena):
         )
 
         # Add ground plane.
-        self.mjcf_model.worldbody.add(
+        self._ground = self.mjcf_model.worldbody.add(
             "geom",
             name="ground",
             type="plane",
@@ -70,3 +71,8 @@ class Standard(arena.Arena):
 
         # Always initialize the free camera so that it points at the origin.
         self.mjcf_model.statistic.center = (0.0, 0.0, 0.0)
+
+    @property
+    def ground(self) -> hints.MjcfElement:
+        """The ground plane mjcf element."""
+        return self._ground

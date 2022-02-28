@@ -16,11 +16,13 @@ ALL: Tuple[str, ...] = tuple(_registry.get_all_names())
 
 def load(environment_name: str, seed: Optional[int] = None) -> _composer.Environment:
     # Build the task.
-    task: _composer.Task = _registry.get_constructor(environment_name)()
+    task = _registry.get_constructor(environment_name)()
 
     # Ensure MuJoCo will not check for collisions between geoms that can never collide.
     mujoco_collisions.exclude_bodies_based_on_contype_conaffinity(
         task.root_entity.mjcf_model
     )
 
-    return _composer.Environment(task=task, random_state=seed)
+    return _composer.Environment(
+        task=task, random_state=seed, time_limit=task.time_limit
+    )

@@ -50,3 +50,7 @@ class OpenAICube(primitive.Primitive):
         )
 
         setattr(self.mjcf_model.find("geom", "geom"), "material", "material_openai")
+
+    @property
+    def name(self) -> str:
+        return self.mjcf_model.model

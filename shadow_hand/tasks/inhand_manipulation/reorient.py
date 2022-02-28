@@ -14,7 +14,6 @@ from dm_control.composer.variation import rotations
 from dm_control.utils import rewards as reward_utils
 from dm_robotics.transformations import transformations as tr
 
-from shadow_hand import arena
 from shadow_hand import hand
 from shadow_hand.models.hands import shadow_hand_e
 from shadow_hand.tasks.inhand_manipulation import props
@@ -27,12 +26,16 @@ from shadow_hand.tasks.inhand_manipulation.shared import rewards
 from shadow_hand.tasks.inhand_manipulation.shared import tags
 from shadow_hand.tasks.inhand_manipulation.shared import workspaces
 from shadow_hand.utils import geometry_utils
+from shadow_hand.utils import mujoco_collisions
 
 
 @dataclasses.dataclass(frozen=True)
 class Workspace:
     prop_bbox: workspaces.BoundingBox
 
+
+# The maximum amount of physics steps per episode.
+_STEP_LIMIT = 300
 
 # The position of the hand relative in the world frame, in meters.
 _HAND_POS = (0, 0.2, 0.1)
@@ -89,11 +92,12 @@ class ReOrient(composer.Task):
 
     def __init__(
         self,
-        arena: arena.Arena,
+        arena: arenas.Standard,
         hand: hand.Hand,
         obs_settings: observations.ObservationSettings,
         workspace: Workspace = _WORKSPACE,
         restrict_orientation: bool = False,
+        step_limit: Optional[int] = _STEP_LIMIT,
         control_timestep: float = constants.CONTROL_TIMESTEP,
         physics_timestep: float = constants.PHYSICS_TIMESTEP,
     ) -> None:
@@ -111,6 +115,7 @@ class ReOrient(composer.Task):
         """
         self._arena = arena
         self._hand = hand
+        self._step_limit = step_limit
 
         # Attach the hand to the arena.
         self._arena.attach_offset(hand, position=_HAND_POS, quaternion=_HAND_QUAT)
@@ -187,16 +192,6 @@ class ReOrient(composer.Task):
             visible=False,
         )
 
-    def _get_quaternion_difference(self, physics: mjcf.Physics) -> np.ndarray:
-        """Returns the quaternion difference between the prop and the target prop."""
-        prop_quat = physics.bind(self._prop.orientation).sensordata
-        target_prop_quat = physics.bind(self._hint_prop.orientation).sensordata
-        return tr.quat_diff_active(source_quat=prop_quat, target_quat=target_prop_quat)
-
-    def _get_action(self, physics: mjcf.Physics) -> np.ndarray:
-        """Returns the action that was applied."""
-        return np.array(physics.data.ctrl)
-
     @property
     def task_observables(self) -> collections.OrderedDict:
         return self._task_observables
@@ -208,6 +203,20 @@ class ReOrient(composer.Task):
     @property
     def hand(self) -> composer.Entity:
         return self._hand
+
+    @property
+    def time_limit(self) -> float:
+        if self._step_limit is None:
+            return float("inf")
+
+        # Every control action steps the environment, stepping the environment calls
+        # `physics.step()` `physics_steps_per_control_step` times, and each such
+        # `physics.step()` runs for `physics_timestep`.
+        return (
+            self._step_limit
+            * self.physics_steps_per_control_step
+            * self.physics_timestep
+        )
 
     def initialize_episode(
         self, physics: mjcf.Physics, random_state: np.random.RandomState
@@ -229,11 +238,43 @@ class ReOrient(composer.Task):
         return shaped_reward.weighted_average
 
     def should_terminate_episode(self, physics: mjcf.Physics) -> bool:
-        # Terminated if:
-        #  - successful goal orientation is reached
-        #  - object foals
-        #  - maximum episode length is reached (300)
-        return super().should_terminate_episode(physics)
+        """Returns true if episode termination criteria are met.
+
+        Specifically, the episode terminates if any one of the below conditions is met:
+            a) The prop is successfully rotated to the goal orientation
+            b) The prop falls out of the hand onto the ground
+            c) The time limit is reached
+
+        Note that the time limit criterion is enforced at the `composer.Environment`
+        level, so we don't worry about it here.
+        """
+        return self._is_goal_reached(physics) or self._is_prop_fallen(physics)
+
+    # Helper methods.
+
+    def _get_quaternion_difference(self, physics: mjcf.Physics) -> np.ndarray:
+        """Returns the quaternion difference between the prop and the target prop."""
+        prop_quat = physics.bind(self._prop.orientation).sensordata
+        target_prop_quat = physics.bind(self._hint_prop.orientation).sensordata
+        return tr.quat_diff_active(source_quat=prop_quat, target_quat=target_prop_quat)
+
+    def _get_action(self, physics: mjcf.Physics) -> np.ndarray:
+        """Returns the action that was applied."""
+        return np.array(physics.data.ctrl)
+
+    def _is_goal_reached(self, physics: mjcf.Physics) -> bool:
+        """Returns True if the prop has reached the goal orientation."""
+        angular_error = np.linalg.norm(self._get_quaternion_difference(physics))
+        assert isinstance(angular_error, float)
+        return np.isclose(angular_error, 0.0)
+
+    def _is_prop_fallen(self, physics: mjcf.Physics) -> bool:
+        """Returns True if the prop has fallen from the hand."""
+        return mujoco_collisions.has_collision(
+            physics=physics,
+            collision_geom_prefix_1=[f"{self._prop.name}/"],
+            collision_geom_prefix_2=[self._arena.ground.full_identifier],
+        )
 
 
 def _get_shaped_reorientation_reward(
@@ -350,6 +391,7 @@ def _reorient(
         obs_settings=obs_settings,
         workspace=_WORKSPACE,
         restrict_orientation=restrict_orientation,
+        step_limit=_STEP_LIMIT,
         control_timestep=constants.CONTROL_TIMESTEP,
         physics_timestep=constants.PHYSICS_TIMESTEP,
     )

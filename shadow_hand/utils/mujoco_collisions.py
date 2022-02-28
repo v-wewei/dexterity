@@ -1,12 +1,18 @@
 """Utility functions for dealing with MuJoCo collisions.
 
-Taken from: https://github.com/deepmind/dm_robotics/blob/main/py/moma/utils/mujoco_collisions.py
+Adapted from:
+- [1]: https://github.com/deepmind/dm_robotics/blob/main/py/moma/utils/mujoco_collisions.py
+- [2]: https://github.com/deepmind/rgb_stacking/blob/main/rgb_stacking/physics_utils.py
 """
 
-from typing import Optional
+import itertools
+from typing import Optional, Sequence
 
 from dm_control import mjcf
 from dm_control import mujoco
+
+_DEFAULT_OBJECT_COLLISION_MARGIN = 0.0002
+_DEFAULT_COLLISION_MARGIN = 1e-8
 
 
 def exclude_bodies_based_on_contype_conaffinity(
@@ -85,3 +91,32 @@ def _is_pass_contype_conaffinity_check(
         model.geom_contype[geom1_id] & model.geom_conaffinity[geom2_id]
         or model.geom_contype[geom2_id] & model.geom_conaffinity[geom1_id]
     )
+
+
+def has_collision(
+    physics: mjcf.Physics,
+    collision_geom_prefix_1: Sequence[str],
+    collision_geom_prefix_2: Sequence[str],
+    margin: float = _DEFAULT_COLLISION_MARGIN,
+) -> bool:
+    """Check for collisions between geoms.
+
+    Args:
+        physics: A `mjcf.Physics` instance.
+        collision_geom_prefix_1: A sequence of geom names that are considered
+            part of the first object.
+        collision_geom_prefix_2: A sequence of geom names that are considered
+            part of the second object.
+        margin: Margin below which collisions are considered.
+    """
+    for contact in physics.data.contact:
+        if contact.dist > margin:
+            continue
+        geom1_name = physics.model.id2name(contact.geom1, "geom")
+        geom2_name = physics.model.id2name(contact.geom2, "geom")
+        for pair in itertools.product(collision_geom_prefix_1, collision_geom_prefix_2):
+            if (geom1_name.startswith(pair[0]) and geom2_name.startswith(pair[1])) or (
+                geom2_name.startswith(pair[0]) and geom1_name.startswith(pair[1])
+            ):
+                return True
+    return False

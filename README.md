@@ -7,6 +7,7 @@ This repository contains code related to my research involving the [Shadow Hand]
 ## Todos
 
 - [ ] Improve all unit tests.
+- [ ] Rename `shadow_hand.utils.mujoco_utils.py`.
 - [ ] Figure out joint torque and velocity limits. I submitted an [issue](https://github.com/shadow-robot/sr_core/issues/206).
 - [x] Add torque sensors and fingertip sites.
 - [ ] Implement inverse kinematics.
@@ -17,8 +18,10 @@ This repository contains code related to my research involving the [Shadow Hand]
 - [x] Optimize scene light settings in XML file.
 - [ ] Add props to place objects in the palm of the hand.
     - [ ] Load YCB and EGAD objects.
-- [x] Implement `task` and `env` suite.
-    - [ ] Figure out episode termination and after step criteria.
+- [x] Implement in-hand manipulation `composer.Task`.
+    - [x] Add shaped reward.
+    - [x] Add episode termination criteria.
+    - [x] Figure out time limit vs max time steps.
 
 ## Changelog
 
