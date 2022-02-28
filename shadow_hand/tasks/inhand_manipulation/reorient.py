@@ -11,7 +11,7 @@ from dm_control.composer import initializers
 from dm_control.composer.observation import observable
 from dm_control.composer.variation import distributions
 from dm_control.composer.variation import rotations
-from dm_control.utils import rewards
+from dm_control.utils import rewards as reward_utils
 from dm_robotics.transformations import transformations as tr
 
 from shadow_hand import arena
@@ -23,6 +23,7 @@ from shadow_hand.tasks.inhand_manipulation.shared import cameras
 from shadow_hand.tasks.inhand_manipulation.shared import constants
 from shadow_hand.tasks.inhand_manipulation.shared import observations
 from shadow_hand.tasks.inhand_manipulation.shared import registry
+from shadow_hand.tasks.inhand_manipulation.shared import rewards
 from shadow_hand.tasks.inhand_manipulation.shared import tags
 from shadow_hand.tasks.inhand_manipulation.shared import workspaces
 from shadow_hand.utils import geometry_utils
@@ -52,9 +53,10 @@ _PROP_SIZE = 0.02
 _ORIENTATION_EPS = 0.1
 # Threshold for successful orientation, in radians.
 _ORIENTATION_THRESHOLD = 0.1
-_ORIENTATION_COEF = 1.0
-_SUCCESS_BONUS_COEF = 800.0
-_ACTION_SMOOTHING_COEF = -0.1  # NOTE(kevin): negative sign.
+# Reward shaping coefficients.
+_ORIENTATION_WEIGHT = 1.0
+_SUCCESS_BONUS_WEIGHT = 800.0
+_ACTION_SMOOTHING_WEIGHT = -0.1  # NOTE(kevin): negative sign.
 
 _WORKSPACE = Workspace(
     prop_bbox=workspaces.BoundingBox(
@@ -90,7 +92,7 @@ class ReOrient(composer.Task):
         arena: arena.Arena,
         hand: hand.Hand,
         obs_settings: observations.ObservationSettings,
-        workspace: Workspace,
+        workspace: Workspace = _WORKSPACE,
         restrict_orientation: bool = False,
         control_timestep: float = constants.CONTROL_TIMESTEP,
         physics_timestep: float = constants.PHYSICS_TIMESTEP,
@@ -168,6 +170,11 @@ class ReOrient(composer.Task):
         angular_diff_observable.configure(**dataclasses.asdict(obs_settings.prop_pose))
         self._task_observables["angular_difference"] = angular_diff_observable
 
+        # Add action as an observable.
+        self._action_observable = observable.Generic(self._get_action)
+        self._action_observable.configure(**dataclasses.asdict(obs_settings.prop_pose))
+        self._task_observables["action"] = self._action_observable
+
         # Visual debugging.
         workspaces.add_bbox_site(
             body=self.root_entity.mjcf_model.worldbody,
@@ -194,6 +201,10 @@ class ReOrient(composer.Task):
         target_prop_quat = physics.bind(self._hint_prop.orientation).sensordata
         return tr.quat_diff_active(source_quat=prop_quat, target_quat=target_prop_quat)
 
+    def _get_action(self, physics: mjcf.Physics) -> np.ndarray:
+        """Returns the action that was applied."""
+        return np.array(physics.data.ctrl)
+
     @property
     def task_observables(self) -> collections.OrderedDict:
         return self._task_observables
@@ -218,19 +229,27 @@ class ReOrient(composer.Task):
         self._hint_prop.set_pose(physics=physics, quaternion=self._goal_quat)
 
     def get_reward(self, physics: mjcf.Physics) -> float:
-        return _get_shaped_reorientation_reward(
+        shaped_reward = _get_shaped_reorientation_reward(
             physics,
             prop_quat=physics.bind(self._prop.orientation).sensordata,
             goal_quat=self._goal_quat,
         )
+        return shaped_reward.weighted_average
+
+    def should_terminate_episode(self, physics: mjcf.Physics) -> bool:
+        # Terminated if:
+        #  - successful goal orientation is reached
+        #  - object foals
+        #  - maximum episode length is reached (300)
+        return super().should_terminate_episode(physics)
 
 
 def _get_shaped_reorientation_reward(
     physics: mjcf.Physics,
     prop_quat: np.ndarray,
     goal_quat: np.ndarray,
-) -> float:
-    """Returns a shaped reward for re-orientation, as described in [1].
+) -> rewards.ShapedReward:
+    """Returns a tuple of shaping reward components, as defined in [1].
 
     The reward is a weighted sum of the following components:
         - orientation reward: The inverse of the absolute value of the angular error
@@ -249,28 +268,41 @@ def _get_shaped_reorientation_reward(
         [1]: A System for General In-Hand Object Re-Orientation,
         https://arxiv.org/abs/2111.03043
     """
+    shaped_reward = rewards.ShapedReward()
+
     # Orientation component.
     angular_error = np.linalg.norm(
         geometry_utils.get_orientation_error(to_quat=prop_quat, from_quat=goal_quat)
     )
     angular_error_abs = np.abs(angular_error)
     orientation_reward = 1.0 / (angular_error_abs + _ORIENTATION_EPS)
+    shaped_reward = shaped_reward.add(
+        name="orientation",
+        value=orientation_reward,
+        weight=_ORIENTATION_WEIGHT,
+    )
 
     # Success bonus component.
-    success_bonus_reward = rewards.tolerance(
+    success_bonus_reward = reward_utils.tolerance(
         x=angular_error_abs,
         bounds=(0, _ORIENTATION_THRESHOLD),
         margin=0.0,
     )
+    shaped_reward = shaped_reward.add(
+        name="success_bonus",
+        value=success_bonus_reward,
+        weight=_SUCCESS_BONUS_WEIGHT,
+    )
 
     # Action smoothing component.
     action_smoothing_reward = np.linalg.norm(physics.data.ctrl) ** 2
-
-    return (
-        orientation_reward * _ORIENTATION_COEF
-        + success_bonus_reward * _SUCCESS_BONUS_COEF
-        + action_smoothing_reward * _ACTION_SMOOTHING_COEF
+    shaped_reward = shaped_reward.add(
+        name="action_smoothing",
+        value=action_smoothing_reward,
+        weight=_ACTION_SMOOTHING_WEIGHT,
     )
+
+    return shaped_reward
 
 
 def _replace_alpha(rgba: np.ndarray, alpha: float = 0.3) -> np.ndarray:
