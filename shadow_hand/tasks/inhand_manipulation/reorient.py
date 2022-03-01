@@ -237,6 +237,16 @@ class ReOrient(composer.Task):
         )
         return rewards.weight_average(shaped_reward)
 
+    def after_step(
+        self, physics: mjcf.Physics, random_state: np.random.RandomState
+    ) -> None:
+        del random_state  # Unused.
+        self._failure_termination = False
+        if self._is_prop_fallen(physics):
+            self._failure_termination = True
+        if self._is_goal_reached(physics):
+            self._failure_termination = True
+
     def should_terminate_episode(self, physics: mjcf.Physics) -> bool:
         """Returns true if episode termination criteria are met.
 
@@ -248,7 +258,14 @@ class ReOrient(composer.Task):
         Note that the time limit criterion is enforced at the `composer.Environment`
         level, so we don't worry about it here.
         """
-        return self._is_goal_reached(physics) or self._is_prop_fallen(physics)
+        del physics  # Unused.
+        return self._failure_termination
+
+    def get_discount(self, physics: mjcf.Physics) -> float:
+        del physics  # Unused.
+        if self._failure_termination:
+            return 0.0
+        return 1.0
 
     # Helper methods.
 
