@@ -23,6 +23,5 @@ def load(environment_name: str, seed: Optional[int] = None) -> _composer.Environ
         task.root_entity.mjcf_model
     )
 
-    return _composer.Environment(
-        task=task, random_state=seed, time_limit=task.time_limit
-    )
+    # NOTE(kevin): By default, the time limit is infinite.
+    return _composer.Environment(task=task, random_state=seed)

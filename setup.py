@@ -15,17 +15,20 @@ setup(
     },
     python_requires=">=3.8",
     install_requires=[
+        "absl-py",
         "numpy",
         "typing_extensions",
         "dm_control @ git+git://github.com/deepmind/dm_control.git",
         "dm_robotics-geometry",
         "dm_robotics-transformations",
-        "dm_robotics-agentflow",
     ],
     extras_require={
         "testing": [
             "pytest",
-            "absl-py",
+        ],
+        "examples": [
+            "matplotlib",
+            "imageio",
         ],
     },
 )

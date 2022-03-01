@@ -1,11 +1,10 @@
 """Placing fingertip locations at target sites using inverse kinematics."""
 
-import dataclasses
 import time
-from typing import List, Optional
 
-import dcargs
 import numpy as np
+from absl import app
+from absl import flags
 from dm_control import mjcf
 from dm_control import mujoco
 from dm_control.mujoco.wrapper.mjbindings import enums
@@ -17,6 +16,13 @@ from shadow_hand.models.hands import shadow_hand_e
 from shadow_hand.models.hands import shadow_hand_e_constants as consts
 from shadow_hand.tasks.inhand_manipulation.shared import arenas
 from shadow_hand.tasks.inhand_manipulation.shared import cameras
+
+flags.DEFINE_integer("seed", None, "Random seed.")
+flags.DEFINE_integer("num_solves", 1, "Number of IK solves.")
+flags.DEFINE_float("linear_tol", 1e-4, "Linear tolerance.")
+flags.DEFINE_boolean("disable_plot", False, "Angular tolerance.")
+
+FLAGS = flags.FLAGS
 
 
 def render_scene(
@@ -34,68 +40,18 @@ def render_scene(
     )
 
 
-def plot(image: np.ndarray, window: str = "") -> None:
-    plt.figure(window)
-    plt.imshow(image)
-    plt.axis("off")
-    plt.show()
-    plt.close()
-
-
-def animate(
-    physics: mjcf.Physics,
-    duration: float = 2.0,
-    framerate: float = 30,
-) -> List[np.ndarray]:
-    frames: List[np.ndarray] = []
-    while physics.data.time < duration:
-        physics.step()
-        if len(frames) < physics.data.time * framerate:
-            pixels = render_scene(physics, transparent=True)
-            frames.append(pixels)
-    return frames
-
-
-def _build_arena(name: str, disable_gravity: bool = False) -> arenas.Standard:
-    arena = arenas.Standard(name)
-    arena.mjcf_model.option.timestep = 0.001
-    if disable_gravity:
-        arena.mjcf_model.option.gravity = (0.0, 0.0, 0.0)
-    else:
-        arena.mjcf_model.option.gravity = (0.0, 0.0, -9.81)
-    arena.mjcf_model.size.nconmax = 1_000
-    arena.mjcf_model.size.njmax = 2_000
-    arena.mjcf_model.visual.__getattr__("global").offheight = 480
-    arena.mjcf_model.visual.__getattr__("global").offwidth = 640
-    arena.mjcf_model.visual.map.znear = 5e-4
-    return arena
-
-
-def _add_hand(arena: arenas.Standard):
-    axis_angle = np.radians(180) * np.array([0, np.sqrt(2) / 2, -np.sqrt(2) / 2])
-    quat = tr.axisangle_to_quat(axis_angle)
-    hand = shadow_hand_e.ShadowHandSeriesE()
-    arena.attach_offset(hand, position=(0, 0.2, 0.1), quaternion=quat)
-    return hand
-
-
-@dataclasses.dataclass
-class Args:
-    seed: Optional[int] = None
-    num_solves: int = 1
-    linear_tol: float = 1e-4
-    disable_plot: bool = False
-
-
-def main(args: Args) -> None:
-    if args.seed is not None:
-        np.random.seed(args.seed)
+def main(_) -> None:
+    if FLAGS.seed is not None:
+        np.random.seed(FLAGS.seed)
 
     successes: int = 0
-    for _ in range(args.num_solves):
+    for _ in range(FLAGS.num_solves):
         # Build the scene.
-        arena = _build_arena("shadow_hand_inverse_kinematics")
-        hand = _add_hand(arena)
+        arena = arenas.Standard("arena")
+        axis_angle = np.radians(180) * np.array([0, np.sqrt(2) / 2, -np.sqrt(2) / 2])
+        quat = tr.axisangle_to_quat(axis_angle)
+        hand = shadow_hand_e.ShadowHandSeriesE()
+        arena.attach_offset(hand, position=(0, 0.2, 0.1), quaternion=quat)
 
         # Add camera.
         arena.mjcf_model.worldbody.add(
@@ -144,7 +100,7 @@ def main(args: Args) -> None:
                 type="sphere",
                 pos=position,
                 rgba="0 0 1 .7",
-                size="0.01",
+                size="0.005",
             )
 
         # Recreate physics instance since we changed the MJCF.
@@ -154,7 +110,7 @@ def main(args: Args) -> None:
         ik_start = time.time()
         qpos = solver.solve(
             target_positions=target_positions,
-            linear_tol=args.linear_tol,
+            linear_tol=FLAGS.linear_tol,
             max_steps=1_000,
             early_stop=True,
             num_attempts=15,
@@ -172,7 +128,7 @@ def main(args: Args) -> None:
             im_actual = render_scene(physics, transparent=False)
             im_actual_tr = render_scene(physics, transparent=True)
 
-            if not args.disable_plot:
+            if not FLAGS.disable_plot:
                 _, axes = plt.subplots(1, 4, figsize=(12, 4))
                 axes[0].imshow(im_start)
                 axes[0].set_title("Starting")
@@ -187,19 +143,16 @@ def main(args: Args) -> None:
                 plt.subplots_adjust(wspace=0, hspace=0)
                 plt.tight_layout()
                 plt.show()
-                plt.close()
-
-                plt.figure()
-                plt.imshow(im_actual_tr)
-                plt.show()
-                plt.close()
 
             successes += 1
         else:
-            plot(im_desired, "failed")
+            plt.figure("failed")
+            plt.imshow(im_desired)
+            plt.axis("off")
+            plt.show()
 
-    print(f"solve success rate: {successes}/{args.num_solves}.")
+    print(f"solve success rate: {successes}/{FLAGS.num_solves}.")
 
 
 if __name__ == "__main__":
-    main(dcargs.parse(Args, description=__doc__))
+    app.run(main)

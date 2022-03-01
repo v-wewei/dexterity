@@ -22,7 +22,7 @@ This repository contains code related to my research involving the [Shadow Hand]
     - [x] Add shaped reward.
     - [x] Add episode termination criteria.
     - [x] Figure out time limit vs max time steps.
-- [ ] Should actuator limits for the hand be scaled to `[-1, 1]`?
+- [ ] Unit test various aspects of the reorient task.
 
 ## Notes
 

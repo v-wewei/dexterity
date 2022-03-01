@@ -34,9 +34,6 @@ class Workspace:
     prop_bbox: workspaces.BoundingBox
 
 
-# The maximum amount of physics steps per episode.
-_STEP_LIMIT = 300
-
 # The position of the hand relative in the world frame, in meters.
 _HAND_POS = (0, 0.2, 0.1)
 # The orientation of the hand relative to the world frame.
@@ -97,7 +94,7 @@ class ReOrient(composer.Task):
         obs_settings: observations.ObservationSettings,
         workspace: Workspace = _WORKSPACE,
         restrict_orientation: bool = False,
-        step_limit: Optional[int] = _STEP_LIMIT,
+        fall_termination: bool = True,
         control_timestep: float = constants.CONTROL_TIMESTEP,
         physics_timestep: float = constants.PHYSICS_TIMESTEP,
     ) -> None:
@@ -110,12 +107,13 @@ class ReOrient(composer.Task):
             workspace: The workspace to use.
             restrict_orientation: If True, the goal orientation is restricted about the
                 Z-axis. Otherwise, it is fully sampled from SO(3).
+            fall_termination: Whether to terminate if the prop falls off the hand and
+                onto the ground.
             control_timestep: The control timestep, in seconds.
             physics_timestep: The physics timestep, in seconds.
         """
         self._arena = arena
         self._hand = hand
-        self._step_limit = step_limit
 
         # Attach the hand to the arena.
         self._arena.attach_offset(hand, position=_HAND_POS, quaternion=_HAND_QUAT)
@@ -192,6 +190,9 @@ class ReOrient(composer.Task):
             visible=False,
         )
 
+        self._fall_termination = fall_termination
+        self._discount = 1.0
+
     @property
     def task_observables(self) -> collections.OrderedDict:
         return self._task_observables
@@ -204,23 +205,11 @@ class ReOrient(composer.Task):
     def hand(self) -> composer.Entity:
         return self._hand
 
-    @property
-    def time_limit(self) -> float:
-        if self._step_limit is None:
-            return float("inf")
-
-        # Every control action steps the environment, stepping the environment calls
-        # `physics.step()` `physics_steps_per_control_step` times, and each such
-        # `physics.step()` runs for `physics_timestep`.
-        return (
-            self._step_limit
-            * self.physics_steps_per_control_step
-            * self.physics_timestep
-        )
-
     def initialize_episode(
         self, physics: mjcf.Physics, random_state: np.random.RandomState
     ) -> None:
+        self._discount = 1.0
+
         # Randomly sample a starting configuration for the prop.
         self._prop_placer(physics=physics, random_state=random_state)
 
@@ -242,30 +231,23 @@ class ReOrient(composer.Task):
     ) -> None:
         del random_state  # Unused.
         self._failure_termination = False
-        if self._is_prop_fallen(physics):
-            self._failure_termination = True
-        if self._is_goal_reached(physics):
-            self._failure_termination = True
+        if self._fall_termination:
+            if self._is_prop_fallen(physics):
+                self._failure_termination = True
 
     def should_terminate_episode(self, physics: mjcf.Physics) -> bool:
-        """Returns true if episode termination criteria are met.
-
-        Specifically, the episode terminates if any one of the below conditions is met:
-            a) The prop is successfully rotated to the goal orientation
-            b) The prop falls out of the hand onto the ground
-            c) The time limit is reached
-
-        Note that the time limit criterion is enforced at the `composer.Environment`
-        level, so we don't worry about it here.
-        """
-        del physics  # Unused.
-        return self._failure_termination
+        """Returns true if episode termination criteria are met."""
+        if self._failure_termination:
+            self._discount = 0.0
+            return True
+        else:
+            if self._is_goal_reached(physics):
+                return True
+            return False
 
     def get_discount(self, physics: mjcf.Physics) -> float:
         del physics  # Unused.
-        if self._failure_termination:
-            return 0.0
-        return 1.0
+        return self._discount
 
     # Helper methods.
 
@@ -391,7 +373,8 @@ def _hintify(entity: composer.Entity, alpha: Optional[float] = None) -> None:
 
 
 def _reorient(
-    obs_settings: observations.ObservationSettings, restrict_orientation: bool
+    obs_settings: observations.ObservationSettings,
+    restrict_orientation: bool,
 ) -> composer.Task:
     """Configure and instantiate a `ReOrient` task."""
     arena = arenas.Standard()
@@ -404,7 +387,6 @@ def _reorient(
         obs_settings=obs_settings,
         workspace=_WORKSPACE,
         restrict_orientation=restrict_orientation,
-        step_limit=_STEP_LIMIT,
         control_timestep=constants.CONTROL_TIMESTEP,
         physics_timestep=constants.PHYSICS_TIMESTEP,
     )
@@ -413,7 +395,8 @@ def _reorient(
 @registry.add(tags.FEATURES)
 def reorient_so3() -> composer.Task:
     return _reorient(
-        obs_settings=observations.PERFECT_FEATURES, restrict_orientation=False
+        obs_settings=observations.PERFECT_FEATURES,
+        restrict_orientation=False,
     )
 
 
