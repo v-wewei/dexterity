@@ -16,6 +16,7 @@ flags.DEFINE_enum(
     "Optional name of an environment to load. If unspecified a prompt will appear to "
     "select one.",
 )
+flags.DEFINE_integer("seed", None, "RNG seed.")
 
 FLAGS = flags.FLAGS
 
@@ -40,7 +41,7 @@ def main(_) -> None:
         environment_name = FLAGS.environment_name
 
     loader = functools.partial(
-        inhand_manipulation.load, environment_name=environment_name
+        inhand_manipulation.load, environment_name=environment_name, seed=FLAGS.seed
     )
     viewer.launch(loader)
 
