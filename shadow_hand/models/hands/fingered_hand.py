@@ -11,15 +11,15 @@ from shadow_hand.hints import MjcfElement
 from shadow_hand.utils import mujoco_utils
 
 
-class Hand(abc.ABC, composer.Entity):
-    """Abstract base class for a robotic hand."""
+class FingeredHand(abc.ABC, composer.Entity):
+    """Base composer class for a multi-fingered hand."""
+
+    def _build_observables(self) -> composer.Observables:
+        return RobotHandObservables(self)
 
     @abc.abstractmethod
     def _build(self) -> None:
         """Entity initialization method to be overridden by subclasses."""
-
-    def _build_observables(self) -> composer.Observables:
-        return HandObservables(self)
 
     @property
     @abc.abstractmethod
@@ -56,10 +56,10 @@ class Hand(abc.ABC, composer.Entity):
         """Sets the joints of the hand to a given configuration."""
 
 
-class HandObservables(composer.Observables):
-    """Observables for a robotic hand."""
+class RobotHandObservables(composer.Observables):
+    """Observables for a fingered hand."""
 
-    _entity: Hand
+    _entity: FingeredHand
 
     # shape: (1, 24)
     @composer.observable

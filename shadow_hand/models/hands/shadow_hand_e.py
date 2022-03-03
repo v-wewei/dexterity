@@ -4,8 +4,8 @@ import numpy as np
 from dm_control import composer
 from dm_control import mjcf
 
-from shadow_hand import hand
 from shadow_hand.hints import MjcfElement
+from shadow_hand.models.hands import fingered_hand
 from shadow_hand.models.hands import shadow_hand_e_actuation as sh_actuation
 from shadow_hand.models.hands import shadow_hand_e_constants as consts
 from shadow_hand.utils import mujoco_actuation
@@ -13,7 +13,7 @@ from shadow_hand.utils import mujoco_actuation
 _EPSILON: float = 1e-6
 
 
-class ShadowHandSeriesE(hand.Hand):
+class ShadowHandSeriesE(fingered_hand.FingeredHand):
     """Shadow Dexterous Hand E Series."""
 
     def _build(

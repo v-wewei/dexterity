@@ -1,8 +1,9 @@
 """A standalone app for visualizing in-hand manipulation tasks."""
 
-# import functools
 from typing import Sequence
 
+import dm_env
+import numpy as np
 from absl import app
 from absl import flags
 from dm_control import viewer
@@ -40,24 +41,14 @@ def main(_) -> None:
     else:
         environment_name = FLAGS.environment_name
 
-    # loader = functools.partial(
-    #     inhand_manipulation.load, environment_name=environment_name, seed=FLAGS.seed
-    # )
-    # viewer.launch(loader)
-
     env = inhand_manipulation.load(environment_name=environment_name, seed=FLAGS.seed)
     action_spec = env.action_spec()
 
-    import numpy as np
-
-    def random_policy(timestep):
-        action = np.random.uniform(
-            action_spec.minimum,
-            action_spec.maximum,
-            size=action_spec.shape,
+    def random_policy(timestep: dm_env.TimeStep) -> np.ndarray:
+        del timestep
+        return np.random.uniform(
+            action_spec.minimum, action_spec.maximum, size=action_spec.shape
         )
-        action[:2] = 0.0
-        return action
 
     viewer.launch(env, policy=random_policy)
 

@@ -16,8 +16,8 @@ from dm_robotics.transformations import transformations as tr
 
 from shadow_hand import effector
 from shadow_hand import effectors
-from shadow_hand import hand
 from shadow_hand import task
+from shadow_hand.models.hands import fingered_hand
 from shadow_hand.models.hands import shadow_hand_e
 from shadow_hand.tasks.inhand_manipulation import props
 from shadow_hand.tasks.inhand_manipulation.shared import arenas
@@ -93,7 +93,7 @@ class ReOrient(task.Task):
     def __init__(
         self,
         arena: arenas.Standard,
-        hand: hand.Hand,
+        hand: fingered_hand.FingeredHand,
         hand_effector: effector.Effector,
         obs_settings: observations.ObservationSettings,
         workspace: Workspace = _WORKSPACE,
@@ -107,7 +107,7 @@ class ReOrient(task.Task):
         Args:
             arena: The arena to use.
             hand: The hand to use.
-            hand_effector: The hand effector to use.
+            hand_effector:
             obs_settings: The observation settings to use.
             workspace: The workspace to use.
             restrict_orientation: If True, the goal orientation is restricted about the
@@ -117,7 +117,7 @@ class ReOrient(task.Task):
             control_timestep: The control timestep, in seconds.
             physics_timestep: The physics timestep, in seconds.
         """
-        super().__init__(arena, hand, hand_effector)
+        super().__init__(arena=arena, hand=hand, hand_effector=hand_effector)
 
         # Attach the hand to the arena.
         self._arena.attach_offset(hand, position=_HAND_POS, quaternion=_HAND_QUAT)
@@ -382,15 +382,21 @@ def _reorient(
 ) -> composer.Task:
     """Configure and instantiate a `ReOrient` task."""
     arena = arenas.Standard()
+
     hand = shadow_hand_e.ShadowHandSeriesE(
         observable_options=observations.make_options(obs_settings, _HAND_OBSERVABLES),
     )
-    effector = effectors.HandEffector(hand=hand, hand_name=hand.name)
-    relative_effector = effectors.RelativeEffector(hand_effector=effector)
+
+    # Effector used for the shadow hand.
+    joint_position_effector = effectors.HandEffector(hand=hand, hand_name=hand.name)
+    hand_effector = effectors.RelativeToJointPositions(
+        joint_position_effector, hand=hand
+    )
+
     return ReOrient(
         arena=arena,
         hand=hand,
-        hand_effector=relative_effector,
+        hand_effector=hand_effector,
         obs_settings=obs_settings,
         workspace=_WORKSPACE,
         restrict_orientation=restrict_orientation,
