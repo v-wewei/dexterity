@@ -6,9 +6,11 @@ from dm_control import mjcf
 
 from shadow_hand import hand
 from shadow_hand.hints import MjcfElement
-from shadow_hand.models.hands import shadow_hand_e_actuation
+from shadow_hand.models.hands import shadow_hand_e_actuation as sh_actuation
 from shadow_hand.models.hands import shadow_hand_e_constants as consts
 from shadow_hand.utils import mujoco_actuation
+
+_EPSILON: float = 1e-6
 
 
 class ShadowHandSeriesE(hand.Hand):
@@ -17,17 +19,16 @@ class ShadowHandSeriesE(hand.Hand):
     def _build(
         self,
         name: str = "shadow_hand_e",
-        actuation: consts.Actuation = consts.Actuation.POSITION,
+        actuation: sh_actuation.Actuation = sh_actuation.Actuation.POSITION,
     ) -> None:
         """Initializes the hand.
 
         Args:
             name: The name of the hand. Used as a prefix in the MJCF name attributes.
-            actuation: Instance of `shadow_hand_e_constants.Actuation` specifying which
+            actuation: Instance of `shadow_hand_e_actuation.Actuation` specifying which
                 actuation method to use.
         """
         self._mjcf_root = mjcf.from_path(str(consts.SHADOW_HAND_E_XML))
-
         self._mjcf_root.model = name
         self._actuation = actuation
 
@@ -172,27 +173,9 @@ class ShadowHandSeriesE(hand.Hand):
         """Returns True if the given position control command is valid."""
         ctrl_bounds = self.actuator_ctrl_range(physics)
         shape_cond = control.shape == (consts.NUM_ACTUATORS,)
-        lower_cond = bool(np.all(control >= ctrl_bounds[:, 0] - consts.EPSILON))
-        upper_cond = bool(np.all(control <= ctrl_bounds[:, 1] + consts.EPSILON))
+        lower_cond = bool(np.all(control >= ctrl_bounds[:, 0] - _EPSILON))
+        upper_cond = bool(np.all(control <= ctrl_bounds[:, 1] + _EPSILON))
         return shape_cond and lower_cond and upper_cond
-
-    def compensate_gravity(self, physics: mjcf.Physics) -> None:
-        """Applies Cartesian forces to the bodies of the hand in order to counteract
-        gravity.
-
-        This will affect the output of pressure, force, or torque sensors within the
-        kinematic chain leading from the worldbody to the bodies that are being
-        compensated.
-
-        Args:
-            physics: An `mjcf.Physics` instance.
-        """
-        body_elements = self.mjcf_model.find_all("body")
-        gravity = np.hstack([physics.model.opt.gravity, [0, 0, 0]])
-        physics_bodies = physics.bind(body_elements)
-        physics_bodies.xfrc_applied[:] = -gravity * physics_bodies.mass[..., None]
-
-    # TODO(kevin): Add method to remove gravity compensation.
 
     # ================= #
     # Private methods.
@@ -261,13 +244,15 @@ class ShadowHandSeriesE(hand.Hand):
 
     def _add_actuators(self) -> None:
         """Adds actuators to the hand."""
-        if self._actuation not in consts.Actuation:
+        if self._actuation not in sh_actuation.Actuation:
             raise ValueError(
                 f"Actuation {self._actuation} is not a valid actuation mode."
             )
 
-        if self._actuation == consts.Actuation.POSITION:
+        if self._actuation == sh_actuation.Actuation.POSITION:
             self._add_position_actuators()
+        elif self._actuation == sh_actuation.Actuation.EFFORT:
+            raise NotImplementedError("Effort actuation is not yet implemented.")
 
     def _add_position_actuators(self) -> None:
         """Adds position actuators to the mjcf model."""
@@ -277,7 +262,7 @@ class ShadowHandSeriesE(hand.Hand):
 
         self._actuators: List[mjcf.Element] = []
         self._actuator_elem_mapping: Dict[consts.Actuators, mjcf.Element] = {}
-        for actuator, actuator_params in shadow_hand_e_actuation.ACTUATOR_PARAMS[
+        for actuator, actuator_params in sh_actuation.ACTUATOR_PARAMS[
             self._actuation
         ].items():
             if actuator in consts.ACTUATOR_TENDON_MAPPING:
@@ -292,7 +277,7 @@ class ShadowHandSeriesE(hand.Hand):
                 elem_type = "joint"
                 elem.damping = actuator_params.damping
 
-            qposrange = consts.ACTUATION_LIMITS[self._actuation][actuator]
+            qposrange = sh_actuation.ACTUATION_LIMITS[self._actuation][actuator]
             actuator_elem = mujoco_actuation.add_position_actuator(
                 elem=elem,
                 elem_type=elem_type,

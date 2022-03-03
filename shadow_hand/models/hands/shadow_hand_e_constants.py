@@ -20,8 +20,6 @@ SHADOW_HAND_E_XML: Path = (
     / "shadow_hand_series_e.xml"
 )
 
-EPSILON: float = 1e-6
-
 
 class Components(enum.Enum):
     """The actuated components of the hand: wrist and fingers."""
@@ -131,15 +129,6 @@ JOINT_GROUP: Dict[Components, Tuple[Joints, ...]] = {
 # ====================== #
 # Actuation constants
 # ====================== #
-
-
-class Actuation(enum.Enum):
-    """Available actuation methods for the hand."""
-
-    POSITION = enum.auto()
-    """In position mode, the joint actuators receive a position and a position
-    controller is used to maintain the joint configuration.
-    """
 
 
 class Actuators(enum.Enum):
@@ -381,12 +370,6 @@ VELOCITY_LIMITS: Dict[Actuators, Tuple[float, float]] = {
     Actuators.A_THJ2: (-2.0, 2.0),
     Actuators.A_THJ1: (-2.0, 2.0),
     Actuators.A_THJ0: (-2.0, 2.0),
-}
-
-# Actuation limits of the hand.
-ACTUATION_LIMITS: Dict[Actuation, Dict[Actuators, Tuple[float, float]]] = {
-    # For position control, actuation limits are joint limits.
-    Actuation.POSITION: ACTUATOR_CTRLRANGE,
 }
 
 # ====================== #

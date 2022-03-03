@@ -14,7 +14,10 @@ from dm_control.composer.variation import rotations
 from dm_control.utils import rewards as reward_utils
 from dm_robotics.transformations import transformations as tr
 
+from shadow_hand import effector
+from shadow_hand import effectors
 from shadow_hand import hand
+from shadow_hand import task
 from shadow_hand.models.hands import shadow_hand_e
 from shadow_hand.tasks.inhand_manipulation import props
 from shadow_hand.tasks.inhand_manipulation.shared import arenas
@@ -84,13 +87,14 @@ _HAND_OBSERVABLES = observations.ObservableNames(
 )
 
 
-class ReOrient(composer.Task):
+class ReOrient(task.Task):
     """Manipulate an object to a goal orientation."""
 
     def __init__(
         self,
         arena: arenas.Standard,
         hand: hand.Hand,
+        hand_effector: effector.Effector,
         obs_settings: observations.ObservationSettings,
         workspace: Workspace = _WORKSPACE,
         restrict_orientation: bool = False,
@@ -103,6 +107,7 @@ class ReOrient(composer.Task):
         Args:
             arena: The arena to use.
             hand: The hand to use.
+            hand_effector: The hand effector to use.
             obs_settings: The observation settings to use.
             workspace: The workspace to use.
             restrict_orientation: If True, the goal orientation is restricted about the
@@ -112,8 +117,7 @@ class ReOrient(composer.Task):
             control_timestep: The control timestep, in seconds.
             physics_timestep: The physics timestep, in seconds.
         """
-        self._arena = arena
-        self._hand = hand
+        super().__init__(arena, hand, hand_effector)
 
         # Attach the hand to the arena.
         self._arena.attach_offset(hand, position=_HAND_POS, quaternion=_HAND_QUAT)
@@ -381,9 +385,12 @@ def _reorient(
     hand = shadow_hand_e.ShadowHandSeriesE(
         observable_options=observations.make_options(obs_settings, _HAND_OBSERVABLES),
     )
+    effector = effectors.HandEffector(hand=hand, hand_name=hand.name)
+    relative_effector = effectors.RelativeEffector(hand_effector=effector)
     return ReOrient(
         arena=arena,
         hand=hand,
+        hand_effector=relative_effector,
         obs_settings=obs_settings,
         workspace=_WORKSPACE,
         restrict_orientation=restrict_orientation,
@@ -403,5 +410,6 @@ def reorient_so3() -> composer.Task:
 @registry.add(tags.FEATURES, tags.EASY)
 def reorient_z() -> composer.Task:
     return _reorient(
-        obs_settings=observations.PERFECT_FEATURES, restrict_orientation=True
+        obs_settings=observations.PERFECT_FEATURES,
+        restrict_orientation=True,
     )
