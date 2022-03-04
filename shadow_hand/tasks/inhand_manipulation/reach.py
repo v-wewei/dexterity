@@ -17,6 +17,7 @@ from shadow_hand import task
 from shadow_hand.models.hands import fingered_hand
 from shadow_hand.models.hands import shadow_hand_e
 from shadow_hand.tasks.inhand_manipulation.shared import arenas
+from shadow_hand.tasks.inhand_manipulation.shared import cameras
 from shadow_hand.tasks.inhand_manipulation.shared import constants
 from shadow_hand.tasks.inhand_manipulation.shared import initializers
 from shadow_hand.tasks.inhand_manipulation.shared import observations
@@ -113,7 +114,11 @@ class Reach(task.Task):
         )
 
         # Add task observables.
-        self._task_observables: Dict[str, observable.Observable] = {}
+        self._task_observables = cameras.add_camera_observables(
+            arena,
+            obs_settings,
+            cameras.FRONT_CLOSE,
+        )
 
         target_positions_observable = observable.Generic(self._get_target_positions)
         target_positions_observable.configure(
@@ -163,7 +168,7 @@ class Reach(task.Task):
 
 
 def _reach(obs_settings: observations.ObservationSettings) -> composer.Task:
-    """Configure and instantiate a `ReOrient` task."""
+    """Configure and instantiate a `Reach` task."""
     arena = arenas.Standard()
 
     hand = shadow_hand_e.ShadowHandSeriesE(
