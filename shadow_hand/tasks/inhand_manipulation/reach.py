@@ -2,7 +2,7 @@
 
 import dataclasses
 import random
-from typing import Dict, List
+from typing import Dict, List, Optional
 
 import numpy as np
 from dm_control import composer
@@ -114,6 +114,7 @@ class Reach(task.Task):
         self._fingertips_initializer = initializers.FingertipPositionPlacer(
             target_sites=self._target_sites, hand=hand
         )
+        self._target_positions: Optional[np.ndarray] = None
 
         # Add task observables.
         self._task_observables = cameras.add_camera_observables(
@@ -141,6 +142,9 @@ class Reach(task.Task):
     ) -> None:
         self._fingertips_initializer(physics, random_state)
 
+        # Set to None to retrigger a calculation in `_get_target_positions`.
+        self._target_positions = None
+
     def after_step(
         self, physics: mjcf.Physics, random_state: np.random.RandomState
     ) -> None:
@@ -160,7 +164,11 @@ class Reach(task.Task):
     # Helper methods.
 
     def _get_target_positions(self, physics: mjcf.Physics) -> np.ndarray:
-        return np.array(physics.bind(self._target_sites).xpos).ravel()
+        if self._target_positions is None:
+            self._target_positions = np.array(
+                physics.bind(self._target_sites).xpos
+            ).ravel()
+        return self._target_positions
 
     def _get_fingertip_positions(self, physics: mjcf.Physics) -> np.ndarray:
         return np.array(physics.bind(self._hand.fingertip_sites).xpos).ravel()
