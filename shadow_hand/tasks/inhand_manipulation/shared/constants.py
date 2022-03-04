@@ -5,10 +5,10 @@ from typing import Tuple
 _Rgba = Tuple[float, float, float, float]
 
 # MuJoCo physics timestep.
-PHYSICS_TIMESTEP: float = 0.001
+PHYSICS_TIMESTEP: float = 0.005
 
 # Interval between agent actions, in seconds.
-CONTROL_TIMESTEP: float = 0.04
+CONTROL_TIMESTEP: float = 0.025
 
 # Predefined RGBA values
 RED: _Rgba = (1.0, 0.0, 0.0, 0.3)

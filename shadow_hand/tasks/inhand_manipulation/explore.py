@@ -44,6 +44,13 @@ def main(_) -> None:
     env = inhand_manipulation.load(environment_name=environment_name, seed=FLAGS.seed)
     action_spec = env.action_spec()
 
+    print("physics steps per control step: ", env.task.physics_steps_per_control_step)
+
+    # Print out observations.
+    timestep = env.reset()
+    for k, v in timestep.observation.items():
+        print(f"{k}: {v.shape}")
+
     def random_policy(timestep: dm_env.TimeStep) -> np.ndarray:
         del timestep
         return np.random.uniform(

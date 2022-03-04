@@ -84,7 +84,7 @@ class RobotHandObservables(composer.Observables):
 
     # shape: (1, 15)
     @composer.observable
-    def fingerip_positions(self) -> observable.Generic:
+    def fingertip_positions(self) -> observable.Generic:
         def _get_fingertip_positions(physics: mjcf.Physics) -> np.ndarray:
             positions = []
             for fingertip_site in self._entity.fingertip_sites:

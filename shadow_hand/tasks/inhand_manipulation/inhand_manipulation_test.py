@@ -9,7 +9,7 @@ from absl.testing import parameterized
 
 from shadow_hand.tasks import inhand_manipulation
 
-_SEED = 0
+_SEED = 12345
 _NUM_EPISODES = 5
 _NUM_STEPS_PER_EPISODE = 10
 

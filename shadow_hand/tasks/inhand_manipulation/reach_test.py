@@ -8,17 +8,16 @@ from shadow_hand.tasks import inhand_manipulation
 
 class ReachTest(absltest.TestCase):
     def test_observables(self) -> None:
-        env = inhand_manipulation.load(environment_name="reach", seed=12345)
+        env = inhand_manipulation.load(environment_name="reach", seed=123)
 
         timestep = env.reset()
 
         for key in [
             "shadow_hand_e/joint_positions",
             "shadow_hand_e/joint_velocities",
-            "shadow_hand_e/fingerip_positions",
+            "shadow_hand_e/fingertip_positions",
             "shadow_hand_e/fingertip_linear_velocities",
             "target_positions",
-            "fingertip_positions",
         ]:
             self.assertIn(key, timestep.observation)
 
@@ -30,7 +29,7 @@ class ReachTest(absltest.TestCase):
         timestep = env.step(zero_action)
 
         target_positions = timestep.observation["target_positions"]
-        fingertip_positions = timestep.observation["fingertip_positions"]
+        fingertip_positions = timestep.observation["shadow_hand_e/fingertip_positions"]
         expected_reward = -1.0 * np.linalg.norm(target_positions - fingertip_positions)
         np.testing.assert_equal(expected_reward, timestep.reward)
 

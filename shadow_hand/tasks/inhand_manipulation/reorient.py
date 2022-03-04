@@ -79,7 +79,7 @@ _HAND_OBSERVABLES = observations.ObservableNames(
     proprio=(
         "joint_positions",
         "joint_velocities",
-        "fingerip_positions",
+        "fingertip_positions",
         "fingertip_orientations",
         "fingertip_linear_velocities",
         "fingertip_angular_velocities",

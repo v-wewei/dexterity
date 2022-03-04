@@ -45,12 +45,14 @@ _SITE_ALPHA = 0.1
 _TARGET_SIZE = 5e-3
 _TARGET_ALPHA = 1.0
 
+_DISTANCE_TO_TARGET_THRESHOLD = 0.01
+
 # Observable settings.
 _HAND_OBSERVABLES = observations.ObservableNames(
     proprio=(
         "joint_positions",
         "joint_velocities",
-        "fingerip_positions",
+        "fingertip_positions",
         "fingertip_linear_velocities",
     ),
 )
@@ -122,17 +124,9 @@ class Reach(task.Task):
 
         target_positions_observable = observable.Generic(self._get_target_positions)
         target_positions_observable.configure(
-            **dataclasses.asdict(obs_settings.prop_pose)
+            **dataclasses.asdict(obs_settings.prop_pose),
         )
         self._task_observables["target_positions"] = target_positions_observable
-
-        fingertip_positions_observable = observable.Generic(
-            self._get_fingertip_positions
-        )
-        fingertip_positions_observable.configure(
-            **dataclasses.asdict(obs_settings.prop_pose)
-        )
-        self._task_observables["fingertip_positions"] = fingertip_positions_observable
 
     @property
     def task_observables(self) -> Dict[str, observable.Observable]:
@@ -147,16 +141,21 @@ class Reach(task.Task):
     ) -> None:
         self._fingertips_initializer(physics, random_state)
 
-    def get_reward(self, physics: mjcf.Physics) -> float:
-        fingertip_positions = self._get_fingertip_positions(physics)
-        target_positions = self._get_target_positions(physics)
-        distance = float(np.linalg.norm(fingertip_positions - target_positions))
-        reward = -1.0 * distance
-        return reward
+    def after_step(
+        self, physics: mjcf.Physics, random_state: np.random.RandomState
+    ) -> None:
+        del random_state  # Unused.
+        self._distance = np.linalg.norm(
+            self._get_fingertip_positions(physics) - self._get_target_positions(physics)
+        )
 
-    def get_discount(self, physics: mjcf.Physics) -> float:
+    def get_reward(self, physics: mjcf.Physics) -> float:
         del physics  # Unused.
-        return 1.0
+        return -1.0 * float(self._distance)
+
+    def should_terminate_episode(self, physics: mjcf.Physics) -> bool:
+        del physics  # Unused.
+        return float(self._distance) <= _DISTANCE_TO_TARGET_THRESHOLD
 
     # Helper methods.
 
@@ -175,11 +174,7 @@ def _reach(obs_settings: observations.ObservationSettings) -> composer.Task:
         observable_options=observations.make_options(obs_settings, _HAND_OBSERVABLES),
     )
 
-    # Effector used for the shadow hand.
-    joint_position_effector = effectors.HandEffector(hand=hand, hand_name=hand.name)
-    hand_effector = effectors.RelativeToJointPositions(
-        joint_position_effector, hand=hand
-    )
+    hand_effector = effectors.HandEffector(hand=hand, hand_name=hand.name)
 
     return Reach(
         arena=arena,

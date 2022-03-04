@@ -6,9 +6,8 @@ This repository contains code related to my research involving the [Shadow Hand]
 
 ## Todos
 
-- [ ] Improve all unit tests.
-- [ ] Rename `shadow_hand.utils.mujoco_utils.py`.
-- [ ] Figure out joint torque and velocity limits. I submitted an [issue](https://github.com/shadow-robot/sr_core/issues/206).
+**Core**
+
 - [x] Add torque sensors and fingertip sites.
 - [ ] Implement inverse kinematics.
     - [x] Implement basic pseudoinverse `CartesianVelocitytoJointVelocityMapper`.
@@ -16,13 +15,22 @@ This repository contains code related to my research involving the [Shadow Hand]
     - [ ] Add support for disabling wrist pitch joint (as in OpenAI's [Learning Dexterity](https://arxiv.org/abs/1808.00177)).
     - [ ] Consider speeding up  with C++ implementation if too slow.
 - [x] Optimize scene light settings in XML file.
-- [ ] Add props to place objects in the palm of the hand.
-    - [ ] Load YCB and EGAD objects.
-- [x] Implement in-hand manipulation `composer.Task`.
+- [x] `Reach` task
+    - [ ] Implement sparse and dense reward.
+    - [ ] Unit test task.
+    - [ ] Randomize the initial state of the fingers?
+- [x] `ReOrient` task
     - [x] Add shaped reward.
     - [x] Add episode termination criteria.
     - [x] Figure out time limit vs max time steps.
-- [ ] Unit test various aspects of the reorient task.
+    - [ ] Unit test task.
+- [x] Effectors
+    - [ ] Sanity check absolute vs relative control.
+    - [ ] Find cleaner API design.
+
+**Misc.**
+
+- [ ] Figure out joint torque and velocity limits. I submitted an [issue](https://github.com/shadow-robot/sr_core/issues/206).
 
 ## Notes
 

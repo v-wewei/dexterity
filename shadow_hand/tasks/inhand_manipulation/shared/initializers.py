@@ -23,7 +23,7 @@ class FingertipPositionPlacer(composer.Initializer):
         target_sites: Sequence[hints.MjcfElement],
         hand: fingered_hand.FingeredHand,
         ignore_collisions: bool = False,
-        max_rejection_samples: int = 30,
+        max_rejection_samples: int = 10,
     ) -> None:
         super().__init__()
 
