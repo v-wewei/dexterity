@@ -2,7 +2,7 @@
 
 import dataclasses
 import random
-from typing import Dict, List, Optional
+from typing import Dict, List
 
 import numpy as np
 from dm_control import composer
@@ -112,17 +112,17 @@ class Reach(task.Task):
             )
 
         self._fingertips_initializer = initializers.FingertipPositionPlacer(
-            target_sites=self._target_sites, hand=hand
+            target_sites=self._target_sites,
+            hand=hand,
+            ignore_self_collisions=False,
         )
-        self._target_positions: Optional[np.ndarray] = None
 
-        # Add task observables.
+        # Add close up camera observable. It's off by default.
         self._task_observables = cameras.add_camera_observables(
-            arena,
-            obs_settings,
-            cameras.FRONT_CLOSE,
+            arena, obs_settings, cameras.FRONT_CLOSE
         )
 
+        # Add target positions as an observable.
         target_positions_observable = observable.Generic(self._get_target_positions)
         target_positions_observable.configure(
             **dataclasses.asdict(obs_settings.prop_pose),
@@ -140,17 +140,15 @@ class Reach(task.Task):
     def initialize_episode(
         self, physics: mjcf.Physics, random_state: np.random.RandomState
     ) -> None:
+        # Sample a new goal position for each fingertip.
         self._fingertips_initializer(physics, random_state)
-
-        # Set to None to retrigger a calculation in `_get_target_positions`.
-        self._target_positions = None
 
     def after_step(
         self, physics: mjcf.Physics, random_state: np.random.RandomState
     ) -> None:
         del random_state  # Unused.
         self._distance = np.linalg.norm(
-            self._get_fingertip_positions(physics) - self._get_target_positions(physics)
+            self._get_target_positions(physics) - self._get_fingertip_positions(physics)
         )
 
     def get_reward(self, physics: mjcf.Physics) -> float:
@@ -164,11 +162,7 @@ class Reach(task.Task):
     # Helper methods.
 
     def _get_target_positions(self, physics: mjcf.Physics) -> np.ndarray:
-        if self._target_positions is None:
-            self._target_positions = np.array(
-                physics.bind(self._target_sites).xpos
-            ).ravel()
-        return self._target_positions
+        return np.array(physics.bind(self._target_sites).xpos).ravel()
 
     def _get_fingertip_positions(self, physics: mjcf.Physics) -> np.ndarray:
         return np.array(physics.bind(self._hand.fingertip_sites).xpos).ravel()
