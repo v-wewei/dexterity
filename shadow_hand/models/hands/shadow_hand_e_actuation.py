@@ -44,10 +44,10 @@ _TH_DAMPING = 0.2
 
 _WR_GAIN = 20.0
 _TH_GAIN = 3.0
+_FJ4_GAIN = 2.0
 _FJ3_GAIN = 2.0
 _FJ2_GAIN = 2.0
 _FJ1_GAIN = 0.8
-_FJ4_GAIN = 2.0
 
 ACTUATOR_PARAMS: Dict[Actuation, Dict[consts.Actuators, ActuatorParams]] = {
     Actuation.POSITION: {
