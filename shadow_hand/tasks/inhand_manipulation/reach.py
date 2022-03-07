@@ -67,6 +67,7 @@ class Reach(task.Task):
         hand: fingered_hand.FingeredHand,
         hand_effector: effector.Effector,
         obs_settings: observations.ObservationSettings,
+        dense_reward: bool = False,
         control_timestep: float = constants.CONTROL_TIMESTEP,
         physics_timestep: float = constants.PHYSICS_TIMESTEP,
     ) -> None:
@@ -77,11 +78,13 @@ class Reach(task.Task):
             hand: The hand to use.
             hand_effector: The effector to use for the hand.
             obs_settings: The observation settings to use.
-            workspace: The workspace to use.
+            dense_reward: Whether to use a dense reward.
             control_timestep: The control timestep, in seconds.
             physics_timestep: The physics timestep, in seconds.
         """
         super().__init__(arena=arena, hand=hand, hand_effector=hand_effector)
+
+        self._dense_reward = dense_reward
 
         # Attach the hand to the arena.
         self._arena.attach_offset(hand, position=_HAND_POS, quaternion=_HAND_QUAT)
@@ -153,7 +156,13 @@ class Reach(task.Task):
 
     def get_reward(self, physics: mjcf.Physics) -> float:
         del physics  # Unused.
-        return -1.0 * float(self._distance)
+        # In the dense setting, we return the negative Euclidean distance between the
+        # fingertips and the target sites.
+        if self._dense_reward:
+            return -1.0 * float(self._distance)
+        # In the sparse setting, we return 0 if this distance is below the threshold,
+        # and -1 otherwise.
+        return -1.0 * (float(self._distance) > _DISTANCE_TO_TARGET_THRESHOLD)
 
     def should_terminate_episode(self, physics: mjcf.Physics) -> bool:
         del physics  # Unused.
@@ -168,7 +177,9 @@ class Reach(task.Task):
         return np.array(physics.bind(self._hand.fingertip_sites).xpos).ravel()
 
 
-def _reach(obs_settings: observations.ObservationSettings) -> composer.Task:
+def _reach(
+    obs_settings: observations.ObservationSettings, dense_reward: bool
+) -> composer.Task:
     """Configure and instantiate a `Reach` task."""
     arena = arenas.Standard()
 
@@ -183,11 +194,17 @@ def _reach(obs_settings: observations.ObservationSettings) -> composer.Task:
         hand=hand,
         hand_effector=hand_effector,
         obs_settings=obs_settings,
+        dense_reward=dense_reward,
         control_timestep=constants.CONTROL_TIMESTEP,
         physics_timestep=constants.PHYSICS_TIMESTEP,
     )
 
 
-@registry.add(tags.FEATURES)
-def reach() -> composer.Task:
-    return _reach(obs_settings=observations.PERFECT_FEATURES)
+@registry.add(tags.DENSE, tags.FEATURES)
+def reach_dense() -> composer.Task:
+    return _reach(obs_settings=observations.PERFECT_FEATURES, dense_reward=True)
+
+
+@registry.add(tags.SPARSE, tags.FEATURES)
+def reach_sparse() -> composer.Task:
+    return _reach(obs_settings=observations.PERFECT_FEATURES, dense_reward=False)

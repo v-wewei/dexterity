@@ -2,13 +2,17 @@
 
 import numpy as np
 from absl.testing import absltest
+from absl.testing import parameterized
 
 from shadow_hand.tasks import inhand_manipulation
 
+_REACH_ENVS = [name for name in inhand_manipulation.ALL if "reach" in name]
 
-class ReachTest(absltest.TestCase):
-    def test_observables(self) -> None:
-        env = inhand_manipulation.load(environment_name="reach", seed=123)
+
+class ReachTest(parameterized.TestCase):
+    @parameterized.parameters(*_REACH_ENVS)
+    def test_observables(self, env_name: str) -> None:
+        env = inhand_manipulation.load(environment_name=env_name, seed=123)
 
         timestep = env.reset()
 
@@ -21,8 +25,8 @@ class ReachTest(absltest.TestCase):
         ]:
             self.assertIn(key, timestep.observation)
 
-    def test_reward(self) -> None:
-        env = inhand_manipulation.load(environment_name="reach", seed=12345)
+    def test_dense_reward(self) -> None:
+        env = inhand_manipulation.load(environment_name="reach_dense", seed=12345)
         env.reset()
 
         zero_action = np.zeros_like(env.physics.data.ctrl)

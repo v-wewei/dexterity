@@ -11,8 +11,12 @@ from shadow_hand.utils import mujoco_collisions
 
 _registry.done_importing_tasks()
 
-# A list of strings representing all the registered tasks.
 ALL: Tuple[str, ...] = tuple(_registry.get_all_names())
+
+
+def get_environments_by_tag(tag: str) -> Tuple[str, ...]:
+    """Returns the names of all environments matching a given tag."""
+    return tuple(_registry.get_names_by_tag(tag))
 
 
 def load(environment_name: str, seed: Optional[int] = None) -> _composer.Environment:
