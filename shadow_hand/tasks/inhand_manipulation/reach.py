@@ -2,7 +2,7 @@
 
 import dataclasses
 import random
-from typing import Dict, List
+from typing import Dict, List, cast
 
 import numpy as np
 from dm_control import composer
@@ -150,19 +150,21 @@ class Reach(task.Task):
         self, physics: mjcf.Physics, random_state: np.random.RandomState
     ) -> None:
         del random_state  # Unused.
-        self._distance = np.linalg.norm(
-            self._get_target_positions(physics) - self._get_fingertip_positions(physics)
-        )
+
+        # Check if the fingers are close enough to their targets.
+        goal_pos = self._get_target_positions(physics)
+        cur_pos = self._get_fingertip_positions(physics)
+        self._distance = cast(float, np.linalg.norm(goal_pos - cur_pos))
 
     def get_reward(self, physics: mjcf.Physics) -> float:
         del physics  # Unused.
         # In the dense setting, we return the negative Euclidean distance between the
         # fingertips and the target sites.
         if self._dense_reward:
-            return -1.0 * float(self._distance)
+            return -1.0 * self._distance
         # In the sparse setting, we return 0 if this distance is below the threshold,
         # and -1 otherwise.
-        return -1.0 * (float(self._distance) > _DISTANCE_TO_TARGET_THRESHOLD)
+        return -1.0 * (self._distance > _DISTANCE_TO_TARGET_THRESHOLD)
 
     def should_terminate_episode(self, physics: mjcf.Physics) -> bool:
         del physics  # Unused.
