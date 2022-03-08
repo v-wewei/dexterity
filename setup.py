@@ -1,6 +1,39 @@
 from setuptools import find_packages
 from setuptools import setup
 
+core_requirements = [
+    "absl-py",
+    "numpy",
+    "typing_extensions",
+    "dm_control @ git+git://github.com/deepmind/dm_control.git",
+    "dm_robotics-geometry",
+    "dm_robotics-transformations",
+]
+
+examples_requirements = [
+    "matplotlib",
+    "imageio",
+    "imageio-ffmpeg",
+]
+
+testing_requirements = [
+    "pytest-xdist",
+]
+
+dev_requirements = (
+    [
+        "black",
+        "isort",
+        "flake8",
+        "mypy",
+        "ipdb",
+        "jupyter",
+    ]
+    + testing_requirements
+    + examples_requirements
+)
+
+
 setup(
     name="shadow_hand",
     version="0.0.0",
@@ -14,21 +47,10 @@ setup(
         ],
     },
     python_requires=">=3.8",
-    install_requires=[
-        "absl-py",
-        "numpy",
-        "typing_extensions",
-        "dm_control @ git+git://github.com/deepmind/dm_control.git",
-        "dm_robotics-geometry",
-        "dm_robotics-transformations",
-    ],
+    install_requires=core_requirements,
     extras_require={
-        "testing": [
-            "pytest",
-        ],
-        "examples": [
-            "matplotlib",
-            "imageio",
-        ],
+        "testing": testing_requirements,
+        "examples": examples_requirements,
+        "dev": dev_requirements,
     },
 )
