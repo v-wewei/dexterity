@@ -1,8 +1,8 @@
-"""Tasks involving in-hand object re-orientation."""
+"""Tasks involving hand finger reaching."""
 
 import dataclasses
 import random
-from typing import Dict, List, cast
+from typing import Dict, List, Optional, cast
 
 import numpy as np
 from dm_control import composer
@@ -14,16 +14,15 @@ from shadow_hand import effector
 from shadow_hand import effectors
 from shadow_hand import hints
 from shadow_hand import task
+from shadow_hand.manipulation import arenas
+from shadow_hand.manipulation.shared import cameras
+from shadow_hand.manipulation.shared import initializers
+from shadow_hand.manipulation.shared import observations
+from shadow_hand.manipulation.shared import registry
+from shadow_hand.manipulation.shared import tags
+from shadow_hand.manipulation.shared import workspaces
 from shadow_hand.models.hands import fingered_hand
 from shadow_hand.models.hands import shadow_hand_e
-from shadow_hand.tasks.inhand_manipulation.shared import arenas
-from shadow_hand.tasks.inhand_manipulation.shared import cameras
-from shadow_hand.tasks.inhand_manipulation.shared import constants
-from shadow_hand.tasks.inhand_manipulation.shared import initializers
-from shadow_hand.tasks.inhand_manipulation.shared import observations
-from shadow_hand.tasks.inhand_manipulation.shared import registry
-from shadow_hand.tasks.inhand_manipulation.shared import tags
-from shadow_hand.tasks.inhand_manipulation.shared import workspaces
 
 # The position of the hand relative in the world frame, in meters.
 _HAND_POS = (0, 0.2, 0.1)
@@ -32,6 +31,8 @@ _HAND_QUAT = tr.axisangle_to_quat(
     np.pi * np.array([0, np.sqrt(2) / 2, -np.sqrt(2) / 2])
 )
 
+_SITE_SIZE = 1e-2
+_SITE_ALPHA = 0.1
 _SITE_COLORS = (
     (1.0, 0.0, 0.0),  # Red.
     (0.0, 1.0, 0.0),  # Green.
@@ -40,22 +41,20 @@ _SITE_COLORS = (
     (1.0, 0.0, 1.0),  # Magenta.
     (1.0, 1.0, 0.0),  # Yellow.
 )
-_SITE_SIZE = 1e-2
-_SITE_ALPHA = 0.1
 _TARGET_SIZE = 5e-3
 _TARGET_ALPHA = 1.0
 
+# 1 cm threshold.
 _DISTANCE_TO_TARGET_THRESHOLD = 0.01
 
-# Observable settings.
-_HAND_OBSERVABLES = observations.ObservableNames(
-    proprio=(
-        "joint_positions",
-        "joint_velocities",
-        "fingertip_positions",
-        "fingertip_linear_velocities",
-    ),
-)
+# Timestep of the physics simulation.
+_PHYSICS_TIMESTEP: float = 0.005
+
+# Interval between agent actions, in seconds.
+_CONTROL_TIMESTEP: float = 0.025
+
+# Maximum number of steps per episode.
+_STEP_LIMIT = 100
 
 
 class Reach(task.Task):
@@ -63,13 +62,13 @@ class Reach(task.Task):
 
     def __init__(
         self,
-        arena: arenas.Standard,
+        arena: composer.Arena,
         hand: fingered_hand.FingeredHand,
         hand_effector: effector.Effector,
-        obs_settings: observations.ObservationSettings,
-        dense_reward: bool = False,
-        control_timestep: float = constants.CONTROL_TIMESTEP,
-        physics_timestep: float = constants.PHYSICS_TIMESTEP,
+        observable_settings: observations.ObservationSettings,
+        use_dense_reward: bool,
+        control_timestep: float = _CONTROL_TIMESTEP,
+        physics_timestep: float = _PHYSICS_TIMESTEP,
     ) -> None:
         """Construct a new `Reach` task.
 
@@ -77,14 +76,14 @@ class Reach(task.Task):
             arena: The arena to use.
             hand: The hand to use.
             hand_effector: The effector to use for the hand.
-            obs_settings: The observation settings to use.
+            observable_settings: Settings for entity and task observables.
             dense_reward: Whether to use a dense reward.
             control_timestep: The control timestep, in seconds.
             physics_timestep: The physics timestep, in seconds.
         """
         super().__init__(arena=arena, hand=hand, hand_effector=hand_effector)
 
-        self._dense_reward = dense_reward
+        self._use_dense_reward = use_dense_reward
 
         # Attach the hand to the arena.
         self._arena.attach_offset(hand, position=_HAND_POS, quaternion=_HAND_QUAT)
@@ -120,15 +119,15 @@ class Reach(task.Task):
             ignore_self_collisions=False,
         )
 
-        # Add close up camera observable. It's off by default.
+        # Add camera observables.
         self._task_observables = cameras.add_camera_observables(
-            arena, obs_settings, cameras.FRONT_CLOSE
+            arena, observable_settings, cameras.FRONT_CLOSE
         )
 
         # Add target positions as an observable.
         target_positions_observable = observable.Generic(self._get_target_positions)
         target_positions_observable.configure(
-            **dataclasses.asdict(obs_settings.prop_pose),
+            **dataclasses.asdict(observable_settings.prop_pose),
         )
         self._task_observables["target_positions"] = target_positions_observable
 
@@ -160,7 +159,7 @@ class Reach(task.Task):
         del physics  # Unused.
         # In the dense setting, we return the negative Euclidean distance between the
         # fingertips and the target sites.
-        if self._dense_reward:
+        if self._use_dense_reward:
             return -1.0 * self._distance
         # In the sparse setting, we return 0 if this distance is below the threshold,
         # and -1 otherwise.
@@ -169,6 +168,10 @@ class Reach(task.Task):
     def should_terminate_episode(self, physics: mjcf.Physics) -> bool:
         del physics  # Unused.
         return float(self._distance) <= _DISTANCE_TO_TARGET_THRESHOLD
+
+    @property
+    def step_limit(self) -> Optional[int]:
+        return _STEP_LIMIT
 
     # Helper methods.
 
@@ -179,14 +182,18 @@ class Reach(task.Task):
         return np.array(physics.bind(self._hand.fingertip_sites).xpos).ravel()
 
 
-def _reach(
-    obs_settings: observations.ObservationSettings, dense_reward: bool
+def reach_task(
+    observation_set: observations.ObservationSet,
+    use_dense_reward: bool,
 ) -> composer.Task:
     """Configure and instantiate a `Reach` task."""
     arena = arenas.Standard()
 
     hand = shadow_hand_e.ShadowHandSeriesE(
-        observable_options=observations.make_options(obs_settings, _HAND_OBSERVABLES),
+        observable_options=observations.make_options(
+            observation_set.value,
+            observations.HAND_OBSERVABLES,
+        ),
     )
 
     hand_effector = effectors.HandEffector(hand=hand, hand_name=hand.name)
@@ -195,18 +202,23 @@ def _reach(
         arena=arena,
         hand=hand,
         hand_effector=hand_effector,
-        obs_settings=obs_settings,
-        dense_reward=dense_reward,
-        control_timestep=constants.CONTROL_TIMESTEP,
-        physics_timestep=constants.PHYSICS_TIMESTEP,
+        observable_settings=observation_set.value,
+        use_dense_reward=use_dense_reward,
     )
 
 
-@registry.add(tags.DENSE, tags.FEATURES)
-def reach_dense() -> composer.Task:
-    return _reach(obs_settings=observations.PERFECT_FEATURES, dense_reward=True)
+@registry.add(tags.STATE, tags.DENSE)
+def reach_state_dense() -> composer.Task:
+    """Reach task with full state observations and dense reward."""
+    return reach_task(
+        observation_set=observations.ObservationSet.STATE_ONLY, use_dense_reward=True
+    )
 
 
-@registry.add(tags.SPARSE, tags.FEATURES)
-def reach_sparse() -> composer.Task:
-    return _reach(obs_settings=observations.PERFECT_FEATURES, dense_reward=False)
+@registry.add(tags.STATE, tags.SPARSE)
+def reach_state_sparse() -> composer.Task:
+    """Reach task with full state observations and sparse reward."""
+    return reach_task(
+        observation_set=observations.ObservationSet.STATE_ONLY,
+        use_dense_reward=False,
+    )

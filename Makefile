@@ -29,4 +29,4 @@ test:
 	pytest --durations=10 -n "${N_CPU}" .
 
 explore:
-	python shadow_hand/tasks/inhand_manipulation/explore.py
+	python shadow_hand/manipulation/explore.py

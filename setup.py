@@ -42,6 +42,7 @@ setup(
     packages=find_packages(),
     package_data={
         "shadow_hand": [
+            "py.typed",
             "models/*.xml",
             "models/*.stl",
         ],

@@ -1,4 +1,4 @@
-"""Tests for inhand_manipulation."""
+"""Tests for manipulation."""
 
 import collections
 from typing import Mapping
@@ -7,20 +7,20 @@ import numpy as np
 from absl.testing import absltest
 from absl.testing import parameterized
 
-from shadow_hand.tasks import inhand_manipulation
+from shadow_hand import manipulation
 
 _SEED = 12345
 _NUM_EPISODES = 5
 _NUM_STEPS_PER_EPISODE = 10
 
 
-class InHandManipulationTest(parameterized.TestCase):
+class ManipulationTest(parameterized.TestCase):
     """Tests run on all the registered tasks."""
 
-    @parameterized.parameters(*inhand_manipulation.ALL)
+    @parameterized.parameters(*manipulation.ALL)
     def test_task_runs(self, task_name: str) -> None:
         """Tests that the environment runs and is coherent with its specs."""
-        env = inhand_manipulation.load(task_name, seed=_SEED)
+        env = manipulation.load(task_name, seed=_SEED)
         random_state = np.random.RandomState(_SEED)
 
         observation_spec = env.observation_spec()

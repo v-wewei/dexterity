@@ -15,19 +15,14 @@ from dm_control.utils import rewards as reward_utils
 from dm_robotics.transformations import transformations as tr
 
 from shadow_hand import effector
-from shadow_hand import effectors
 from shadow_hand import task
+from shadow_hand.manipulation import props
+from shadow_hand.manipulation.shared import cameras
+from shadow_hand.manipulation.shared import constants
+from shadow_hand.manipulation.shared import observations
+from shadow_hand.manipulation.shared import rewards
+from shadow_hand.manipulation.shared import workspaces
 from shadow_hand.models.hands import fingered_hand
-from shadow_hand.models.hands import shadow_hand_e
-from shadow_hand.tasks.inhand_manipulation import props
-from shadow_hand.tasks.inhand_manipulation.shared import arenas
-from shadow_hand.tasks.inhand_manipulation.shared import cameras
-from shadow_hand.tasks.inhand_manipulation.shared import constants
-from shadow_hand.tasks.inhand_manipulation.shared import observations
-from shadow_hand.tasks.inhand_manipulation.shared import registry
-from shadow_hand.tasks.inhand_manipulation.shared import rewards
-from shadow_hand.tasks.inhand_manipulation.shared import tags
-from shadow_hand.tasks.inhand_manipulation.shared import workspaces
 from shadow_hand.utils import geometry_utils
 from shadow_hand.utils import mujoco_collisions
 
@@ -92,15 +87,15 @@ class ReOrient(task.Task):
 
     def __init__(
         self,
-        arena: arenas.Standard,
+        arena: composer.Arena,
         hand: fingered_hand.FingeredHand,
         hand_effector: effector.Effector,
         obs_settings: observations.ObservationSettings,
         workspace: Workspace = _WORKSPACE,
         restrict_orientation: bool = False,
         fall_termination: bool = True,
-        control_timestep: float = constants.CONTROL_TIMESTEP,
-        physics_timestep: float = constants.PHYSICS_TIMESTEP,
+        control_timestep: float = 0.001,
+        physics_timestep: float = 0.001,
     ) -> None:
         """Construct a new `ReOrient` task.
 
@@ -224,7 +219,7 @@ class ReOrient(task.Task):
             prop_quat=physics.bind(self._prop.orientation).sensordata,
             goal_quat=self._goal_quat,
         )
-        return rewards.weight_average(shaped_reward)
+        return rewards.weighted_average(shaped_reward)
 
     def after_step(
         self, physics: mjcf.Physics, random_state: np.random.RandomState
@@ -370,48 +365,3 @@ def _hintify(entity: composer.Entity, alpha: Optional[float] = None) -> None:
                 material.rgba = _replace_alpha(material.rgba, alpha=alpha)
             geom.contype = 0
             geom.conaffinity = 0
-
-
-def _reorient(
-    obs_settings: observations.ObservationSettings,
-    restrict_orientation: bool,
-) -> composer.Task:
-    """Configure and instantiate a `ReOrient` task."""
-    arena = arenas.Standard()
-
-    hand = shadow_hand_e.ShadowHandSeriesE(
-        observable_options=observations.make_options(obs_settings, _HAND_OBSERVABLES),
-    )
-
-    # Effector used for the shadow hand.
-    joint_position_effector = effectors.HandEffector(hand=hand, hand_name=hand.name)
-    hand_effector = effectors.RelativeToJointPositions(
-        joint_position_effector, hand=hand
-    )
-
-    return ReOrient(
-        arena=arena,
-        hand=hand,
-        hand_effector=hand_effector,
-        obs_settings=obs_settings,
-        workspace=_WORKSPACE,
-        restrict_orientation=restrict_orientation,
-        control_timestep=constants.CONTROL_TIMESTEP,
-        physics_timestep=constants.PHYSICS_TIMESTEP,
-    )
-
-
-@registry.add(tags.FEATURES)
-def reorient_so3() -> composer.Task:
-    return _reorient(
-        obs_settings=observations.PERFECT_FEATURES,
-        restrict_orientation=False,
-    )
-
-
-@registry.add(tags.FEATURES, tags.EASY)
-def reorient_z() -> composer.Task:
-    return _reorient(
-        obs_settings=observations.PERFECT_FEATURES,
-        restrict_orientation=True,
-    )

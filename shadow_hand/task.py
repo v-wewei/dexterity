@@ -1,3 +1,5 @@
+from typing import Optional
+
 import numpy as np
 from dm_control import composer
 from dm_control import mjcf
@@ -46,3 +48,17 @@ class Task(composer.Task):
 
     def action_spec(self, physics: mjcf.Physics) -> specs.BoundedArray:
         return self._hand_effector.action_spec(physics)
+
+    @property
+    def step_limit(self) -> Optional[int]:
+        """The maximum number of steps in an episode.
+
+        By default, this is None, which corresponds to a time limit of "inf".
+        """
+        return None
+
+    @property
+    def time_limit(self) -> float:
+        if self.step_limit is not None:
+            return self.step_limit * self.control_timestep
+        return float("inf")

@@ -1,6 +1,7 @@
-"""Shared configuration options for observations."""
+"""Shared configuration options for """
 
 import dataclasses
+import enum
 from typing import Callable, Optional, Tuple, Union
 
 
@@ -22,12 +23,15 @@ class CameraObservableSpec(ObservableSpec):
 
     height: int
     width: int
+    depth: bool
+    segmentation: bool
 
 
 @dataclasses.dataclass(frozen=True)
 class ObservationSettings:
     """Container for `ObservableSpec`s grouped by category."""
 
+    privileged_proprio: ObservableSpec
     proprio: ObservableSpec
     prop_pose: ObservableSpec
     camera: CameraObservableSpec
@@ -37,6 +41,7 @@ class ObservationSettings:
 class ObservableNames:
     """Container that groups the names of observables by category."""
 
+    privileged_proprio: Tuple[str, ...] = dataclasses.field(default_factory=tuple)
     proprio: Tuple[str, ...] = dataclasses.field(default_factory=tuple)
     prop_pose: Tuple[str, ...] = dataclasses.field(default_factory=tuple)
     camera: Tuple[str, ...] = dataclasses.field(default_factory=tuple)
@@ -57,6 +62,8 @@ _ENABLED_FEATURE = dataclasses.replace(_DISABLED_FEATURE, enabled=True)
 _DISABLED_CAMERA = CameraObservableSpec(
     height=84,
     width=84,
+    depth=False,
+    segmentation=False,
     enabled=False,
     update_interval=1,
     buffer_size=1,
@@ -66,17 +73,42 @@ _DISABLED_CAMERA = CameraObservableSpec(
 )
 _ENABLED_CAMERA = dataclasses.replace(_DISABLED_CAMERA, enabled=True)
 
-# Predefined observation settings.
-PERFECT_FEATURES = ObservationSettings(
+# Predefined sets of configurations to apply to each category of observable.
+_STATE_ONLY = ObservationSettings(
+    privileged_proprio=_ENABLED_FEATURE,
     proprio=_ENABLED_FEATURE,
     prop_pose=_ENABLED_FEATURE,
     camera=_DISABLED_CAMERA,
 )
-VISION = ObservationSettings(
+_VISION_ONLY = ObservationSettings(
+    privileged_proprio=_DISABLED_FEATURE,
     proprio=_ENABLED_FEATURE,
     prop_pose=_DISABLED_FEATURE,
     camera=_ENABLED_CAMERA,
 )
+_ALL = ObservationSettings(
+    privileged_proprio=_ENABLED_FEATURE,
+    proprio=_ENABLED_FEATURE,
+    prop_pose=_ENABLED_FEATURE,
+    camera=_ENABLED_CAMERA,
+)
+
+HAND_OBSERVABLES = ObservableNames(
+    privileged_proprio=(
+        "joint_velocities",
+        "fingertip_positions",
+        "fingertip_linear_velocities",
+    ),
+    proprio=("joint_positions",),
+)
+
+
+class ObservationSet(enum.Enum):
+    """Different possible set of observations that can be exposed."""
+
+    STATE_ONLY = _STATE_ONLY
+    VISION_ONLY = _VISION_ONLY
+    ALL = _ALL
 
 
 def make_options(obs_settings: ObservationSettings, obs_names: ObservableNames):

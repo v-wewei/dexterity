@@ -1,4 +1,4 @@
-"""A standalone app for visualizing in-hand manipulation tasks."""
+"""A standalone app for visualizing manipulation tasks."""
 
 from typing import Sequence
 
@@ -8,12 +8,12 @@ from absl import app
 from absl import flags
 from dm_control import viewer
 
-from shadow_hand.tasks import inhand_manipulation
+from shadow_hand import manipulation
 
 flags.DEFINE_enum(
     "environment_name",
     None,
-    inhand_manipulation.ALL,
+    manipulation.ALL,
     "Optional name of an environment to load. If unspecified a prompt will appear to "
     "select one.",
 )
@@ -33,7 +33,7 @@ def prompt_environment_name(values: Sequence[str]) -> str:
 
 
 def main(_) -> None:
-    all_names = list(inhand_manipulation.ALL)
+    all_names = list(manipulation.ALL)
 
     if FLAGS.environment_name is None:
         print("\n ".join(["Available environments:"] + all_names))
@@ -41,8 +41,13 @@ def main(_) -> None:
     else:
         environment_name = FLAGS.environment_name
 
-    env = inhand_manipulation.load(environment_name=environment_name, seed=FLAGS.seed)
+    env = manipulation.load(environment_name=environment_name, seed=FLAGS.seed)
     action_spec = env.action_spec()
+
+    # Print entity and task observables.
+    timestep = env.reset()
+    for k, v in timestep.observation.items():
+        print(f"{k}: {v.shape}")
 
     def random_policy(timestep: dm_env.TimeStep) -> np.ndarray:
         del timestep

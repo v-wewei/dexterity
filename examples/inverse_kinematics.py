@@ -12,10 +12,10 @@ from dm_robotics.transformations import transformations as tr
 from matplotlib import pyplot as plt
 
 from shadow_hand.ik import ik_solver
+from shadow_hand.manipulation.arenas import Standard
+from shadow_hand.manipulation.shared import cameras
 from shadow_hand.models.hands import shadow_hand_e
 from shadow_hand.models.hands import shadow_hand_e_constants as consts
-from shadow_hand.tasks.inhand_manipulation.shared import arenas
-from shadow_hand.tasks.inhand_manipulation.shared import cameras
 
 flags.DEFINE_integer("seed", None, "Random seed.")
 flags.DEFINE_integer("num_solves", 1, "Number of IK solves.")
@@ -47,7 +47,7 @@ def main(_) -> None:
     successes: int = 0
     for _ in range(FLAGS.num_solves):
         # Build the scene.
-        arena = arenas.Standard("arena")
+        arena = Standard()
         axis_angle = np.radians(180) * np.array([0, np.sqrt(2) / 2, -np.sqrt(2) / 2])
         quat = tr.axisangle_to_quat(axis_angle)
         hand = shadow_hand_e.ShadowHandSeriesE()

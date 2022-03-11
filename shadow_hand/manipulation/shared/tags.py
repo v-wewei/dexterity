@@ -1,13 +1,13 @@
 """String constants used to annotate task constructors."""
 
-# The complexity.
+# Complexity.
 EASY = "easy"
 HARD = "hard"
 
-# The type of observation.
-FEATURES = "features"
+# Observation type.
+STATE = "features"
 VISION = "vision"
 
-# The type of reward.
+# Reward type.
 SPARSE = "sparse"
 DENSE = "dense"

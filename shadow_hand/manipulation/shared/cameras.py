@@ -7,7 +7,7 @@ from typing import Tuple
 from dm_control import composer
 from dm_control.composer.observation import observable
 
-from shadow_hand.tasks.inhand_manipulation.shared import observations
+from shadow_hand.manipulation.shared import observations
 
 
 @dataclasses.dataclass(frozen=True)

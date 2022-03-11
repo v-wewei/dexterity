@@ -113,48 +113,6 @@ class ShadowHandSeriesE(fingered_hand.FingeredHand):
             )
         return consts.POSITION_TO_CONTROL @ qpos
 
-    # def actuator_ctrl_range(self, physics: mjcf.Physics) -> np.ndarray:
-    #     """Returns lower and upper bounds on the actuator controls.
-
-    #     Args:
-    #         physics: An `mjcf.Physics` instance.
-
-    #     Returns:
-    #         A (20, 2) ndarray containing (lower, upper) control bounds.
-    #     """
-    #     # These are queried from the mjcf instead of the hard-coded constants. This is
-    #     # to account for any possible runtime randomizations.
-    #     return np.array(physics.bind(self._actuators).ctrlrange, copy=True)
-
-    # def joint_limits(self, physics: mjcf.Physics) -> np.ndarray:
-    #     """Returns lower and upper bounds on the joint positions.
-
-    #     Args:
-    #         physics: An `mjcf.Physics` instance.
-
-    #     Returns:
-    #         A (24, 2) ndarray containing (lower, upper) position bounds.
-    #     """
-    #     # These are queried from the mjcf instead of the hard-coded constants. This is
-    #     # to account for any possible runtime randomizations.
-    #     return np.array(physics.bind(self._joints).range, copy=True)
-
-    # def set_position_control(self, physics: mjcf.Physics, control: np.ndarray) -> None:
-    #     """Sets the positions of the joints to the given control command.
-
-    #     Each coordinate in the control vector is the desired joint angle, or sum of
-    #     joint angles for coupled joints.
-
-    #     Args:
-    #         physics: An `mjcf.Physics` instance.
-    #         control: The position control vector, of shape (20,).
-    #     """
-    #     if not self.is_position_control_valid(physics, control):
-    #         raise ValueError("Position control command is invalid.")
-
-    #     physics_actuators = physics.bind(self._actuators)
-    #     physics_actuators.ctrl[:] = control
-
     def set_joint_angles(self, physics: mjcf.Physics, joint_angles: np.ndarray) -> None:
         """Sets the joints of the hand to a given configuration.
 
@@ -166,16 +124,6 @@ class ShadowHandSeriesE(fingered_hand.FingeredHand):
 
         physics_joints.qpos[:] = joint_angles
         physics_actuators.ctrl[:] = self.joint_positions_to_control(joint_angles)
-
-    # def is_position_control_valid(
-    #     self, physics: mjcf.Physics, control: np.ndarray
-    # ) -> bool:
-    #     """Returns True if the given position control command is valid."""
-    #     ctrl_bounds = self.actuator_ctrl_range(physics)
-    #     shape_cond = control.shape == (consts.NUM_ACTUATORS,)
-    #     lower_cond = bool(np.all(control >= ctrl_bounds[:, 0] - _EPSILON))
-    #     upper_cond = bool(np.all(control <= ctrl_bounds[:, 1] + _EPSILON))
-    #     return shape_cond and lower_cond and upper_cond
 
     # ================= #
     # Private methods.

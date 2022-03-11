@@ -16,8 +16,8 @@ This repository contains code related to my research involving the [Shadow Hand]
     - [ ] Consider speeding up  with C++ implementation if too slow.
 - [x] Optimize scene light settings in XML file.
 - [x] `Reach` task
-    - [ ] Implement sparse and dense reward.
-    - [ ] Unit test task.
+    - [x] Implement sparse and dense reward.
+    - [x] Unit test task.
     - [ ] Randomize the initial state of the fingers?
 - [x] `ReOrient` task
     - [x] Add shaped reward.
@@ -27,6 +27,7 @@ This repository contains code related to my research involving the [Shadow Hand]
 - [x] Effectors
     - [ ] Sanity check absolute vs relative control.
     - [ ] Find cleaner API design.
+- [ ] Add pointcloud observable.
 
 **Misc.**
 

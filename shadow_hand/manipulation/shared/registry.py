@@ -1,4 +1,4 @@
-"""A global registry of constructors for in-hand manipulation environments."""
+"""A global registry of constructors for manipulation environments."""
 
 from dm_control.utils import containers
 
