@@ -51,14 +51,5 @@ class Task(composer.Task):
 
     @property
     def step_limit(self) -> Optional[int]:
-        """The maximum number of steps in an episode.
-
-        By default, this is None, which corresponds to a time limit of "inf".
-        """
+        """The maximum number of steps in an episode."""
         return None
-
-    @property
-    def time_limit(self) -> float:
-        if self.step_limit is not None:
-            return self.step_limit * self.control_timestep
-        return float("inf")

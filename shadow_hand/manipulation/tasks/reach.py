@@ -54,7 +54,7 @@ _PHYSICS_TIMESTEP: float = 0.005
 _CONTROL_TIMESTEP: float = 0.025
 
 # Maximum number of steps per episode.
-_STEP_LIMIT = 100
+_STEP_LIMIT: int = 100
 
 
 class Reach(task.Task):
