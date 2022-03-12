@@ -142,13 +142,15 @@ class Reach(task.Task):
     def initialize_episode(
         self, physics: mjcf.Physics, random_state: np.random.RandomState
     ) -> None:
+        super().initialize_episode(physics, random_state)
+
         # Sample a new goal position for each fingertip.
         self._fingertips_initializer(physics, random_state)
 
     def after_step(
         self, physics: mjcf.Physics, random_state: np.random.RandomState
     ) -> None:
-        del random_state  # Unused.
+        super().after_step(physics, random_state)
 
         # Check if the fingers are close enough to their targets.
         goal_pos = self._get_target_positions(physics)
@@ -219,6 +221,5 @@ def reach_state_dense() -> composer.Task:
 def reach_state_sparse() -> composer.Task:
     """Reach task with full state observations and sparse reward."""
     return reach_task(
-        observation_set=observations.ObservationSet.STATE_ONLY,
-        use_dense_reward=False,
+        observation_set=observations.ObservationSet.STATE_ONLY, use_dense_reward=False
     )
