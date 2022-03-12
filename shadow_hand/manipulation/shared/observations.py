@@ -96,12 +96,10 @@ _ALL = ObservationSettings(
 HAND_OBSERVABLES = ObservableNames(
     privileged_proprio=(
         "joint_velocities",
+        "fingertip_positions",
         "fingertip_linear_velocities",
     ),
-    proprio=(
-        "joint_positions",
-        "fingertip_positions",
-    ),
+    proprio=("joint_positions",),
 )
 
 

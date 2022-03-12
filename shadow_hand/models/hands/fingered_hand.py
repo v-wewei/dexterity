@@ -86,11 +86,7 @@ class RobotHandObservables(composer.Observables):
     @composer.observable
     def fingertip_positions(self) -> observable.Generic:
         def _get_fingertip_positions(physics: mjcf.Physics) -> np.ndarray:
-            positions = []
-            for fingertip_site in self._entity.fingertip_sites:
-                pose = mujoco_utils.get_site_pose(physics, fingertip_site)
-                positions.append(pose[:3, 3])
-            return np.concatenate(positions)
+            return physics.bind(self._entity.fingertip_sites).xpos.ravel()
 
         return observable.Generic(raw_observation_callable=_get_fingertip_positions)
 
@@ -98,11 +94,9 @@ class RobotHandObservables(composer.Observables):
     @composer.observable
     def fingertip_orientations(self) -> observable.Generic:
         def _get_fingertip_orientations(physics: mjcf.Physics) -> np.ndarray:
-            orientations = []
-            for fingertip_site in self._entity.fingertip_sites:
-                pose = mujoco_utils.get_site_pose(physics, fingertip_site)
-                orientations.append(tr.mat_to_quat(pose[:3, :3]))
-            return np.concatenate(orientations)
+            xmats = physics.bind(self._entity.fingertip_sites).xmat.reshape(-1, 3, 3)
+            quats = [tr.mat_to_quat(xmat) for xmat in xmats]
+            return np.concatenate(quats)
 
         return observable.Generic(raw_observation_callable=_get_fingertip_orientations)
 
