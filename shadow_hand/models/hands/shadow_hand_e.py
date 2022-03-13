@@ -10,8 +10,6 @@ from shadow_hand.models.hands import shadow_hand_e_actuation as sh_actuation
 from shadow_hand.models.hands import shadow_hand_e_constants as consts
 from shadow_hand.utils import mujoco_actuation
 
-_EPSILON: float = 1e-6
-
 
 class ShadowHandSeriesE(fingered_hand.FingeredHand):
     """Shadow Dexterous Hand E Series."""
