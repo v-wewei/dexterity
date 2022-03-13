@@ -1,15 +1,13 @@
 # Shadow Hand
 
-This repository contains code related to my research involving the [Shadow Hand](https://www.shadowrobot.com/).
-
-<img src="./assets/teaser.gif" width="300"/>
+A suite of tools for simulating the [Shadow Hand](https://www.shadowrobot.com/) in [MuJoCo](https://mujoco.org/) and constructing [dm_control](https://github.com/deepmind/dm_control) environments for training policies with reinforcement learning.
 
 ## Todos
 
 **Core**
 
 - [x] Add torque sensors and fingertip sites.
-- [ ] Implement inverse kinematics.
+- [x] Implement inverse kinematics.
     - [x] Implement basic pseudoinverse `CartesianVelocitytoJointVelocityMapper`.
     - [ ] Implement LSQP `CartesianVelocitytoJointVelocityMapper`.
     - [ ] Add support for disabling wrist pitch joint (as in OpenAI's [Learning Dexterity](https://arxiv.org/abs/1808.00177)).
@@ -18,16 +16,15 @@ This repository contains code related to my research involving the [Shadow Hand]
 - [x] `Reach` task
     - [x] Implement sparse and dense reward.
     - [x] Unit test task.
-    - [ ] Randomize the initial state of the fingers?
 - [x] `ReOrient` task
     - [x] Add shaped reward.
     - [x] Add episode termination criteria.
     - [x] Figure out time limit vs max time steps.
     - [ ] Unit test task.
 - [x] Effectors
-    - [ ] Sanity check absolute vs relative control.
-    - [ ] Find cleaner API design.
-- [ ] Add pointcloud observable.
+    - [x] Hand effector with underlying mujoco actuation.
+    - [ ] Figure out clean API for relative vs absolute control.
+    - [ ] Merge IK effector into main.
 
 **Misc.**
 
