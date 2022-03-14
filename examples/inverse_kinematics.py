@@ -11,7 +11,7 @@ from dm_control.mujoco.wrapper.mjbindings import enums
 from dm_robotics.transformations import transformations as tr
 from matplotlib import pyplot as plt
 
-from shadow_hand.ik import ik_solver
+from shadow_hand.inverse_kinematics import ik_solver
 from shadow_hand.manipulation.arenas import Standard
 from shadow_hand.manipulation.shared import cameras
 from shadow_hand.models.hands import shadow_hand_e

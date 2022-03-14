@@ -3,7 +3,7 @@
 import numpy as np
 from absl.testing import absltest
 
-from shadow_hand.ik import ik_solver
+from shadow_hand.inverse_kinematics import ik_solver
 from shadow_hand.models.hands import shadow_hand_e
 from shadow_hand.models.hands import shadow_hand_e_constants as consts
 

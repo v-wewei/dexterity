@@ -3,6 +3,7 @@ import dataclasses
 from typing import Mapping, Optional, Sequence
 
 import numpy as np
+from absl import logging
 from dm_control import mjcf
 from dm_control.mujoco.wrapper import mjbindings
 from dm_robotics.geometry import geometry
@@ -10,18 +11,14 @@ from dm_robotics.geometry import mujoco_physics
 
 from shadow_hand import controllers
 from shadow_hand.models.hands import shadow_hand_e_constants as consts
-from shadow_hand.utils import geometry_utils
 from shadow_hand.utils import mujoco_utils
 
 mjlib = mjbindings.mjlib
 
-# Gain for the linear and angular twist computation, these values should always
-# be between 0 and 1. 0 corresponds to not moving and 1 corresponds to moving to the
-# target in a single integration timestep.
+# Gain for the linear twist computation, should always be between 0 and 1.
+# 0 corresponds to not moving and 1 corresponds to moving to the target in a single
+# integration timestep.
 _LINEAR_VELOCITY_GAIN = 0.95
-_ANGULAR_VELOCITY_GAIN = 0.95
-
-_NULLSPACE_GAIN = 0.4
 
 # Integration timestep used to convert from joint velocities to joint positions.
 _INTEGRATION_TIMESTEP_SEC = 1.0
@@ -51,7 +48,6 @@ class IKSolver:
         model: mjcf.RootElement,
         fingers: Sequence[consts.Components],
         prefix: str = "",
-        nullspace_gain: float = _NULLSPACE_GAIN,
     ) -> None:
         """Constructor.
 
@@ -59,10 +55,7 @@ class IKSolver:
             model: The MJCF model root.
             prefix: The prefix assigned to the hand model in case it is attached to
                 another entity.
-            nullspace_gain: Scales the nullspace velocity bias. If the gain is set to 0,
-                there will be no nullspace optimization during the solve process.
         """
-        self._nullspace_gain = nullspace_gain
         self._fingers = fingers
         self._physics = mjcf.Physics.from_mjcf_model(model)
         self._geometry_physics = mujoco_physics.wrap(self._physics)
@@ -195,7 +188,7 @@ class IKSolver:
                 break
 
         if not success:
-            print(f"{self.__class__.__name__} failed to find a solution.")
+            logging.warning(f"{self.__class__.__name__} failed to find a solution.")
 
         return sol_qpos
 
@@ -226,10 +219,9 @@ class IKSolver:
                     cur_poses[finger],
                     geometry.Pose(position=target_position, quaternion=None),
                     _LINEAR_VELOCITY_GAIN,
-                    _ANGULAR_VELOCITY_GAIN,
                     _INTEGRATION_TIMESTEP_SEC,
                 )
-                twists.append(twist.linear)
+                twists.append(twist)
 
             qdot_sol = self._compute_joint_velocities(twists)
 
@@ -282,21 +274,10 @@ class IKSolver:
         self, cartesian_6d_target: Sequence[np.ndarray]
     ) -> np.ndarray:
         """Maps a Cartesian 6D target velocity to joint velocities."""
-        nullspace_bias = None
-        if self._nullspace_gain > 0.0:
-            nullspace_bias = (
-                _NULLSPACE_GAIN
-                * (
-                    self._nullspace_joint_position_reference
-                    - self._all_joints_binding.qpos
-                )
-                / _INTEGRATION_TIMESTEP_SEC
-            )
-
         return self._mapper.compute_joint_velocities(
             data=self._physics.data,
             target_velocities=cartesian_6d_target,
-            nullspace_bias=nullspace_bias,
+            nullspace_bias=None,
         )
 
     def _update_physics_data(self) -> None:
@@ -318,15 +299,9 @@ def _compute_twist(
     init_pose: geometry.Pose,
     final_pose: geometry.Pose,
     linear_velocity_gain: float,
-    angular_velocity_gain: float,
     control_timestep_seconds: float,
-) -> geometry.Twist:
+) -> np.ndarray:
     """Returns the twist to apply to the element to reach final_pose from init_pose."""
     position_error = final_pose.position - init_pose.position
-    orientation_error = geometry_utils.get_orientation_error(
-        to_quat=final_pose.quaternion,
-        from_quat=init_pose.quaternion,
-    )
     linear = linear_velocity_gain * position_error / control_timestep_seconds
-    angular = angular_velocity_gain * orientation_error / control_timestep_seconds
-    return geometry.Twist(np.concatenate((linear, angular)))
+    return linear
