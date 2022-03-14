@@ -178,7 +178,7 @@ class ReOrient(task.Task):
         # Add action taken at the previous timestep as an observable.
         self._action_observable = observable.Generic(self._get_action)
         self._action_observable.configure(
-            **dataclasses.asdict(observable_settings.prop_pose)
+            **dataclasses.asdict(observable_settings.proprio)
         )
         self._task_observables["action"] = self._action_observable
 
