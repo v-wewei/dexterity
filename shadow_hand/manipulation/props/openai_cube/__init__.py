@@ -1,19 +1,12 @@
 """The OpenAI cube."""
 
-from typing import Sequence
+from typing import Sequence, Union
 
 from dm_control.entities.props import primitive
 
 from shadow_hand import _SRC_ROOT
 
-_TEXTURE_PATH = (
-    _SRC_ROOT
-    / "tasks"
-    / "inhand_manipulation"
-    / "props"
-    / "openai_cube"
-    / "openai_cube.png"
-)
+_TEXTURE_PATH = _SRC_ROOT / "manipulation" / "props" / "openai_cube" / "openai_cube.png"
 
 
 class OpenAICube(primitive.Primitive):
@@ -21,7 +14,7 @@ class OpenAICube(primitive.Primitive):
 
     def _build(
         self,
-        size: Sequence[float],
+        size: Union[float, Sequence[float]],
         name: str = "openai_cube",
     ) -> None:
         """Builds the cube.
@@ -30,6 +23,12 @@ class OpenAICube(primitive.Primitive):
             size: [x_half_length, y_half_length, z_half_length]
             name: Optional name for the cube prop.
         """
+        if isinstance(size, float):
+            size = [size] * 3
+        else:
+            if len(size) != 3:
+                raise ValueError("Size must be a float or a sequence of three floats.")
+
         super()._build(geom_type="box", size=size, name=name)
 
         self.mjcf_model.asset.add(
