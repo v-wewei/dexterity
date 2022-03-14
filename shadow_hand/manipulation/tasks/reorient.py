@@ -70,10 +70,11 @@ _CONTROL_TIMESTEP: float = 0.025
 # Maximum number of steps per episode.
 _STEP_LIMIT: int = 300
 
+_BBOX_SIZE = 0.05
 _WORKSPACE = Workspace(
     prop_bbox=workspaces.BoundingBox(
-        lower=(-0.02, -0.22, 0.16),
-        upper=(+0.02, -0.15, 0.19),
+        lower=(-_BBOX_SIZE / 2, -0.13 - _BBOX_SIZE / 2, 0.16),
+        upper=(+_BBOX_SIZE / 2, -0.13 + _BBOX_SIZE / 2, 0.16),
     ),
 )
 

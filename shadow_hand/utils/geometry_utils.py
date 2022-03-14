@@ -4,15 +4,6 @@ import numpy as np
 from dm_robotics.transformations import transformations as tr
 
 
-def get_orientation_error(to_quat: np.ndarray, from_quat: np.ndarray) -> np.ndarray:
-    """Returns the error between the two quaternions as an axis-angle.
-
-    Note that to convert to a scalar angle error, call `np.linalg.norm` on the result.
-    """
-    err_quat = tr.quat_diff_active(from_quat, to_quat)
-    return tr.quat_to_axisangle(err_quat)
-
-
 def l2_normalize(
     x: np.ndarray,
     axis: Optional[int] = None,
@@ -24,13 +15,15 @@ def l2_normalize(
     return x * x_inv_norm
 
 
+def get_orientation_error(to_quat: np.ndarray, from_quat: np.ndarray) -> np.ndarray:
+    """Returns the error between the two quaternions as an axis-angle."""
+    err_quat = tr.quat_diff_active(from_quat, to_quat)
+    # NOTE(kevin): The norm of this axis-angle is the scalar valued angular error.
+    return tr.quat_to_axisangle(err_quat)
+
+
 def quaternion_equal(actual: np.ndarray, expected: np.ndarray) -> bool:
     """Returns True if two quaternions are equal."""
     actual = np.array(actual)
     expected = np.array(expected)
     return np.allclose(actual, expected) or np.allclose(actual, expected * -1)
-
-
-def wrap_angle(angle: float) -> float:
-    """Wrap an angle to [-pi, pi] range."""
-    return (angle + np.pi) % (2 * np.pi) - np.pi
