@@ -126,7 +126,7 @@ class ReOrient(task.Task):
             observable_settings, _FREEPROP_OBSERVABLES
         )
         self._prop = props.OpenAICube(
-            size=[_PROP_SIZE] * 3, observable_options=prop_obs_options, name="prop"
+            size=_PROP_SIZE, observable_options=prop_obs_options, name="prop"
         )
         arena.add_free_entity(self._prop)
 
@@ -136,7 +136,7 @@ class ReOrient(task.Task):
             observable_settings, _TARGETPROP_OBSERVABLES
         )
         self._hint_prop = props.OpenAICube(
-            size=[_PROP_SIZE] * 3,
+            size=_PROP_SIZE,
             observable_options=target_prop_obs_options,
             name="target_prop",
         )

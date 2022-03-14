@@ -169,3 +169,12 @@ def get_element_type(element: hints.MjcfElement) -> mjbindings.enums.mjtObj:
         raise ValueError(
             f"Element must be a MuJoCo body, geom or site. Got [{element.tag}]."
         )
+
+
+def compensate_gravity(
+    physics: mjcf.Physics, body_elements: Sequence[hints.MjcfElement]
+) -> None:
+    """Counteracts gravity by applying forces to body elements."""
+    gravity = np.hstack([physics.model.opt.gravity, [0.0, 0.0, 0.0]])
+    bodies = physics.bind(body_elements)
+    bodies.xfrc_applied = -gravity * bodies.mass[..., None]

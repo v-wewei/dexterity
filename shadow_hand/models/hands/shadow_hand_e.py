@@ -9,6 +9,7 @@ from shadow_hand.models.hands import fingered_hand
 from shadow_hand.models.hands import shadow_hand_e_actuation as sh_actuation
 from shadow_hand.models.hands import shadow_hand_e_constants as consts
 from shadow_hand.utils import mujoco_actuation
+from shadow_hand.utils import mujoco_utils
 
 
 class ShadowHandSeriesE(fingered_hand.FingeredHand):
@@ -35,6 +36,14 @@ class ShadowHandSeriesE(fingered_hand.FingeredHand):
         self._add_tendons()
         self._add_actuators()
         self._add_sensors()
+
+    def initialize_episode(
+        self, physics: mjcf.Physics, random_state: np.random.RandomState
+    ) -> None:
+        del random_state  # Unused.
+
+        # Apply gravity compensation.
+        mujoco_utils.compensate_gravity(physics, self.mjcf_model.find_all("body"))
 
     # ================= #
     # Accessors.
@@ -112,16 +121,8 @@ class ShadowHandSeriesE(fingered_hand.FingeredHand):
         return consts.POSITION_TO_CONTROL @ qpos
 
     def set_joint_angles(self, physics: mjcf.Physics, joint_angles: np.ndarray) -> None:
-        """Sets the joints of the hand to a given configuration.
-
-        Also sets the controller to prevent the hand from moving back to the previous
-        configuration.
-        """
-        physics_joints = physics.bind(self._joints)
-        physics_actuators = physics.bind(self._actuators)
-
-        physics_joints.qpos[:] = joint_angles
-        physics_actuators.ctrl[:] = self.joint_positions_to_control(joint_angles)
+        """Sets the joints of the hand to a given configuration."""
+        physics.bind(self._joints).qpos = joint_angles
 
     # ================= #
     # Private methods.

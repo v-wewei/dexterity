@@ -73,7 +73,6 @@ class FingertipPositionPlacer(composer.Initializer):
                 be found after `max_rejection_samples` randomly sampled joint
                 configurations.
         """
-
         initial_qpos = physics.bind(self._hand.joints).qpos.copy()
         fingertip_pos = None
 
@@ -83,7 +82,7 @@ class FingertipPositionPlacer(composer.Initializer):
                 physics.bind(self._hand.joints).range[:, 0],
                 physics.bind(self._hand.joints).range[:, 1],
             )
-            physics.bind(self._hand.joints).qpos = qpos
+            self._hand.set_joint_angles(physics, qpos)
 
             physics.forward()
 
@@ -95,7 +94,7 @@ class FingertipPositionPlacer(composer.Initializer):
                 break
 
         # Restore the initial joint configuration.
-        physics.bind(self._hand.joints).qpos = initial_qpos
+        self._hand.set_joint_angles(physics, initial_qpos)
 
         if fingertip_pos is None:
             raise RuntimeError(

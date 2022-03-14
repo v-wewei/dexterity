@@ -1,5 +1,3 @@
-"""Arenas for the in-hand manipulation suite of tasks."""
-
 from typing import Optional
 
 from shadow_hand import arena
@@ -7,7 +5,7 @@ from shadow_hand import hints
 
 
 class Standard(arena.Arena):
-    """Suite-specific subclass of the standard Composer arena."""
+    """Subclass of the standard Composer arena for the manipulation suite of tasks."""
 
     def _build(self, name: Optional[str] = None) -> None:
         super()._build(name=name)
@@ -58,7 +56,7 @@ class Standard(arena.Arena):
             solref=(0.002, 1),
         )
 
-        # Add lighting
+        # Add lighting.
         self.mjcf_model.worldbody.add(
             "light",
             pos=(0, 0, 1.5),
