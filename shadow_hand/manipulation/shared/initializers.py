@@ -1,6 +1,6 @@
 """Shared initializers for the hand."""
 
-from typing import Sequence
+from typing import Optional, Sequence
 
 import numpy as np
 from dm_control import composer
@@ -47,6 +47,7 @@ class FingertipPositionPlacer(composer.Initializer):
         self._hand = hand
         self._ignore_self_collisions = ignore_self_collisions
         self._max_rejection_samples = max_rejection_samples
+        self._qpos = None
 
     def _has_self_collisions(self, physics: mjcf.Physics) -> bool:
         """Returns True if the hand is in a self-collision state."""
@@ -79,6 +80,7 @@ class FingertipPositionPlacer(composer.Initializer):
             # is only performed if ignore_self_collisions evaluates to False.
             # See: https://docs.python.org/3/library/stdtypes.html#boolean-operations-and-or-not
             if self._ignore_self_collisions or not self._has_self_collisions(physics):
+                self._qpos = qpos
                 fingertip_pos = physics.bind(self._hand.fingertip_sites).xpos.copy()
                 break
 
@@ -93,3 +95,8 @@ class FingertipPositionPlacer(composer.Initializer):
             )
         else:
             physics.bind(self._target_sites).pos = fingertip_pos
+
+    @property
+    def qpos(self) -> Optional[np.ndarray]:
+        """The joint configuration used to place the target sites."""
+        return self._qpos
