@@ -6,7 +6,7 @@ core_requirements = [
     "numpy",
     "typing_extensions",
     "mujoco",
-    "dm_control",
+    "dm_control >= 1.0.0",
     "dm_robotics-geometry",
     "dm_robotics-transformations",
 ]

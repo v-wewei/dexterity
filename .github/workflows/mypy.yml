@@ -22,7 +22,6 @@ jobs:
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip wheel
-          bash scripts/install_mujoco.sh
           pip install -e .
           pip install mypy
       - name: Test with mypy
