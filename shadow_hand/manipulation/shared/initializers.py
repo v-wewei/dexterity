@@ -8,6 +8,7 @@ from dm_control import mjcf
 
 from shadow_hand import hints
 from shadow_hand.models.hands import fingered_hand
+from shadow_hand.utils import mujoco_collisions
 
 _REJECTION_SAMPLING_FAILED = (
     "Failed to find a collision-free initial configuration for the fingertips after "
@@ -49,19 +50,7 @@ class FingertipPositionPlacer(composer.Initializer):
 
     def _has_self_collisions(self, physics: mjcf.Physics) -> bool:
         """Returns True if the hand is in a self-collision state."""
-        mjcf_root = self._hand.mjcf_model.root_model
-        hand_model = self._hand.mjcf_model
-        all_geoms = mjcf_root.find_all("geom")
-        for contact in physics.data.contact:
-            geom_1 = all_geoms[contact.geom1]
-            geom_2 = all_geoms[contact.geom2]
-            # Ignore contacts with positive distance (i.e., not actually touching).
-            if contact.dist > 0:
-                continue
-            # Check for hand-hand collisions.
-            if geom_1.root is hand_model and geom_2.root is hand_model:
-                return True
-        return False
+        return mujoco_collisions.has_self_collision(physics, self._hand.name)
 
     def __call__(
         self, physics: mjcf.Physics, random_state: np.random.RandomState
