@@ -18,7 +18,11 @@ def get_environments_by_tag(tag: str) -> Tuple[str, ...]:
     return tuple(_registry.get_names_by_tag(tag))
 
 
-def load(environment_name: str, seed: Optional[int] = None) -> _composer.Environment:
+def load(
+    environment_name: str,
+    seed: Optional[int] = None,
+    strip_singleton_obs_buffer_dim: bool = True,
+) -> _composer.Environment:
     # Build the task.
     task: Task = _registry.get_constructor(environment_name)()
 
@@ -27,4 +31,8 @@ def load(environment_name: str, seed: Optional[int] = None) -> _composer.Environ
         task.root_entity.mjcf_model
     )
 
-    return _composer.Environment(task=task, random_state=seed)
+    return _composer.Environment(
+        task=task,
+        random_state=seed,
+        strip_singleton_obs_buffer_dim=strip_singleton_obs_buffer_dim,
+    )
