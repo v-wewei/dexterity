@@ -37,10 +37,9 @@ class ManipulationTest(parameterized.TestCase):
                     self.assertIsNone(time_step.reward)
                     self.assertIsNone(time_step.discount)
                 else:
-                    self._validate_reward_range(time_step.reward)
                     self._validate_discount(time_step.discount)
                 action = random_state.uniform(action_spec.minimum, action_spec.maximum)
-                env.step(action)
+                time_step = env.step(action)
 
     # Helper methods.
 
@@ -52,10 +51,6 @@ class ManipulationTest(parameterized.TestCase):
         self.assertEqual(list(observation.keys()), list(observation_spec.keys()))
         for name, array_spec in observation_spec.items():
             array_spec.validate(observation[name])
-
-    def _validate_reward_range(self, reward: float) -> None:
-        self.assertIsInstance(reward, float)
-        self.assertBetween(reward, 0.0, 1.0)
 
     def _validate_discount(self, discount: float) -> None:
         self.assertIsInstance(discount, float)
