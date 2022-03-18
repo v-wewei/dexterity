@@ -58,8 +58,6 @@ class Parameters:
         """Validates the parameters."""
 
         for object_type in self.object_types:
-            print(f"Validating object_type: {object_type}")
-
             if object_type not in [
                 mujoco.mjtObj.mjOBJ_BODY,
                 mujoco.mjtObj.mjOBJ_GEOM,
