@@ -137,6 +137,13 @@ class Reach(task.Task):
         )
         self._task_observables["target_positions"] = target_positions_observable
 
+        # Add action taken at the previous timestep as an observable.
+        self._action_observable = observable.Generic(self._get_action)
+        self._action_observable.configure(
+            **dataclasses.asdict(observable_settings.proprio)
+        )
+        self._task_observables["action"] = self._action_observable
+
     @property
     def task_observables(self) -> Dict[str, observable.Observable]:
         return self._task_observables
@@ -205,6 +212,9 @@ class Reach(task.Task):
 
     def _get_fingertip_positions(self, physics: mjcf.Physics) -> np.ndarray:
         return np.array(physics.bind(self._hand.fingertip_sites).xpos).ravel()
+
+    def _get_action(self, physics: mjcf.Physics) -> np.ndarray:
+        return np.array(physics.data.ctrl)
 
     def _maybe_color_fingers(
         self,

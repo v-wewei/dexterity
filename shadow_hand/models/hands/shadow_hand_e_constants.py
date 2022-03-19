@@ -471,6 +471,6 @@ FINGER_GEOM_MAPPING: Dict[Components, Tuple[str, ...]] = {
     Components.FF: ("ffproximal", "ffmiddle", "ffdistal"),
     Components.MF: ("mfproximal", "mfmiddle", "mfdistal"),
     Components.RF: ("rfproximal", "rfmiddle", "rfdistal"),
-    Components.LF: ("lfmetacarpal", "lfproximal", "lfmiddle", "lfdistal"),
+    Components.LF: ("lfproximal", "lfmiddle", "lfdistal"),
     Components.TH: ("thproximal", "thmiddle", "thdistal"),
 }
