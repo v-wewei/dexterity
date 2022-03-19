@@ -23,6 +23,7 @@ from shadow_hand.manipulation.shared import tags
 from shadow_hand.manipulation.shared import workspaces
 from shadow_hand.models.hands import fingered_hand
 from shadow_hand.models.hands import shadow_hand_e
+from shadow_hand.models.hands import shadow_hand_e_constants as consts
 
 # The position of the hand relative in the world frame, in meters.
 _HAND_POS = (0, 0.2, 0.1)
@@ -47,6 +48,9 @@ _TARGET_ALPHA = 1.0
 # 1 cm threshold.
 _DISTANCE_TO_TARGET_THRESHOLD = 0.01
 
+# Assign this color to the finger geoms if the finger is within the target threshold.
+_THRESHOLD_COLOR = (0.0, 1.0, 0.0)
+
 # Timestep of the physics simulation.
 _PHYSICS_TIMESTEP: float = 0.01
 
@@ -67,6 +71,7 @@ class Reach(task.Task):
         hand_effector: effector.Effector,
         observable_settings: observations.ObservationSettings,
         use_dense_reward: bool,
+        visualize_reward: bool,
         control_timestep: float = _CONTROL_TIMESTEP,
         physics_timestep: float = _PHYSICS_TIMESTEP,
     ) -> None:
@@ -84,6 +89,7 @@ class Reach(task.Task):
         super().__init__(arena=arena, hand=hand, hand_effector=hand_effector)
 
         self._use_dense_reward = use_dense_reward
+        self._visualize_reward = visualize_reward
 
         # Attach the hand to the arena.
         self._arena.attach_offset(hand, position=_HAND_POS, quaternion=_HAND_QUAT)
@@ -147,6 +153,17 @@ class Reach(task.Task):
         # Sample a new goal position for each fingertip.
         self._fingertips_initializer(physics, random_state)
 
+        # Save initial finger colors.
+        if self._visualize_reward:
+            self._init_finger_colors = {}
+            for i, geoms in enumerate(consts.FINGER_GEOM_MAPPING.values()):
+                elems = [
+                    elem
+                    for elem in self._hand.mjcf_model.find_all("geom")
+                    if elem.name in geoms
+                ]
+                self._init_finger_colors[i] = (elems, physics.bind(elems).rgba)
+
     def after_step(
         self, physics: mjcf.Physics, random_state: np.random.RandomState
     ) -> None:
@@ -156,6 +173,12 @@ class Reach(task.Task):
         goal_pos = self._get_target_positions(physics)
         cur_pos = self._get_fingertip_positions(physics)
         self._distance = cast(float, np.linalg.norm(goal_pos - cur_pos))
+
+        # If they are close enough, change their color.
+        if self._visualize_reward:
+            self._maybe_color_fingers(
+                physics, goal_pos.reshape(-1, 3), cur_pos.reshape(-1, 3)
+            )
 
     def get_reward(self, physics: mjcf.Physics) -> float:
         del physics  # Unused.
@@ -183,10 +206,24 @@ class Reach(task.Task):
     def _get_fingertip_positions(self, physics: mjcf.Physics) -> np.ndarray:
         return np.array(physics.bind(self._hand.fingertip_sites).xpos).ravel()
 
+    def _maybe_color_fingers(
+        self,
+        physics: mjcf.Physics,
+        goal_positions: np.ndarray,
+        cur_positions: np.ndarray,
+    ) -> None:
+        for i, (desired, achieved) in enumerate(zip(goal_positions, cur_positions)):
+            elems, rgba = self._init_finger_colors[i]
+            if np.linalg.norm(desired - achieved) < _DISTANCE_TO_TARGET_THRESHOLD:
+                physics.bind(elems).rgba = _THRESHOLD_COLOR + (1.0,)
+            else:
+                physics.bind(elems).rgba = rgba
+
 
 def reach_task(
     observation_set: observations.ObservationSet,
     use_dense_reward: bool,
+    visualize_reward: bool = True,
 ) -> composer.Task:
     """Configure and instantiate a `Reach` task."""
     arena = arenas.Standard()
@@ -206,6 +243,7 @@ def reach_task(
         hand_effector=hand_effector,
         observable_settings=observation_set.value,
         use_dense_reward=use_dense_reward,
+        visualize_reward=visualize_reward,
     )
 
 
@@ -213,7 +251,9 @@ def reach_task(
 def reach_state_dense() -> composer.Task:
     """Reach task with full state observations and dense reward."""
     return reach_task(
-        observation_set=observations.ObservationSet.STATE_ONLY, use_dense_reward=True
+        observation_set=observations.ObservationSet.STATE_ONLY,
+        use_dense_reward=True,
+        visualize_reward=True,
     )
 
 
@@ -221,5 +261,7 @@ def reach_state_dense() -> composer.Task:
 def reach_state_sparse() -> composer.Task:
     """Reach task with full state observations and sparse reward."""
     return reach_task(
-        observation_set=observations.ObservationSet.STATE_ONLY, use_dense_reward=False
+        observation_set=observations.ObservationSet.STATE_ONLY,
+        use_dense_reward=False,
+        visualize_reward=True,
     )

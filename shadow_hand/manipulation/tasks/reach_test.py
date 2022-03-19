@@ -10,7 +10,11 @@ from shadow_hand.manipulation.tasks import reach_task
 
 class ReachTaskTest(absltest.TestCase):
     def test_dense_reward(self) -> None:
-        task = reach_task(observations.ObservationSet.STATE_ONLY, use_dense_reward=True)
+        task = reach_task(
+            observations.ObservationSet.STATE_ONLY,
+            use_dense_reward=True,
+            visualize_reward=False,
+        )
 
         random_state = np.random.RandomState(12345)
         env = composer.Environment(task, random_state=random_state)

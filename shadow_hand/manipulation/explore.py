@@ -18,6 +18,7 @@ flags.DEFINE_enum(
     "select one.",
 )
 flags.DEFINE_integer("seed", None, "RNG seed.")
+flags.DEFINE_boolean("no_policy", False, "If toggled, disables the random policy.")
 
 FLAGS = flags.FLAGS
 
@@ -55,7 +56,7 @@ def main(_) -> None:
             action_spec.minimum, action_spec.maximum, size=action_spec.shape
         )
 
-    viewer.launch(env, policy=random_policy)
+    viewer.launch(env, policy=None if FLAGS.no_policy else random_policy)
 
 
 if __name__ == "__main__":

@@ -465,3 +465,12 @@ COLORED_GEOMS: Tuple[str, ...] = (
     "thmiddle",
     "thdistal",
 )
+
+# Mapping from finger `Components` to its associated geoms.
+FINGER_GEOM_MAPPING: Dict[Components, Tuple[str, ...]] = {
+    Components.FF: ("ffproximal", "ffmiddle", "ffdistal"),
+    Components.MF: ("mfproximal", "mfmiddle", "mfdistal"),
+    Components.RF: ("rfproximal", "rfmiddle", "rfdistal"),
+    Components.LF: ("lfmetacarpal", "lfproximal", "lfmiddle", "lfdistal"),
+    Components.TH: ("thproximal", "thmiddle", "thdistal"),
+}
