@@ -48,10 +48,10 @@ _TARGET_ALPHA = 1.0
 _DISTANCE_TO_TARGET_THRESHOLD = 0.01
 
 # Timestep of the physics simulation.
-_PHYSICS_TIMESTEP: float = 0.005
+_PHYSICS_TIMESTEP: float = 0.01
 
 # Interval between agent actions, in seconds.
-_CONTROL_TIMESTEP: float = 0.025
+_CONTROL_TIMESTEP: float = 0.02
 
 # Maximum number of steps per episode.
 _STEP_LIMIT: int = 100
