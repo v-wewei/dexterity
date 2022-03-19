@@ -1,5 +1,4 @@
 SHELL := /bin/bash
-N_CPU := $$(python -c "import os; print(os.cpu_count())")
 
 .PHONY: help check format test explore
 .DEFAULT: help
@@ -26,7 +25,7 @@ format:
 	mypy .
 
 test:
-	pytest --durations=10 -n "${N_CPU}" .
+	pytest -n auto
 
 explore:
 	python shadow_hand/manipulation/explore.py
