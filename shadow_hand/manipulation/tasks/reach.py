@@ -45,8 +45,9 @@ _SITE_COLORS = (
 _TARGET_SIZE = 5e-3
 _TARGET_ALPHA = 1.0
 
-# 1 cm threshold.
-_DISTANCE_TO_TARGET_THRESHOLD = 0.01
+# This is the threshold at which the distance between all the fingers of the hand and
+# their target locations is considered small enough and the task is deemed successful.
+_DISTANCE_TO_TARGET_THRESHOLD = 0.01  # 1 cm.
 
 # Assign this color to the finger geoms if the finger is within the target threshold.
 _THRESHOLD_COLOR = (0.0, 1.0, 0.0)
@@ -208,12 +209,21 @@ class Reach(task.Task):
     # Helper methods.
 
     def _get_target_positions(self, physics: mjcf.Physics) -> np.ndarray:
+        """Returns the desired fingertip Cartesian positions in the world frame.
+
+        The returned array is of shape (15,).
+        """
         return np.array(physics.bind(self._target_sites).xpos).ravel()
 
     def _get_fingertip_positions(self, physics: mjcf.Physics) -> np.ndarray:
+        """Returns the current fingertip Cartesian positions in the world frame.
+
+        The returned array is of shape (15,).
+        """
         return np.array(physics.bind(self._hand.fingertip_sites).xpos).ravel()
 
     def _get_action(self, physics: mjcf.Physics) -> np.ndarray:
+        """Returns the control action that was taken at the previous timestep."""
         return np.array(physics.data.ctrl)
 
     def _maybe_color_fingers(
