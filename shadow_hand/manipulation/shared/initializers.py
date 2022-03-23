@@ -80,8 +80,8 @@ class FingertipPositionPlacer(composer.Initializer):
             # is only performed if ignore_self_collisions evaluates to False.
             # See: https://docs.python.org/3/library/stdtypes.html#boolean-operations-and-or-not
             if self._ignore_self_collisions or not self._has_self_collisions(physics):
-                self._qpos = qpos
                 fingertip_pos = physics.bind(self._hand.fingertip_sites).xpos.copy()
+                self._qpos = qpos
                 break
 
         # Restore the initial joint configuration.

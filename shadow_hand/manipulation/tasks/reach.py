@@ -1,7 +1,6 @@
 """Tasks involving hand finger reaching."""
 
 import dataclasses
-import random
 from typing import Dict, List, Optional, cast
 
 import numpy as np
@@ -101,11 +100,10 @@ class Reach(task.Task):
         )
 
         # Create visible sites for the finger tips.
-        color_sequence = random.sample(_SITE_COLORS, k=len(_SITE_COLORS))
         for i, site in enumerate(self._hand.fingertip_sites):
             site.group = None  # Make the sites visible.
             site.size = (_SITE_SIZE,) * 3  # Increase their size.
-            site.rgba = color_sequence[i] + (_SITE_ALPHA,)  # Change their color.
+            site.rgba = _SITE_COLORS[i] + (_SITE_ALPHA,)  # Change their color.
 
         # Create target sites for each fingertip.
         self._target_sites: List[hints.MjcfElement] = []
@@ -115,7 +113,7 @@ class Reach(task.Task):
                     body=arena.mjcf_model.worldbody,
                     radius=_TARGET_SIZE,
                     visible=True,
-                    rgba=color_sequence[i] + (_TARGET_ALPHA,),
+                    rgba=_SITE_COLORS[i] + (_TARGET_ALPHA,),
                     name=f"target_{site.name}",
                 )
             )
