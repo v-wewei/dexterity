@@ -66,6 +66,9 @@ _MAX_SOLVES: int = 50
 # The maximum allowed time for reaching the current target, in seconds.
 _MAX_TIME_SINGLE_SOLVE: float = 5.0
 
+# The maximum allowed time for the entire episode, in seconds.
+_TIME_LIMIT = 30.0
+
 
 class Reach(task.Task):
     """Move the fingers to desired goal positions."""
@@ -255,6 +258,10 @@ class Reach(task.Task):
     @property
     def total_solves(self) -> int:
         return self._total_solves
+
+    @property
+    def time_limit(self) -> float:
+        return _TIME_LIMIT
 
     # Helper methods.
 
