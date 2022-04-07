@@ -5,7 +5,10 @@ from shadow_hand import hints
 
 
 class Standard(arena.Arena):
-    """Subclass of the standard Composer arena for the manipulation suite of tasks."""
+    """Subclass of the standard Composer arena for the manipulation suite of tasks.
+
+    Has a checkered ground plane.
+    """
 
     def _build(self, name: Optional[str] = None) -> None:
         super()._build(name=name)

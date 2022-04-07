@@ -141,7 +141,9 @@ class Reach(task.Task):
 
         # Add camera observables.
         self._task_observables = cameras.add_camera_observables(
-            arena, observable_settings, cameras.FRONT_CLOSE
+            arena,
+            observable_settings,
+            cameras.FRONT_CLOSE,
         )
 
         # Add target positions as an observable.
@@ -233,13 +235,17 @@ class Reach(task.Task):
             # Otherwise, we reward it using a distance function D(a, b) which is defined
             # as the tanh over the Euclidean distance between a and b, which decays to
             # 0.05 as the distance reaches 0.1.
-            return np.mean(
+            # If all fingertips are within the threshold, we give it a bonus of +10.
+            reward = np.mean(
                 np.where(
                     self._distance <= _DISTANCE_TO_TARGET_THRESHOLD,
                     1.0,
                     [1.0 - rewards.tanh_squared(d, margin=0.1) for d in self._distance],
                 )
             )
+            if np.all(self._distance <= _DISTANCE_TO_TARGET_THRESHOLD):
+                reward += 10.0
+            return reward
         # Sparse reward:
         # For each fingertip that is close enough to the target, we reward it with a 1.
         # Otherwise, no reward is given.
