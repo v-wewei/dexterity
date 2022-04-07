@@ -55,10 +55,10 @@ _DISTANCE_TO_TARGET_THRESHOLD = 0.01  # 1 cm.
 _THRESHOLD_COLOR = (0.0, 1.0, 0.0)
 
 # Timestep of the physics simulation.
-_PHYSICS_TIMESTEP: float = 0.005
+_PHYSICS_TIMESTEP: float = 0.01
 
 # Interval between agent actions, in seconds.
-_CONTROL_TIMESTEP: float = 0.025
+_CONTROL_TIMESTEP: float = 0.02
 
 # The maximum number of consecutive solves until the task is terminated.
 _MAX_SOLVES: int = 50
@@ -67,7 +67,7 @@ _MAX_SOLVES: int = 50
 _MAX_TIME_SINGLE_SOLVE: float = 5.0
 
 # The maximum allowed time for the entire episode, in seconds.
-_TIME_LIMIT = 30.0
+_TIME_LIMIT = 35.0
 
 
 class Reach(task.Task):
