@@ -67,7 +67,7 @@ _MAX_SOLVES: int = 50
 _MAX_TIME_SINGLE_SOLVE: float = 5.0
 
 # The maximum allowed time for the entire episode, in seconds.
-_TIME_LIMIT = 35.0
+_TIME_LIMIT = 50.0  # 1 second per solve.
 
 
 class Reach(task.Task):
