@@ -5,6 +5,7 @@ from typing import Optional, Sequence
 import numpy as np
 from dm_control import composer
 from dm_control import mjcf
+from dm_control.composer.initializers import utils
 
 from shadow_hand import hints
 from shadow_hand.models.hands import fingered_hand
@@ -82,14 +83,18 @@ class FingertipPositionPlacer(composer.Initializer):
                 self._hand.set_joint_angles(physics, initial_qpos)
                 physics.bind(self._hand.actuators).ctrl[:] = ctrl_desired
 
+                original_time = physics.data.time
+                hand_isolator = utils.JointStaticIsolator(physics, self._hand.joints)
                 qpos_prev = None
                 while True:
-                    physics.step()
+                    with hand_isolator:
+                        physics.step()
                     qpos = physics.bind(self._hand.joints).qpos.copy()
                     if qpos_prev is not None:
                         if np.all(np.abs(qpos_prev - qpos) <= 1e-3):
                             break
                     qpos_prev = qpos
+                physics.data.time = original_time
 
                 fingertip_pos = physics.bind(self._hand.fingertip_sites).xpos.copy()
                 self._qpos = qpos_desired
