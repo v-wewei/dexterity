@@ -47,12 +47,15 @@ _TARGET_ALPHA = 1.0
 
 _STEPS_BEFORE_MOVING_TARGET: int = 5
 
-# This is the threshold at which the distance between all the fingers of the hand and
-# their target locations is considered small enough and the task is deemed successful.
+# Threshold for the distance between a finger and its target below which we consider the
+# target reached.
 _DISTANCE_TO_TARGET_THRESHOLD = 0.01  # 1 cm.
 
 # Assign this color to the finger geoms if the finger is within the target threshold.
 _THRESHOLD_COLOR = (0.0, 1.0, 0.0)
+
+# Bonus reward if all fingers have reached their target locations.
+_REWARD_BONUS: float = 10.0
 
 # Timestep of the physics simulation.
 _PHYSICS_TIMESTEP: float = 0.01
@@ -64,10 +67,10 @@ _CONTROL_TIMESTEP: float = 0.02
 _MAX_SOLVES: int = 50
 
 # The maximum allowed time for reaching the current target, in seconds.
-_MAX_TIME_SINGLE_SOLVE: float = 5.0
+_MAX_TIME_SINGLE_SOLVE: float = 1.0
 
 # The maximum allowed time for the entire episode, in seconds.
-_TIME_LIMIT = 50.0  # 1 second per solve.
+_TIME_LIMIT = _MAX_SOLVES * _MAX_TIME_SINGLE_SOLVE
 
 
 class Reach(task.Task):
@@ -235,7 +238,7 @@ class Reach(task.Task):
             # Otherwise, we reward it using a distance function D(a, b) which is defined
             # as the tanh over the Euclidean distance between a and b, which decays to
             # 0.05 as the distance reaches 0.1.
-            # If all fingertips are within the threshold, we give it a bonus of +10.
+            # A bonus is given if all fingertips reach their targets.
             reward = np.mean(
                 np.where(
                     self._distance <= _DISTANCE_TO_TARGET_THRESHOLD,
@@ -244,16 +247,19 @@ class Reach(task.Task):
                 )
             )
             if np.all(self._distance <= _DISTANCE_TO_TARGET_THRESHOLD):
-                reward += 10.0
+                reward += _REWARD_BONUS
             return reward
         # Sparse reward:
         # For each fingertip that is close enough to the target, we reward it with a 1.
         # Otherwise, no reward is given.
         # We then return the average over all fingertips.
-        # So if all fingertips are within the target, the net reward is 1.0.
-        return np.mean(
+        # A bonus is given if all fingertips reach their targets.
+        reward = np.mean(
             np.where(self._distance <= _DISTANCE_TO_TARGET_THRESHOLD, 1.0, 0.0)
         )
+        if np.all(self._distance <= _DISTANCE_TO_TARGET_THRESHOLD):
+            reward += _REWARD_BONUS
+        return reward
 
     def should_terminate_episode(self, physics: mjcf.Physics) -> bool:
         del physics  # Unused.
