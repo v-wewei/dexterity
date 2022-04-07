@@ -1,6 +1,6 @@
 import copy
 import dataclasses
-from typing import Mapping, Optional, Sequence
+from typing import Mapping, Optional, Sequence, Tuple
 
 import mujoco
 import numpy as np
@@ -44,7 +44,7 @@ class IKSolver:
     def __init__(
         self,
         model: mjcf.RootElement,
-        fingers: Sequence[consts.Components],
+        fingers: Optional[Sequence[consts.Components]] = None,
         prefix: str = "",
     ) -> None:
         """Constructor.
@@ -54,9 +54,13 @@ class IKSolver:
             prefix: The prefix assigned to the hand model in case it is attached to
                 another entity.
         """
-        self._fingers = fingers
         self._physics = mjcf.Physics.from_mjcf_model(model)
         self._geometry_physics = mujoco_physics.wrap(self._physics)
+
+        if fingers is None:
+            self._fingers = consts.FINGERS
+        else:
+            self._fingers = tuple(fingers)
 
         # Wrist information.
         wrist_joint_names = [j.name for j in consts.JOINT_GROUP[consts.Components.WR]]
@@ -76,7 +80,7 @@ class IKSolver:
         # Finger information.
         self._controllable_joints = {}
         self._elements = {}
-        for finger in fingers:
+        for finger in self._fingers:
             fingertip_name = consts.FINGER_FINGERTIP_MAPPING[finger]
             fingertip_site_name = mujoco_utils.prefix_identifier(
                 f"{fingertip_name}_site", prefix
@@ -112,11 +116,15 @@ class IKSolver:
             self._num_joints[finger] = len(controllable_joints)
         self._all_joints_binding = self._physics.bind(self._all_joints)
 
-        self._nullspace_joint_position_reference = 0.5 * np.sum(
+        self._nullspace_joint_position_reference = np.mean(
             self._all_joints_binding.range, axis=1
         )
 
         self._create_mapper()
+
+    @property
+    def fingers(self) -> Tuple[consts.Components, ...]:
+        return self._fingers
 
     def _create_mapper(self) -> None:
         obj_types = []
@@ -141,11 +149,6 @@ class IKSolver:
         num_attempts: int = 30,
         stop_on_first_successful_attempt: bool = False,
     ) -> Optional[np.ndarray]:
-        # Set the initial finger configuration to zero.
-        inital_joint_configuration = {}
-        for finger, num_joints in self._num_joints.items():
-            inital_joint_configuration[finger] = np.zeros(num_joints)
-
         nullspace_jnt_qpos_min_err: float = np.inf
         success: bool = False
         sol_qpos: Optional[np.ndarray] = None
@@ -155,13 +158,14 @@ class IKSolver:
             # Randomize the initial joint configuration so that the IK can find
             # different solutions.
             if attempt == 0:
-                for finger, joint_binding in self._joint_bindings.items():
-                    joint_binding.qpos[:] = inital_joint_configuration[finger]
+                self._all_joints_binding.qpos[
+                    :
+                ] = self._nullspace_joint_position_reference
             else:
-                for finger, joint_binding in self._joint_bindings.items():
-                    joint_binding.qpos[:] = np.random.uniform(
-                        joint_binding.range[:, 0], joint_binding.range[:, 1]
-                    )
+                self._all_joints_binding.qpos[:] = np.random.uniform(
+                    self._all_joints_binding.range[:, 0],
+                    self._all_joints_binding.range[:, 1],
+                )
 
             solution = self._solve_ik(
                 target_positions,

@@ -61,6 +61,17 @@ class DampedLeastSquaresMapper(mapper.CartesianVelocitytoJointVelocityMapper):
                 object_type=obj_type,
                 object_id=self.params.model.name2id(obj_name, obj_type),
             )
+
+            # Underactuation correction.
+            avg = 0.5 * (jacobian[:, 4] + jacobian[:, 5])
+            jacobian[:, 4] = jacobian[:, 5] = avg
+            avg = 0.5 * (jacobian[:, 8] + jacobian[:, 9])
+            jacobian[:, 8] = jacobian[:, 9] = avg
+            avg = 0.5 * (jacobian[:, 12] + jacobian[:, 13])
+            jacobian[:, 12] = jacobian[:, 13] = avg
+            avg = 0.5 * (jacobian[:, 17] + jacobian[:, 18])
+            jacobian[:, 17] = jacobian[:, 18] = avg
+
             jacobians.append(jacobian[:3])
         jacobian = np.concatenate(jacobians, axis=0)
         twist = np.concatenate(target_velocities, axis=0)

@@ -68,24 +68,24 @@ class Joints(enum.Enum):
     # First finger: 4 joints, 3 degrees of freedom.
     FFJ3 = enum.auto()
     FFJ2 = enum.auto()
-    FFJ1 = enum.auto()  # c
-    FFJ0 = enum.auto()  # c
+    FFJ1 = enum.auto()  # c 4
+    FFJ0 = enum.auto()  # c 5
     # Middle finger: 4 joints, 3 degrees of freedom.
     MFJ3 = enum.auto()
     MFJ2 = enum.auto()
-    MFJ1 = enum.auto()  # c
-    MFJ0 = enum.auto()  # c
+    MFJ1 = enum.auto()  # c 8
+    MFJ0 = enum.auto()  # c 9
     # Ring finger: 4 joints, 3 degrees of freedom.
     RFJ3 = enum.auto()
     RFJ2 = enum.auto()
-    RFJ1 = enum.auto()  # c
-    RFJ0 = enum.auto()  # c
+    RFJ1 = enum.auto()  # c 12
+    RFJ0 = enum.auto()  # c 13
     # Little finger: 5 joints, 4 degrees of freedom.
     LFJ4 = enum.auto()
     LFJ3 = enum.auto()
     LFJ2 = enum.auto()
-    LFJ1 = enum.auto()  # c
-    LFJ0 = enum.auto()  # c
+    LFJ1 = enum.auto()  # c 17
+    LFJ0 = enum.auto()  # c 18
     # Thumb: 5 joints, 5 degrees of freedom.
     THJ4 = enum.auto()
     THJ3 = enum.auto()

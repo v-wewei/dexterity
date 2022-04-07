@@ -53,3 +53,8 @@ class Task(composer.Task):
     def step_limit(self) -> Optional[int]:
         """The maximum number of steps in an episode."""
         return None
+
+    @property
+    def time_limit(self) -> float:
+        """The maximum number of seconds in an episode."""
+        return float("inf")

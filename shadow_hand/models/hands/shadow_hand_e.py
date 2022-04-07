@@ -37,6 +37,10 @@ class ShadowHandSeriesE(fingered_hand.FingeredHand):
         self._add_actuators()
         self._add_sensors()
 
+    def before_substep(self, physics, random_state):
+        mujoco_utils.compensate_gravity(physics, self.mjcf_model.find_all("body"))
+        return super().before_step(physics, random_state)
+
     def initialize_episode(
         self, physics: mjcf.Physics, random_state: np.random.RandomState
     ) -> None:
@@ -123,6 +127,16 @@ class ShadowHandSeriesE(fingered_hand.FingeredHand):
     def set_joint_angles(self, physics: mjcf.Physics, joint_angles: np.ndarray) -> None:
         """Sets the joints of the hand to a given configuration."""
         physics.bind(self._joints).qpos = joint_angles
+
+    def sample_joint_angles(
+        self, physics: mjcf.Physics, random_state: np.random.RandomState
+    ) -> np.ndarray:
+        qpos = random_state.uniform(*physics.bind(self._joints).range.T)
+        qpos[4] = qpos[5]
+        qpos[8] = qpos[9]
+        qpos[12] = qpos[13]
+        qpos[17] = qpos[18]
+        return qpos
 
     # ================= #
     # Private methods.

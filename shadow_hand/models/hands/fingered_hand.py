@@ -55,6 +55,12 @@ class FingeredHand(abc.ABC, composer.Entity):
     def set_joint_angles(self, physics: mjcf.Physics, joint_angles: np.ndarray) -> None:
         """Sets the joints of the hand to a given configuration."""
 
+    @abc.abstractmethod
+    def sample_joint_angles(
+        self, physics: mjcf.Physics, random_state: np.random.RandomState
+    ) -> np.ndarray:
+        """Samples a random joint configuration for the hand."""
+
 
 class RobotHandObservables(composer.Observables):
     """Observables for a fingered hand."""

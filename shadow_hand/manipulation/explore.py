@@ -50,13 +50,14 @@ def main(_) -> None:
     for k, v in timestep.observation.items():
         print(f"{k}: {v.shape}")
 
-    def random_policy(timestep: dm_env.TimeStep) -> np.ndarray:
-        del timestep
-        return np.random.uniform(
-            action_spec.minimum, action_spec.maximum, size=action_spec.shape
-        )
+    def oracle(timestep: dm_env.TimeStep) -> np.ndarray:
+        del timestep  # Unused
+        qpos = env.task._fingertips_initializer.qpos.copy()
+        ctrl = env.task.hand.joint_positions_to_control(qpos)
+        ctrl = ctrl.astype(action_spec.dtype)
+        return ctrl
 
-    viewer.launch(env, policy=None if FLAGS.no_policy else random_policy)
+    viewer.launch(env, policy=None if FLAGS.no_policy else oracle)
 
 
 if __name__ == "__main__":

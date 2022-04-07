@@ -1,7 +1,7 @@
 """Tasks involving hand finger reaching."""
 
 import dataclasses
-from typing import Dict, List, Optional, cast
+from typing import Dict, List
 
 import numpy as np
 from dm_control import composer
@@ -18,6 +18,7 @@ from shadow_hand.manipulation.shared import cameras
 from shadow_hand.manipulation.shared import initializers
 from shadow_hand.manipulation.shared import observations
 from shadow_hand.manipulation.shared import registry
+from shadow_hand.manipulation.shared import rewards
 from shadow_hand.manipulation.shared import tags
 from shadow_hand.manipulation.shared import workspaces
 from shadow_hand.models.hands import fingered_hand
@@ -44,6 +45,8 @@ _SITE_COLORS = (
 _TARGET_SIZE = 5e-3
 _TARGET_ALPHA = 1.0
 
+_STEPS_BEFORE_MOVING_TARGET: int = 5
+
 # This is the threshold at which the distance between all the fingers of the hand and
 # their target locations is considered small enough and the task is deemed successful.
 _DISTANCE_TO_TARGET_THRESHOLD = 0.01  # 1 cm.
@@ -52,13 +55,16 @@ _DISTANCE_TO_TARGET_THRESHOLD = 0.01  # 1 cm.
 _THRESHOLD_COLOR = (0.0, 1.0, 0.0)
 
 # Timestep of the physics simulation.
-_PHYSICS_TIMESTEP: float = 0.01
+_PHYSICS_TIMESTEP: float = 0.005
 
 # Interval between agent actions, in seconds.
-_CONTROL_TIMESTEP: float = 0.02
+_CONTROL_TIMESTEP: float = 0.025
 
-# Maximum number of steps per episode.
-_STEP_LIMIT: int = 100
+# The maximum number of consecutive solves until the task is terminated.
+_MAX_SOLVES: int = 50
+
+# The maximum allowed time for reaching the current target, in seconds.
+_MAX_TIME_SINGLE_SOLVE: float = 5.0
 
 
 class Reach(task.Task):
@@ -72,6 +78,8 @@ class Reach(task.Task):
         observable_settings: observations.ObservationSettings,
         use_dense_reward: bool,
         visualize_reward: bool,
+        steps_before_moving_target: int = _STEPS_BEFORE_MOVING_TARGET,
+        max_solves: int = _MAX_SOLVES,
         control_timestep: float = _CONTROL_TIMESTEP,
         physics_timestep: float = _PHYSICS_TIMESTEP,
     ) -> None:
@@ -82,7 +90,9 @@ class Reach(task.Task):
             hand: The hand to use.
             hand_effector: The effector to use for the hand.
             observable_settings: Settings for entity and task observables.
-            dense_reward: Whether to use a dense reward.
+            use_dense_reward: Whether to use a dense reward.
+            visualize_reward:
+            steps_before_moving_target:
             control_timestep: The control timestep, in seconds.
             physics_timestep: The physics timestep, in seconds.
         """
@@ -90,6 +100,8 @@ class Reach(task.Task):
 
         self._use_dense_reward = use_dense_reward
         self._visualize_reward = visualize_reward
+        self._steps_before_moving_target = steps_before_moving_target
+        self._max_solves = max_solves
 
         # Attach the hand to the arena.
         self._arena.attach_offset(hand, position=_HAND_POS, quaternion=_HAND_QUAT)
@@ -136,13 +148,6 @@ class Reach(task.Task):
         )
         self._task_observables["target_positions"] = target_positions_observable
 
-        # Add action taken at the previous timestep as an observable.
-        self._action_observable = observable.Generic(self._get_action)
-        self._action_observable.configure(
-            **dataclasses.asdict(observable_settings.proprio)
-        )
-        self._task_observables["action"] = self._action_observable
-
     @property
     def task_observables(self) -> Dict[str, observable.Observable]:
         return self._task_observables
@@ -151,6 +156,10 @@ class Reach(task.Task):
     def root_entity(self) -> composer.Entity:
         return self._arena
 
+    @property
+    def hand(self) -> fingered_hand.FingeredHand:
+        return self._hand
+
     def initialize_episode(
         self, physics: mjcf.Physics, random_state: np.random.RandomState
     ) -> None:
@@ -158,6 +167,11 @@ class Reach(task.Task):
 
         # Sample a new goal position for each fingertip.
         self._fingertips_initializer(physics, random_state)
+        self._total_solves = 0
+        self._reward_step_counter = 0
+        self._registered_solve = False
+        self._exceeded_single_solve_time = False
+        self._solve_start_time = physics.data.time
 
         # Save initial finger colors.
         if self._visualize_reward:
@@ -170,39 +184,77 @@ class Reach(task.Task):
                 ]
                 self._init_finger_colors[i] = (elems, physics.bind(elems).rgba)
 
+    def before_step(
+        self,
+        physics: mjcf.Physics,
+        action: np.ndarray,
+        random_state: np.random.RandomState,
+    ) -> None:
+        super().before_step(physics, action, random_state)
+
+        if self._reward_step_counter >= self._steps_before_moving_target:
+            self._fingertips_initializer(physics, random_state)
+            self._reward_step_counter = 0
+            self._registered_solve = False
+            self._exceeded_single_solve_time = False
+            self._solve_start_time = physics.data.time
+
     def after_step(
         self, physics: mjcf.Physics, random_state: np.random.RandomState
     ) -> None:
         super().after_step(physics, random_state)
 
         # Check if the fingers are close enough to their targets.
-        goal_pos = self._get_target_positions(physics)
-        cur_pos = self._get_fingertip_positions(physics)
-        self._distance = cast(float, np.linalg.norm(goal_pos - cur_pos))
+        goal_pos = self._get_target_positions(physics).reshape(-1, 3)
+        cur_pos = self._get_fingertip_positions(physics).reshape(-1, 3)
+        self._distance = np.linalg.norm(goal_pos - cur_pos, axis=1)
+        if np.all(self._distance <= _DISTANCE_TO_TARGET_THRESHOLD):
+            self._reward_step_counter += 1
+            if not self._registered_solve:
+                self._total_solves += 1
+                self._registered_solve = True
+        else:
+            if physics.data.time - self._solve_start_time > _MAX_TIME_SINGLE_SOLVE:
+                self._exceeded_single_solve_time = True
 
         # If they are close enough, change their color.
         if self._visualize_reward:
-            self._maybe_color_fingers(
-                physics, goal_pos.reshape(-1, 3), cur_pos.reshape(-1, 3)
-            )
+            self._maybe_color_fingers(physics)
 
     def get_reward(self, physics: mjcf.Physics) -> float:
         del physics  # Unused.
-        # In the dense setting, we return the negative Euclidean distance between the
-        # fingertips and the target sites.
         if self._use_dense_reward:
-            return -1.0 * self._distance
-        # In the sparse setting, we return 0 if this distance is below the threshold,
-        # and -1 otherwise.
-        return -1.0 * (self._distance > _DISTANCE_TO_TARGET_THRESHOLD)
+            # Dense reward:
+            # For each fingertip that is close enough to the target, we reward it with
+            # a +1.
+            # Otherwise, we reward it using a distance function D(a, b) which is defined
+            # as the tanh over the Euclidean distance between a and b, which decays to
+            # 0.05 as the distance reaches 0.1.
+            return np.mean(
+                np.where(
+                    self._distance <= _DISTANCE_TO_TARGET_THRESHOLD,
+                    1.0,
+                    [1.0 - rewards.tanh_squared(d, margin=0.1) for d in self._distance],
+                )
+            )
+        # Sparse reward:
+        # For each fingertip that is close enough to the target, we reward it with a 1.
+        # Otherwise, no reward is given.
+        # We then return the average over all fingertips.
+        # So if all fingertips are within the target, the net reward is 1.0.
+        return np.mean(
+            np.where(self._distance <= _DISTANCE_TO_TARGET_THRESHOLD, 1.0, 0.0)
+        )
 
     def should_terminate_episode(self, physics: mjcf.Physics) -> bool:
         del physics  # Unused.
-        return float(self._distance) <= _DISTANCE_TO_TARGET_THRESHOLD
+        if self._total_solves >= self._max_solves or self._exceeded_single_solve_time:
+            return True
+        return False
 
     @property
-    def step_limit(self) -> Optional[int]:
-        return _STEP_LIMIT
+    def total_solves(self) -> int:
+        return self._total_solves
 
     # Helper methods.
 
@@ -220,19 +272,10 @@ class Reach(task.Task):
         """
         return np.array(physics.bind(self._hand.fingertip_sites).xpos).ravel()
 
-    def _get_action(self, physics: mjcf.Physics) -> np.ndarray:
-        """Returns the control action that was taken at the previous timestep."""
-        return np.array(physics.data.ctrl)
-
-    def _maybe_color_fingers(
-        self,
-        physics: mjcf.Physics,
-        goal_positions: np.ndarray,
-        cur_positions: np.ndarray,
-    ) -> None:
-        for i, (desired, achieved) in enumerate(zip(goal_positions, cur_positions)):
+    def _maybe_color_fingers(self, physics: mjcf.Physics) -> None:
+        for i, distance in enumerate(self._distance):
             elems, rgba = self._init_finger_colors[i]
-            if np.linalg.norm(desired - achieved) < _DISTANCE_TO_TARGET_THRESHOLD:
+            if distance <= _DISTANCE_TO_TARGET_THRESHOLD:
                 physics.bind(elems).rgba = _THRESHOLD_COLOR + (1.0,)
             else:
                 physics.bind(elems).rgba = rgba

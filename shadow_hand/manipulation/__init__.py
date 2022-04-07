@@ -33,6 +33,7 @@ def load(
 
     return _composer.Environment(
         task=task,
+        time_limit=task.time_limit,
         random_state=seed,
         strip_singleton_obs_buffer_dim=strip_singleton_obs_buffer_dim,
     )

@@ -9,6 +9,7 @@ from dm_control import mjcf
 from shadow_hand import hints
 from shadow_hand.models.hands import fingered_hand
 from shadow_hand.utils import mujoco_collisions
+from shadow_hand.utils import mujoco_utils
 
 _REJECTION_SAMPLING_FAILED = (
     "Failed to find a collision-free initial configuration for the fingertips after "
@@ -66,22 +67,32 @@ class FingertipPositionPlacer(composer.Initializer):
         initial_qpos = physics.bind(self._hand.joints).qpos.copy()
         fingertip_pos = None
 
+        # Apply gravity compensation.
+        mujoco_utils.compensate_gravity(physics, self._hand.mjcf_model.find_all("body"))
+
         for _ in range(self._max_rejection_samples):
             # Sample a random joint configuration.
-            qpos = random_state.uniform(
-                physics.bind(self._hand.joints).range[:, 0],
-                physics.bind(self._hand.joints).range[:, 1],
-            )
-            self._hand.set_joint_angles(physics, qpos)
-
+            qpos_desired = self._hand.sample_joint_angles(physics, random_state)
+            self._hand.set_joint_angles(physics, qpos_desired)
             physics.forward()
 
-            # `or` is a short-circuit operator in python, which means collision checking
-            # is only performed if ignore_self_collisions evaluates to False.
-            # See: https://docs.python.org/3/library/stdtypes.html#boolean-operations-and-or-not
             if self._ignore_self_collisions or not self._has_self_collisions(physics):
+                ctrl_desired = self._hand.joint_positions_to_control(qpos_desired)
+
+                self._hand.set_joint_angles(physics, initial_qpos)
+                physics.bind(self._hand.actuators).ctrl[:] = ctrl_desired
+
+                qpos_prev = None
+                while True:
+                    physics.step()
+                    qpos = physics.bind(self._hand.joints).qpos.copy()
+                    if qpos_prev is not None:
+                        if np.all(np.abs(qpos_prev - qpos) <= 1e-3):
+                            break
+                    qpos_prev = qpos
+
                 fingertip_pos = physics.bind(self._hand.fingertip_sites).xpos.copy()
-                self._qpos = qpos
+                self._qpos = qpos_desired
                 break
 
         # Restore the initial joint configuration.
