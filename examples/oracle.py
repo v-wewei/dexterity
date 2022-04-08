@@ -9,6 +9,9 @@ from absl import flags
 
 from shadow_hand import manipulation
 
+flags.DEFINE_enum(
+    "environment_name", "reach_state_dense", manipulation.ALL, "The environment name."
+)
 flags.DEFINE_integer("seed", None, "RNG seed.")
 flags.DEFINE_integer("num_episodes", 1, "Number of episodes to run.")
 
@@ -16,7 +19,7 @@ FLAGS = flags.FLAGS
 
 
 def main(_) -> None:
-    env = manipulation.load(environment_name="reach_state_dense", seed=FLAGS.seed)
+    env = manipulation.load(environment_name=FLAGS.environment_name, seed=FLAGS.seed)
     action_spec = env.action_spec()
 
     def oracle(timestep: dm_env.TimeStep) -> np.ndarray:
@@ -36,19 +39,19 @@ def main(_) -> None:
         num_steps = 0
         returns = 0.0
         rewards = []
-        distances = []
         episode_start = time.time()
         while True:
             action = oracle(timestep)
             actions.append(action)
             timestep = env.step(action)
-            distances.append(np.mean(env.task._distance))
             frames.append(
                 env.physics.render(height=480, width=640, camera_id="front_close")
             )
             returns += timestep.reward
             rewards.append(timestep.reward)
             num_steps += 1
+            if env.task.total_solves > 1:
+                break
             if timestep.last():
                 break
         episode_time_ms = time.time() - episode_start
@@ -61,13 +64,12 @@ def main(_) -> None:
 
     imageio.mimsave("temp/oracle_reach.mp4", frames, fps=30, quality=8)
 
-    plt.figure()
-    plt.plot(np.cumsum(rewards))
-    plt.xlabel("Timestep")
-    plt.ylabel("Episode Return")
-    plt.grid()
-    plt.savefig("temp/oracle_reach_reward.png", format="png")
-    plt.close()
+    with plt.style.context(["science"]):
+        fig, ax = plt.subplots()
+        ax.plot(rewards, "o-")
+        ax.autoscale()
+        ax.set(xlabel="Timestep", ylabel="Reward")
+        fig.savefig("temp/oracle_reach_reward.jpg", dpi=300)
 
 
 if __name__ == "__main__":

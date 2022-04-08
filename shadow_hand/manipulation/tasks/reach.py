@@ -58,10 +58,10 @@ _THRESHOLD_COLOR = (0.0, 1.0, 0.0)
 _REWARD_BONUS: float = 10.0
 
 # Timestep of the physics simulation.
-_PHYSICS_TIMESTEP: float = 0.01
+_PHYSICS_TIMESTEP: float = 0.005
 
 # Interval between agent actions, in seconds.
-_CONTROL_TIMESTEP: float = 0.02
+_CONTROL_TIMESTEP: float = 0.025
 
 # The maximum number of consecutive solves until the task is terminated.
 _MAX_SOLVES: int = 50
