@@ -96,6 +96,12 @@ class FingertipPositionPlacer(composer.Initializer):
                     qpos_prev = qpos
                 physics.data.time = original_time
 
+                # At this point, the fingers could have collided and gotten stuck in a
+                # stalemate. Thus, we check again and discard the solution if any
+                # contacts were detected.
+                if self._has_self_collisions(physics):
+                    continue
+
                 fingertip_pos = physics.bind(self._hand.fingertip_sites).xpos.copy()
                 self._qpos = qpos_desired
                 break

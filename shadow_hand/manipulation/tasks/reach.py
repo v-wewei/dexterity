@@ -58,10 +58,10 @@ _THRESHOLD_COLOR = (0.0, 1.0, 0.0)
 _REWARD_BONUS: float = 10.0
 
 # Timestep of the physics simulation.
-_PHYSICS_TIMESTEP: float = 0.005
+_PHYSICS_TIMESTEP: float = 0.01
 
 # Interval between agent actions, in seconds.
-_CONTROL_TIMESTEP: float = 0.025
+_CONTROL_TIMESTEP: float = 0.02
 
 # The maximum number of consecutive solves until the task is terminated.
 _MAX_SOLVES: int = 50
@@ -109,6 +109,9 @@ class Reach(task.Task):
         self._steps_before_moving_target = steps_before_moving_target
         self._max_solves = max_solves
 
+        # Use RK4 integrator.
+        self.root_entity.mjcf_model.option.integrator = "RK4"
+
         # Attach the hand to the arena.
         self._arena.attach_offset(hand, position=_HAND_POS, quaternion=_HAND_QUAT)
 
@@ -144,9 +147,7 @@ class Reach(task.Task):
 
         # Add camera observables.
         self._task_observables = cameras.add_camera_observables(
-            arena,
-            observable_settings,
-            cameras.FRONT_CLOSE,
+            arena, observable_settings, cameras.FRONT_CLOSE
         )
 
         # Add target positions as an observable.

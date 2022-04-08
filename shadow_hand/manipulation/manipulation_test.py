@@ -39,6 +39,7 @@ class ManipulationTest(parameterized.TestCase):
                 else:
                     self._validate_discount(time_step.discount)
                 action = random_state.uniform(action_spec.minimum, action_spec.maximum)
+                action = action.astype(action_spec.dtype)
                 time_step = env.step(action)
 
     # Helper methods.

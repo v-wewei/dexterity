@@ -19,14 +19,16 @@ class ReachTaskTest(absltest.TestCase):
 
         random_state = np.random.RandomState(12345)
         env = composer.Environment(task, random_state=random_state)
+        action_spec = env.action_spec()
 
         env.reset()
-        timestep = env.step(np.zeros(env.action_spec().shape))
+        timestep = env.step(np.zeros(action_spec.shape, action_spec.dtype))
         self.assertEqual(timestep.reward, 0.0)
 
         assert env.task._fingertips_initializer.qpos is not None
         qpos_sol = env.task._fingertips_initializer.qpos.copy()
         ctrl_sol = env.task.hand.joint_positions_to_control(qpos_sol)
+        ctrl_sol = ctrl_sol.astype(action_spec.dtype)
         while True:
             timestep = env.step(ctrl_sol)
             if env.task.total_solves > 0:
