@@ -1,5 +1,4 @@
 import time
-from typing import Optional
 
 import dm_env
 import mujoco
@@ -10,7 +9,6 @@ from dm_control import mjcf
 from dm_control.mujoco import wrapper
 
 from shadow_hand import manipulation
-from shadow_hand import wrappers
 
 flags.DEFINE_enum(
     "environment_name", "reach_state_dense", manipulation.ALL, "The environment name."
@@ -21,18 +19,8 @@ flags.DEFINE_integer("num_episodes", 1, "Number of episodes to run.")
 FLAGS = flags.FLAGS
 
 
-def make_env(environment_name: str, seed: Optional[int] = None) -> dm_env.Environment:
-    env = manipulation.load(
-        environment_name=environment_name,
-        strip_singleton_obs_buffer_dim=True,
-        seed=seed,
-    )
-    env = wrappers.SinglePrecisionWrapper(env)
-    env = wrappers.ConcatObservationWrapper(env)
-    return env
-
-
 def render(physics: mjcf.Physics) -> np.ndarray:
+    """Custom rendering with contact points and forces."""
     scene_option = wrapper.core.MjvOption()
     scene_option.flags[mujoco.mjtVisFlag.mjVIS_CONTACTPOINT] = True
     scene_option.flags[mujoco.mjtVisFlag.mjVIS_CONTACTFORCE] = True
@@ -42,7 +30,11 @@ def render(physics: mjcf.Physics) -> np.ndarray:
 
 
 def main(_) -> None:
-    env = make_env(environment_name=FLAGS.environment_name, seed=FLAGS.seed)
+    env = manipulation.load(
+        environment_name=FLAGS.environment_name,
+        strip_singleton_obs_buffer_dim=True,
+        seed=FLAGS.seed,
+    )
     action_spec = env.action_spec()
 
     def oracle(timestep: dm_env.TimeStep) -> np.ndarray:

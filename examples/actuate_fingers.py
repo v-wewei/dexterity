@@ -67,81 +67,81 @@ def main() -> None:
     time += duration_per
     for i in range(2):
         control[0] = consts.ACTUATOR_CTRLRANGE[consts.Actuators.A_WRJ1][0]
-        hand.set_position_control(physics, hand.joint_positions_to_control(control))
+        physics.bind(hand.actuators).ctrl[:] = hand.joint_positions_to_control(control)
         render(physics, frames, time, framerate)
         if i == 1:
             control[0] = 0.0
         else:
             control[0] = consts.ACTUATOR_CTRLRANGE[consts.Actuators.A_WRJ1][1]
-        hand.set_position_control(physics, hand.joint_positions_to_control(control))
+        physics.bind(hand.actuators).ctrl[:] = hand.joint_positions_to_control(control)
         render(physics, frames, time + duration_per, framerate)
         time += 2 * duration_per
 
     # Thumb.
     control[23] = consts.ACTUATOR_CTRLRANGE[consts.Actuators.A_THJ0][1]
-    hand.set_position_control(physics, hand.joint_positions_to_control(control))
+    physics.bind(hand.actuators).ctrl[:] = hand.joint_positions_to_control(control)
     render(physics, frames, time, framerate)
 
     # First finger.
     time += duration_per
     control[4] += np.radians(90)
     control[5] += np.radians(90)
-    hand.set_position_control(physics, hand.joint_positions_to_control(control))
+    physics.bind(hand.actuators).ctrl[:] = hand.joint_positions_to_control(control)
     render(physics, frames, time, framerate)
 
     # Middle finger.
     time += duration_per
     control[8] += np.radians(90)
     control[9] += np.radians(90)
-    hand.set_position_control(physics, hand.joint_positions_to_control(control))
+    physics.bind(hand.actuators).ctrl[:] = hand.joint_positions_to_control(control)
     render(physics, frames, time, framerate)
 
     # Ring finger.
     time += duration_per
     control[12] += np.radians(90)
     control[13] += np.radians(90)
-    hand.set_position_control(physics, hand.joint_positions_to_control(control))
+    physics.bind(hand.actuators).ctrl[:] = hand.joint_positions_to_control(control)
     render(physics, frames, time, framerate)
 
     # Little finger.
     time += duration_per
     control[17] += np.radians(90)
     control[18] += np.radians(90)
-    hand.set_position_control(physics, hand.joint_positions_to_control(control))
+    physics.bind(hand.actuators).ctrl[:] = hand.joint_positions_to_control(control)
     render(physics, frames, time, framerate)
 
     # Little finger.
     time += duration_per
     control[17] -= np.radians(90)
     control[18] -= np.radians(90)
-    hand.set_position_control(physics, hand.joint_positions_to_control(control))
+    physics.bind(hand.actuators).ctrl[:] = hand.joint_positions_to_control(control)
     render(physics, frames, time, framerate)
 
     # Ring finger.
     time += duration_per
     control[12] -= np.radians(90)
     control[13] -= np.radians(90)
-    hand.set_position_control(physics, hand.joint_positions_to_control(control))
+    physics.bind(hand.actuators).ctrl[:] = hand.joint_positions_to_control(control)
     render(physics, frames, time, framerate)
 
     # Middle finger.
     time += duration_per
     control[8] -= np.radians(90)
     control[9] -= np.radians(90)
-    hand.set_position_control(physics, hand.joint_positions_to_control(control))
+    physics.bind(hand.actuators).ctrl[:] = hand.joint_positions_to_control(control)
     render(physics, frames, time, framerate)
 
     # First finger.
     time += duration_per
     control[4] -= np.radians(90)
     control[5] -= np.radians(90)
-    hand.set_position_control(physics, hand.joint_positions_to_control(control))
+    physics.bind(hand.actuators).ctrl[:] = hand.joint_positions_to_control(control)
     render(physics, frames, time, framerate)
 
     # Thumb.
     time += duration_per
     control[23] = consts.ACTUATOR_CTRLRANGE[consts.Actuators.A_THJ0][0]
-    hand.set_position_control(physics, hand.joint_positions_to_control(control))
+    physics.bind(hand.actuators).ctrl[:] = hand.joint_positions_to_control(control)
     render(physics, frames, time, framerate)
 
     imageio.mimsave("temp/teaser.gif", frames, fps=framerate)
