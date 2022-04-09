@@ -12,15 +12,18 @@ from shadow_hand import manipulation
 _SEED = 12345
 _NUM_EPISODES = 5
 _NUM_STEPS_PER_EPISODE = 10
+_DOMAINS_AND_TASKS = [
+    dict(domain=domain, task=task) for domain, task in manipulation.ALL_TASKS
+]
 
 
 class ManipulationTest(parameterized.TestCase):
     """Tests run on all the registered tasks."""
 
-    @parameterized.parameters(*manipulation.ALL)
-    def test_task_runs(self, task_name: str) -> None:
+    @parameterized.parameters(_DOMAINS_AND_TASKS)
+    def test_task_runs(self, domain: str, task: str) -> None:
         """Tests that the environment runs and is coherent with its specs."""
-        env = manipulation.load(task_name, seed=_SEED)
+        env = manipulation.load(domain, task, seed=_SEED)
         random_state = np.random.RandomState(_SEED)
 
         observation_spec = env.observation_spec()

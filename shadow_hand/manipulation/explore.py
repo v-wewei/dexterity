@@ -2,23 +2,22 @@
 
 from typing import Sequence
 
-import dm_env
-import numpy as np
 from absl import app
 from absl import flags
 from dm_control import viewer
 
 from shadow_hand import manipulation
 
+_ALL_NAMES = [".".join(domain_task) for domain_task in manipulation.ALL_TASKS]
+
 flags.DEFINE_enum(
     "environment_name",
     None,
-    manipulation.ALL,
-    "Optional name of an environment to load. If unspecified a prompt will appear to "
-    "select one.",
+    _ALL_NAMES,
+    "Optional 'domain_name.task_name' pair specifying the environment to load.",
 )
 flags.DEFINE_integer("seed", None, "RNG seed.")
-flags.DEFINE_boolean("no_policy", False, "If toggled, disables the random policy.")
+flags.DEFINE_bool("timeout", True, "Whether episodes should have a time limit.")
 
 FLAGS = flags.FLAGS
 
@@ -34,30 +33,28 @@ def prompt_environment_name(values: Sequence[str]) -> str:
 
 
 def main(_) -> None:
-    all_names = list(manipulation.ALL)
-
     if FLAGS.environment_name is None:
-        print("\n ".join(["Available environments:"] + all_names))
-        environment_name = prompt_environment_name(all_names)
+        print("\n ".join(["Available environments:"] + _ALL_NAMES))
+        environment_name = prompt_environment_name(_ALL_NAMES)
     else:
         environment_name = FLAGS.environment_name
 
-    env = manipulation.load(environment_name=environment_name, seed=FLAGS.seed)
-    action_spec = env.action_spec()
+    index = _ALL_NAMES.index(environment_name)
+    domain_name, task_name = manipulation.ALL_TASKS[index]
+
+    env = manipulation.load(
+        domain_name=domain_name,
+        task_name=task_name,
+        seed=FLAGS.seed,
+        time_limit=float("inf") if not FLAGS.timeout else None,
+    )
 
     # Print entity and task observables.
     timestep = env.reset()
     for k, v in timestep.observation.items():
         print(f"{k}: {v.shape}")
 
-    def oracle(timestep: dm_env.TimeStep) -> np.ndarray:
-        del timestep  # Unused
-        qpos = env.task._fingertips_initializer.qpos.copy()
-        ctrl = env.task.hand.joint_positions_to_control(qpos)
-        ctrl = ctrl.astype(action_spec.dtype)
-        return ctrl
-
-    viewer.launch(env, policy=None if FLAGS.no_policy else oracle)
+    viewer.launch(env)
 
 
 if __name__ == "__main__":

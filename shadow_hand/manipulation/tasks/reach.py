@@ -7,6 +7,7 @@ import numpy as np
 from dm_control import composer
 from dm_control import mjcf
 from dm_control.composer.observation import observable
+from dm_control.utils import containers
 from dm_robotics.transformations import transformations as tr
 
 from shadow_hand import effector
@@ -17,7 +18,6 @@ from shadow_hand.manipulation import arenas
 from shadow_hand.manipulation.shared import cameras
 from shadow_hand.manipulation.shared import initializers
 from shadow_hand.manipulation.shared import observations
-from shadow_hand.manipulation.shared import registry
 from shadow_hand.manipulation.shared import rewards
 from shadow_hand.manipulation.shared import tags
 from shadow_hand.manipulation.shared import workspaces
@@ -72,6 +72,8 @@ _MAX_TIME_SINGLE_SOLVE: float = 1.0
 # The maximum allowed time for the entire episode, in seconds.
 _TIME_LIMIT = _MAX_SOLVES * _MAX_TIME_SINGLE_SOLVE
 
+SUITE = containers.TaggedTasks()
+
 
 class Reach(task.Task):
     """Move the fingers to desired goal positions."""
@@ -109,7 +111,13 @@ class Reach(task.Task):
         self._steps_before_moving_target = steps_before_moving_target
         self._max_solves = max_solves
 
-        # Use RK4 integrator.
+        # It seems that with the default Euler integrator, goal initialization can
+        # produce target positions that are solvable in the initialization phase, but
+        # result in a stalemate where fingers collide and get stuck in the actual policy
+        # rollout. This is probably due to compounding errors in the stepping. RK4 seems
+        # to be a bit more stable in this regard, so we use that instead. Unfortunately,
+        # it does make the runtime a bit longer. The correct thing to do would be to
+        # probably reuse the same warmstart state and stick to Euler.
         self.root_entity.mjcf_model.option.integrator = "RK4"
 
         # Attach the hand to the arena.
@@ -328,8 +336,8 @@ def reach_task(
     )
 
 
-@registry.add(tags.STATE, tags.DENSE)
-def reach_state_dense() -> composer.Task:
+@SUITE.add(tags.STATE, tags.DENSE)
+def state_dense() -> composer.Task:
     """Reach task with full state observations and dense reward."""
     return reach_task(
         observation_set=observations.ObservationSet.STATE_ONLY,
@@ -338,8 +346,8 @@ def reach_state_dense() -> composer.Task:
     )
 
 
-@registry.add(tags.STATE, tags.SPARSE)
-def reach_state_sparse() -> composer.Task:
+@SUITE.add(tags.STATE, tags.SPARSE)
+def state_sparse() -> composer.Task:
     """Reach task with full state observations and sparse reward."""
     return reach_task(
         observation_set=observations.ObservationSet.STATE_ONLY,

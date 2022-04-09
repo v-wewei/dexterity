@@ -11,6 +11,7 @@ from dm_control.composer import initializers
 from dm_control.composer.observation import observable
 from dm_control.composer.variation import distributions
 from dm_control.composer.variation import rotations
+from dm_control.utils import containers
 from dm_control.utils import rewards as reward_utils
 from dm_robotics.transformations import transformations as tr
 
@@ -22,7 +23,6 @@ from shadow_hand.manipulation import props
 from shadow_hand.manipulation.shared import cameras
 from shadow_hand.manipulation.shared import constants
 from shadow_hand.manipulation.shared import observations
-from shadow_hand.manipulation.shared import registry
 from shadow_hand.manipulation.shared import rewards
 from shadow_hand.manipulation.shared import tags
 from shadow_hand.manipulation.shared import workspaces
@@ -85,6 +85,8 @@ _FREEPROP_OBSERVABLES = observations.ObservableNames(
 _TARGETPROP_OBSERVABLES = observations.ObservableNames(
     prop_pose=("orientation",),
 )
+
+SUITE = containers.TaggedTasks()
 
 
 class ReOrient(task.Task):
@@ -403,8 +405,8 @@ def reorient_task(
     )
 
 
-@registry.add(tags.STATE)
-def reorient_state() -> composer.Task:
+@SUITE.add(tags.STATE)
+def state_dense() -> composer.Task:
     return reorient_task(
         observation_set=observations.ObservationSet.STATE_ONLY,
     )

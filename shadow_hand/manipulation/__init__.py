@@ -1,30 +1,66 @@
-from typing import Optional, Tuple
+import collections
+import inspect
+from typing import Optional
 
 from dm_control import composer as _composer
 
-from shadow_hand.manipulation.shared import registry as _registry
-from shadow_hand.manipulation.tasks import reach as _reach
-from shadow_hand.manipulation.tasks import reorient as _reorient
-from shadow_hand.task import Task
+from shadow_hand.manipulation.tasks import reach
+from shadow_hand.manipulation.tasks import reorient
 from shadow_hand.utils import mujoco_collisions
 
-_registry.done_importing_tasks()
+# Find all domains imported.
+_DOMAINS = {
+    name: module
+    for name, module in locals().items()
+    if inspect.ismodule(module) and hasattr(module, "SUITE")
+}
 
-ALL: Tuple[str, ...] = tuple(_registry.get_all_names())
+
+def _get_tasks(tag):
+    """Returns a sequence of (domain name, task name) pairs for the given tag."""
+    result = []
+    for domain_name in sorted(_DOMAINS.keys()):
+        domain = _DOMAINS[domain_name]
+        if tag is None:
+            tasks_in_domain = domain.SUITE
+        else:
+            tasks_in_domain = domain.SUITE.tagged(tag)
+        for task_name in tasks_in_domain.keys():
+            result.append((domain_name, task_name))
+    return tuple(result)
 
 
-def get_environments_by_tag(tag: str) -> Tuple[str, ...]:
-    """Returns the names of all environments matching a given tag."""
-    return tuple(_registry.get_names_by_tag(tag))
+def _get_tasks_by_domain(tasks):
+    """Returns a dict mapping from task name to a tuple of domain names."""
+    result = collections.defaultdict(list)
+
+    for domain_name, task_name in tasks:
+        result[domain_name].append(task_name)
+
+    return {k: tuple(v) for k, v in result.items()}
+
+
+# A sequence containing all (domain name, task name) pairs.
+ALL_TASKS = _get_tasks(tag=None)
+
+# A mapping from each domain name to a sequence of its task names.
+TASKS_BY_DOMAIN = _get_tasks_by_domain(ALL_TASKS)
 
 
 def load(
-    environment_name: str,
+    domain_name: str,
+    task_name: str,
     seed: Optional[int] = None,
     strip_singleton_obs_buffer_dim: bool = True,
+    time_limit: Optional[float] = None,
 ) -> _composer.Environment:
-    # Build the task.
-    task: Task = _registry.get_constructor(environment_name)()
+    if domain_name not in _DOMAINS:
+        raise ValueError(f"Unknown domain: {domain_name}")
+    domain = _DOMAINS[domain_name]
+
+    if task_name not in domain.SUITE:
+        raise ValueError(f"Unknown task: {task_name}")
+    task = domain.SUITE[task_name]()
 
     # Ensure MuJoCo will not check for collisions between geoms that can never collide.
     mujoco_collisions.exclude_bodies_based_on_contype_conaffinity(
@@ -33,7 +69,7 @@ def load(
 
     return _composer.Environment(
         task=task,
-        time_limit=task.time_limit,
+        time_limit=time_limit or task.time_limit,
         random_state=seed,
         strip_singleton_obs_buffer_dim=strip_singleton_obs_buffer_dim,
     )

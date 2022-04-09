@@ -1,3 +1,5 @@
+"""Rollout and visualize an oracle policy for the reaching domain."""
+
 import time
 
 import dm_env
@@ -10,9 +12,10 @@ from dm_control.mujoco import wrapper
 
 from shadow_hand import manipulation
 
-flags.DEFINE_enum(
-    "environment_name", "reach_state_dense", manipulation.ALL, "The environment name."
-)
+_DOMAIN = "reach"
+_REACH_TASKS = manipulation.TASKS_BY_DOMAIN[_DOMAIN]
+
+flags.DEFINE_enum("task_name", "state_dense", _REACH_TASKS, "Which reach task to load.")
 flags.DEFINE_integer("seed", None, "RNG seed.")
 flags.DEFINE_integer("num_episodes", 1, "Number of episodes to run.")
 
@@ -22,7 +25,6 @@ FLAGS = flags.FLAGS
 def render(physics: mjcf.Physics) -> np.ndarray:
     """Custom rendering with contact points and forces."""
     scene_option = wrapper.core.MjvOption()
-    scene_option.flags[mujoco.mjtVisFlag.mjVIS_CONTACTPOINT] = True
     scene_option.flags[mujoco.mjtVisFlag.mjVIS_CONTACTFORCE] = True
     return physics.render(
         height=480, width=640, camera_id="front_close", scene_option=scene_option
@@ -31,7 +33,8 @@ def render(physics: mjcf.Physics) -> np.ndarray:
 
 def main(_) -> None:
     env = manipulation.load(
-        environment_name=FLAGS.environment_name,
+        domain_name=_DOMAIN,
+        task_name=FLAGS.task_name,
         strip_singleton_obs_buffer_dim=True,
         seed=FLAGS.seed,
     )
@@ -72,8 +75,9 @@ def main(_) -> None:
         print(f"Total reward: {returns}")
         print(f"Solves: {env.task.total_solves}")
 
-    # import imageio
-    # imageio.mimsave("temp/oracle_reach.mp4", frames, fps=30, quality=8)
+    import imageio
+
+    imageio.mimsave("temp/oracle_reach.mp4", frames, fps=30, quality=8)
 
 
 if __name__ == "__main__":

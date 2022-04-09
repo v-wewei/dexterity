@@ -7,7 +7,8 @@ from shadow_hand import manipulation
 
 class LoaderConstantsTest(absltest.TestCase):
     def testConstants(self) -> None:
-        self.assertNotEmpty(manipulation.ALL)
+        self.assertNotEmpty(manipulation.ALL_TASKS)
+        self.assertNotEmpty(manipulation.TASKS_BY_DOMAIN)
 
 
 if __name__ == "__main__":
