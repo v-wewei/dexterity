@@ -72,6 +72,17 @@ class RobotHandObservables(composer.Observables):
     def joint_positions(self) -> observable.MJCFFeature:
         return observable.MJCFFeature(kind="qpos", mjcf_element=self._entity.joints)
 
+    # shape: (1, 48)
+    @composer.observable
+    def joint_positions_sin_cos(self) -> observable.MJCFFeature:
+        def _get_joint_pos_sin_cos(physics: mjcf.Physics) -> np.ndarray:
+            qpos = physics.bind(self._entity.joints).qpos
+            qpos_sin = np.sin(qpos)
+            qpos_cos = np.cos(qpos)
+            return np.concatenate([qpos_sin, qpos_cos])
+
+        return observable.Generic(raw_observation_callable=_get_joint_pos_sin_cos)
+
     # shape: (1, 24)
     @composer.observable
     def joint_velocities(self) -> observable.MJCFFeature:

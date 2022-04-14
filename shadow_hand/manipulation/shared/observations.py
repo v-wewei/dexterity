@@ -99,7 +99,7 @@ HAND_OBSERVABLES = ObservableNames(
         "fingertip_positions",
         "fingertip_linear_velocities",
     ),
-    proprio=("joint_positions",),
+    proprio=("joint_positions_sin_cos",),
 )
 
 
