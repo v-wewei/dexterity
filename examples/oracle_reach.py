@@ -65,7 +65,7 @@ def main(_) -> None:
             rewards.append(timestep.reward)
             num_steps += 1
             if timestep.last():
-                assert env.task.total_solves == 50, "Oracle failed to solve the task."
+                assert env.task.total_solves == 25, "Oracle failed to solve the task."
                 break
         episode_time_ms = time.time() - episode_start
 

@@ -58,13 +58,13 @@ _THRESHOLD_COLOR = (0.0, 1.0, 0.0)
 _REWARD_BONUS: float = 10.0
 
 # Timestep of the physics simulation.
-_PHYSICS_TIMESTEP: float = 0.01
+_PHYSICS_TIMESTEP: float = 0.02
 
 # Interval between agent actions, in seconds.
-_CONTROL_TIMESTEP: float = 0.02
+_CONTROL_TIMESTEP: float = 0.08
 
 # The maximum number of consecutive solves until the task is terminated.
-_MAX_SOLVES: int = 50
+_MAX_SOLVES: int = 25
 
 # The maximum allowed time for reaching the current target, in seconds.
 _MAX_TIME_SINGLE_SOLVE: float = 1.0
@@ -99,8 +99,11 @@ class Reach(task.Task):
             hand_effector: The effector to use for the hand.
             observable_settings: Settings for entity and task observables.
             use_dense_reward: Whether to use a dense reward.
-            visualize_reward:
-            steps_before_moving_target:
+            visualize_reward: Whether to color the fingers when they reach their
+                respective targets.
+            steps_before_moving_target: How many steps to remain at the current targets
+                before setting new ones.
+            max_solves: The maximum number of target solves before terminating the task.
             control_timestep: The control timestep, in seconds.
             physics_timestep: The physics timestep, in seconds.
         """
