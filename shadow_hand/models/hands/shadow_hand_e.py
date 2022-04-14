@@ -37,10 +37,6 @@ class ShadowHandSeriesE(fingered_hand.FingeredHand):
         self._add_actuators()
         self._add_sensors()
 
-    def before_substep(self, physics, random_state):
-        mujoco_utils.compensate_gravity(physics, self.mjcf_model.find_all("body"))
-        return super().before_step(physics, random_state)
-
     def initialize_episode(
         self, physics: mjcf.Physics, random_state: np.random.RandomState
     ) -> None:
