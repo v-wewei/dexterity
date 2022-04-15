@@ -64,10 +64,6 @@ _MAX_SOLVES: int = 25
 # Corresponds to _MAX_TIME_SINGLE_SOLVE / _CONTROL_TIMESTEP steps.
 _MAX_TIME_SINGLE_SOLVE: float = 1.0
 
-# The maximum allowed time for the entire episode, in seconds.
-_TIME_WAITING_FOR_NEXT_TARGET = _STEPS_BEFORE_MOVING_TARGET * _CONTROL_TIMESTEP
-_TIME_LIMIT = _MAX_SOLVES * (_MAX_TIME_SINGLE_SOLVE + _TIME_WAITING_FOR_NEXT_TARGET)
-
 SUITE = containers.TaggedTasks()
 
 
@@ -256,6 +252,17 @@ class Reach(task.Task):
             return True
         return False
 
+    def get_discount(self, physics: mjcf.Physics) -> float:
+        # In the finite-horizon setting, on successful termination, we return 0.0 to
+        # indicate a terminal state. If the episode did not successfully terminate,
+        # i.e., the agent exceeded the time limit for a single solve, we return a
+        # discount of 1.0 to indicate that the agent should treat the episode as if it
+        # would have continued, even though the trajectory is truncated.
+        del physics  # Unused.
+        if self._total_solves >= self._max_solves:
+            return 0.0
+        return 1.0
+
     @property
     def total_solves(self) -> int:
         return self._total_solves
@@ -263,10 +270,6 @@ class Reach(task.Task):
     @property
     def max_solves(self) -> int:
         return self._max_solves
-
-    @property
-    def time_limit(self) -> float:
-        return _TIME_LIMIT
 
     # Helper methods.
 
