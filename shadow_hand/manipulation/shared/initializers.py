@@ -65,10 +65,14 @@ class FingertipPositionPlacer(composer.Initializer):
                 be found after `max_rejection_samples` randomly sampled joint
                 configurations.
         """
-        initial_qpos = physics.bind(self._hand.joints).qpos.copy()
+        joint_binding = physics.bind(self._hand.joints)
+        actuator_binding = physics.bind(self._hand.actuators)
+
+        initial_qpos = joint_binding.qpos.copy()
+        initial_ctrl = actuator_binding.ctrl.copy()
         fingertip_pos = None
 
-        # Apply gravity compensation.
+        # # Apply gravity compensation.
         mujoco_utils.compensate_gravity(physics, self._hand.mjcf_model.find_all("body"))
 
         for _ in range(self._max_rejection_samples):
@@ -81,7 +85,7 @@ class FingertipPositionPlacer(composer.Initializer):
                 ctrl_desired = self._hand.joint_positions_to_control(qpos_desired)
 
                 self._hand.set_joint_angles(physics, initial_qpos)
-                physics.bind(self._hand.actuators).ctrl[:] = ctrl_desired
+                actuator_binding.ctrl[:] = ctrl_desired
 
                 original_time = physics.data.time
                 hand_isolator = utils.JointStaticIsolator(physics, self._hand.joints)
@@ -89,7 +93,7 @@ class FingertipPositionPlacer(composer.Initializer):
                 while True:
                     with hand_isolator:
                         physics.step()
-                    qpos = physics.bind(self._hand.joints).qpos.copy()
+                    qpos = joint_binding.qpos.copy()
                     if qpos_prev is not None:
                         if np.all(np.abs(qpos_prev - qpos) <= 1e-3):
                             break
@@ -106,8 +110,9 @@ class FingertipPositionPlacer(composer.Initializer):
                 self._qpos = qpos_desired
                 break
 
-        # Restore the initial joint configuration.
+        # Restore the initial joint configuration and ctrl.
         self._hand.set_joint_angles(physics, initial_qpos)
+        actuator_binding.ctrl[:] = initial_ctrl
 
         if fingertip_pos is None:
             raise RuntimeError(
