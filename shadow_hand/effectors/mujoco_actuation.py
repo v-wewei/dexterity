@@ -30,7 +30,8 @@ class MujocoEffector(effector.Effector):
         return self._action_spec
 
     def set_control(self, physics: mjcf.Physics, command: np.ndarray) -> None:
-        self.action_spec(physics).validate(command)
+        # NOTE(kevin): Commenting out for now until I figure out where to clip.
+        # self.action_spec(physics).validate(command)
         physics.bind(self._actuators).ctrl[:] = command
 
     @property

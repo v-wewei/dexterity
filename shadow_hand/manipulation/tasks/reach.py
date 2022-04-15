@@ -51,9 +51,6 @@ _DISTANCE_TO_TARGET_THRESHOLD = 0.01  # 1 cm.
 # Assign this color to the finger geoms if the finger is within the target threshold.
 _THRESHOLD_COLOR = (0.0, 1.0, 0.0)  # Green.
 
-# Bonus reward if all fingers have reached their target locations.
-_REWARD_BONUS: float = 10.0
-
 # Timestep of the physics simulation.
 _PHYSICS_TIMESTEP: float = 0.02
 
@@ -240,34 +237,18 @@ class Reach(task.Task):
     def get_reward(self, physics: mjcf.Physics) -> float:
         del physics  # Unused.
         if self._use_dense_reward:
-            # Dense reward:
-            # For each fingertip that is close enough to the target, we reward it with
-            # a +1.
-            # Otherwise, we reward it using a distance function D(a, b) which is defined
-            # as the tanh over the Euclidean distance between a and b, which decays to
-            # 0.05 as the distance reaches 0.1.
-            # A bonus is given if all fingertips reach their targets.
-            reward = np.mean(
+            # Dense reward.
+            return np.mean(
                 np.where(
                     self._distance <= _DISTANCE_TO_TARGET_THRESHOLD,
-                    1.0,
-                    [1.0 - rewards.tanh_squared(d, margin=0.1) for d in self._distance],
+                    0.0,
+                    [-rewards.tanh_squared(d, margin=0.1) for d in self._distance],
                 )
             )
-            if np.all(self._distance <= _DISTANCE_TO_TARGET_THRESHOLD):
-                reward += _REWARD_BONUS
-            return reward
-        # Sparse reward:
-        # For each fingertip that is close enough to the target, we reward it with a 1.
-        # Otherwise, no reward is given.
-        # We then return the average over all fingertips.
-        # A bonus is given if all fingertips reach their targets.
-        reward = np.mean(
-            np.where(self._distance <= _DISTANCE_TO_TARGET_THRESHOLD, 1.0, 0.0)
+        # Sparse reward.
+        return np.mean(
+            np.where(self._distance <= _DISTANCE_TO_TARGET_THRESHOLD, 0.0, -1.0)
         )
-        if np.all(self._distance <= _DISTANCE_TO_TARGET_THRESHOLD):
-            reward += _REWARD_BONUS
-        return reward
 
     def should_terminate_episode(self, physics: mjcf.Physics) -> bool:
         del physics  # Unused.

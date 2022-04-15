@@ -6,7 +6,6 @@ from dm_control import composer
 
 from shadow_hand.manipulation.shared import observations
 from shadow_hand.manipulation.tasks import reach_task
-from shadow_hand.manipulation.tasks.reach import _REWARD_BONUS
 
 
 class ReachTaskTest(absltest.TestCase):
@@ -23,7 +22,7 @@ class ReachTaskTest(absltest.TestCase):
 
         env.reset()
         timestep = env.step(np.zeros(action_spec.shape, action_spec.dtype))
-        self.assertEqual(timestep.reward, 0.0)
+        self.assertEqual(timestep.reward, -1.0)
 
         assert env.task._fingertips_initializer.qpos is not None
         qpos_sol = env.task._fingertips_initializer.qpos.copy()
@@ -33,7 +32,7 @@ class ReachTaskTest(absltest.TestCase):
             timestep = env.step(ctrl_sol)
             if env.task.total_solves > 0:
                 break
-        expected_reward = 1 + _REWARD_BONUS
+        expected_reward = 0.0
         np.testing.assert_equal(timestep.reward, expected_reward)
 
 
