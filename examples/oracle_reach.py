@@ -3,6 +3,7 @@
 import time
 
 import dm_env
+import imageio
 import mujoco
 import numpy as np
 from absl import app
@@ -65,7 +66,6 @@ def main(_) -> None:
             rewards.append(timestep.reward)
             num_steps += 1
             if timestep.last():
-                assert env.task.total_solves == 25, "Oracle failed to solve the task."
                 break
         episode_time_ms = time.time() - episode_start
 
@@ -73,11 +73,9 @@ def main(_) -> None:
         print(f"Episode time: {episode_time_ms:.2f} seconds.")
         print(f"{num_steps} steps taken.")
         print(f"Total reward: {returns}")
-        print(f"Solves: {env.task.total_solves}")
+        print(f"Success rate: {env.task.total_solves}/{env.task.max_solves}")
 
-    import imageio
-
-    imageio.mimsave("temp/oracle_reach.mp4", frames, fps=30, quality=8)
+    imageio.mimsave("temp/oracle_reach.mp4", frames, fps=60, quality=8)
 
 
 if __name__ == "__main__":

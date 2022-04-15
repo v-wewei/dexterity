@@ -72,7 +72,7 @@ class FingertipPositionPlacer(composer.Initializer):
         initial_ctrl = actuator_binding.ctrl.copy()
         fingertip_pos = None
 
-        # # Apply gravity compensation.
+        # Apply gravity compensation.
         mujoco_utils.compensate_gravity(physics, self._hand.mjcf_model.find_all("body"))
 
         for _ in range(self._max_rejection_samples):

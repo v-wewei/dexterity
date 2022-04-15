@@ -8,7 +8,6 @@ from dm_control import composer
 from dm_control import mjcf
 from dm_control.composer.observation import observable
 from dm_control.utils import containers
-from dm_robotics.transformations import transformations as tr
 
 from shadow_hand import effector
 from shadow_hand import effectors
@@ -26,11 +25,9 @@ from shadow_hand.models.hands import shadow_hand_e
 from shadow_hand.models.hands import shadow_hand_e_constants as consts
 
 # The position of the hand relative in the world frame, in meters.
-_HAND_POS = (0, 0.2, 0.1)
+_HAND_POS = (0.0, 0.2, 0.1)
 # The orientation of the hand relative to the world frame.
-_HAND_QUAT = tr.axisangle_to_quat(
-    np.pi * np.array([0, np.sqrt(2) / 2, -np.sqrt(2) / 2])
-)
+_HAND_QUAT = (0.0, 0.0, 0.707106781186, -0.707106781186)
 
 _SITE_SIZE = 1e-2
 _SITE_ALPHA = 0.1
@@ -52,7 +49,7 @@ _STEPS_BEFORE_MOVING_TARGET: int = 5
 _DISTANCE_TO_TARGET_THRESHOLD = 0.01  # 1 cm.
 
 # Assign this color to the finger geoms if the finger is within the target threshold.
-_THRESHOLD_COLOR = (0.0, 1.0, 0.0)
+_THRESHOLD_COLOR = (0.0, 1.0, 0.0)  # Green.
 
 # Bonus reward if all fingers have reached their target locations.
 _REWARD_BONUS: float = 10.0
@@ -61,16 +58,18 @@ _REWARD_BONUS: float = 10.0
 _PHYSICS_TIMESTEP: float = 0.02
 
 # Interval between agent actions, in seconds.
-_CONTROL_TIMESTEP: float = 0.08
+_CONTROL_TIMESTEP: float = 0.02  # 50 Hz.
 
 # The maximum number of consecutive solves until the task is terminated.
 _MAX_SOLVES: int = 25
 
 # The maximum allowed time for reaching the current target, in seconds.
+# Corresponds to _MAX_TIME_SINGLE_SOLVE / _CONTROL_TIMESTEP steps.
 _MAX_TIME_SINGLE_SOLVE: float = 1.0
 
 # The maximum allowed time for the entire episode, in seconds.
-_TIME_LIMIT = _MAX_SOLVES * _MAX_TIME_SINGLE_SOLVE
+_TIME_WAITING_FOR_NEXT_TARGET = _STEPS_BEFORE_MOVING_TARGET * _CONTROL_TIMESTEP
+_TIME_LIMIT = _MAX_SOLVES * (_MAX_TIME_SINGLE_SOLVE + _TIME_WAITING_FOR_NEXT_TARGET)
 
 SUITE = containers.TaggedTasks()
 
@@ -126,10 +125,7 @@ class Reach(task.Task):
         # Attach the hand to the arena.
         self._arena.attach_offset(hand, position=_HAND_POS, quaternion=_HAND_QUAT)
 
-        self.set_timesteps(
-            control_timestep=control_timestep,
-            physics_timestep=physics_timestep,
-        )
+        self.set_timesteps(control_timestep, physics_timestep)
 
         # Create visible sites for the finger tips.
         for i, site in enumerate(self._hand.fingertip_sites):
@@ -282,6 +278,10 @@ class Reach(task.Task):
     @property
     def total_solves(self) -> int:
         return self._total_solves
+
+    @property
+    def max_solves(self) -> int:
+        return self._max_solves
 
     @property
     def time_limit(self) -> float:
