@@ -11,7 +11,7 @@ from absl import flags
 from dm_control import mjcf
 from dm_control.mujoco import wrapper
 
-from shadow_hand import manipulation
+from dexterity import manipulation
 
 _DOMAIN = "reach"
 _REACH_TASKS = manipulation.TASKS_BY_DOMAIN[_DOMAIN]

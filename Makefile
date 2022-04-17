@@ -28,4 +28,4 @@ test:
 	pytest -n auto
 
 explore:
-	python shadow_hand/manipulation/explore.py
+	python dexterity/manipulation/explore.py

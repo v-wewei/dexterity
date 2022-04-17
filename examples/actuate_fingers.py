@@ -4,8 +4,8 @@ import imageio
 import numpy as np
 from dm_control import mjcf
 
-from shadow_hand.models.hands import shadow_hand_e
-from shadow_hand.models.hands import shadow_hand_e_constants as consts
+from dexterity.models.hands import shadow_hand_e
+from dexterity.models.hands import shadow_hand_e_constants as consts
 
 
 def render(

@@ -36,13 +36,13 @@ dev_requirements = (
 
 
 setup(
-    name="shadow_hand",
+    name="dexterity",
     version="0.0.0",
     author="Kevin Zakka",
     license_files=("LICENSE",),
     packages=find_packages(),
     package_data={
-        "shadow_hand": [
+        "dexterity": [
             "py.typed",
             "models/*.xml",
             "models/*.stl",

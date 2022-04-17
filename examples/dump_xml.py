@@ -1,6 +1,6 @@
 from dm_control.mjcf import export_with_assets
 
-from shadow_hand.models.hands import shadow_hand_e
+from dexterity.models.hands import shadow_hand_e
 
 
 def main() -> None:

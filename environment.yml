@@ -10,6 +10,7 @@ dependencies:
   - absl-py
   - matplotlib
   - imageio
+  - imageio-ffmpeg
   - pytest-xdist
   - black
   - isort

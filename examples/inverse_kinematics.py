@@ -11,11 +11,11 @@ from dm_control.mujoco import wrapper
 from dm_robotics.transformations import transformations as tr
 from matplotlib import pyplot as plt
 
-from shadow_hand.inverse_kinematics import ik_solver
-from shadow_hand.manipulation.arenas import Standard
-from shadow_hand.manipulation.shared import cameras
-from shadow_hand.models.hands import shadow_hand_e
-from shadow_hand.models.hands import shadow_hand_e_constants as consts
+from dexterity.inverse_kinematics import ik_solver
+from dexterity.manipulation.arenas import Standard
+from dexterity.manipulation.shared import cameras
+from dexterity.models.hands import shadow_hand_e
+from dexterity.models.hands import shadow_hand_e_constants as consts
 
 flags.DEFINE_integer("seed", None, "Random seed.")
 flags.DEFINE_integer("num_solves", 1, "Number of IK solves.")
