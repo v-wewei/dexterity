@@ -1,0 +1,24 @@
+name: coffee
+channels:
+  - conda-forge
+  - defaults
+dependencies:
+  - python=3.8
+  - pip
+  - numpy
+  - typing_extensions
+  - absl-py
+  - matplotlib
+  - imageio
+  - pytest-xdist
+  - black
+  - isort
+  - flake8
+  - mypy
+  - jupyter
+  - pip:
+    - ipdb
+    - mujoco
+    - dm_control >= 1.0.1
+    - dm_robotics-geometry
+    - dm_robotics-transformations
