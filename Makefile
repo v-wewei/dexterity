@@ -10,7 +10,7 @@ help:
 	@echo "  check: Run type checking and code styling *without* modifying files"
 	@echo "  format: Run type checking and code styling inplace"
 	@echo "  test: Run all tests"
-	@echo "  explore: Run the inhand_manipulation application"
+	@echo "  explore: Run the manipulation suite application"
 
 check:
 	isort --check .

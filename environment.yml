@@ -1,4 +1,4 @@
-name: coffee
+name: dexterity
 channels:
   - conda-forge
   - defaults
