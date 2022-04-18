@@ -62,6 +62,8 @@ class DampedLeastSquaresMapper(mapper.CartesianVelocitytoJointVelocityMapper):
                 object_id=self.params.model.name2id(obj_name, obj_type),
             )
 
+            # TODO(kevin): This logic is specific to the Shadow Hand and should be
+            # abstracted out for other hands.
             # Underactuation correction.
             avg = 0.5 * (jacobian[:, 4] + jacobian[:, 5])
             jacobian[:, 4] = jacobian[:, 5] = avg

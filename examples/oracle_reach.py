@@ -28,7 +28,7 @@ def render(physics: mjcf.Physics) -> np.ndarray:
     scene_option = wrapper.core.MjvOption()
     scene_option.flags[mujoco.mjtVisFlag.mjVIS_CONTACTFORCE] = True
     return physics.render(
-        height=480, width=640, camera_id="front_close", scene_option=scene_option
+        height=480, width=640, camera_id="front_close"  # , scene_option=scene_option
     )
 
 

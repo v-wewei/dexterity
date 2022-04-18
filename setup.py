@@ -1,5 +1,24 @@
+import re
+from pathlib import Path
+
 from setuptools import find_packages
 from setuptools import setup
+
+_here = Path(__file__).resolve().parent
+
+name = "dexterity"
+
+# Reference: https://github.com/patrick-kidger/equinox/blob/main/setup.py
+with open(_here / name / "__init__.py") as f:
+    meta_match = re.search(r"^__version__ = ['\"]([^'\"]*)['\"]", f.read(), re.M)
+    if meta_match:
+        version = meta_match.group(1)
+    else:
+        raise RuntimeError("Unable to find __version__ string.")
+
+
+with open(_here / "README.md", "r") as f:
+    readme = f.read()
 
 core_requirements = [
     "absl-py",
@@ -34,11 +53,34 @@ dev_requirements = (
     + examples_requirements
 )
 
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Developers",
+    "Intended Audience :: Science/Research",
+    "License :: OSI Approved :: BSD License",
+    "Natural Language :: English",
+    "Programming Language :: Python :: 3",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+]
+
+author = "Kevin Zakka"
+
+author_email = "kevinarmandzakka@gmail.com"
+
+description = "Software and tasks for dexterous multi-fingered hand manipulation, powered by MuJoCo"
 
 setup(
-    name="dexterity",
-    version="0.0.0",
-    author="Kevin Zakka",
+    name=name,
+    version=version,
+    author=author,
+    author_email=author_email,
+    maintainer=author,
+    maintainer_email=author_email,
+    description=description,
+    long_description=readme,
+    long_description_content_type="text/markdown",
+    url=f"https://github.com/kevinzakka/{name}",
+    license="BSD",
     license_files=("LICENSE",),
     packages=find_packages(),
     package_data={
@@ -48,8 +90,10 @@ setup(
             "models/*.stl",
         ],
     },
+    zip_safe=True,
     python_requires=">=3.8",
     install_requires=core_requirements,
+    classifiers=classifiers,
     extras_require={
         "testing": testing_requirements,
         "examples": examples_requirements,

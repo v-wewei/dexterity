@@ -1,0 +1,9 @@
+cff-version: 0.0.1
+message: "If you use this software, please cite it as below."
+authors:
+  - family-names: Zakka
+    given-names: Kevin
+title: "dexterity: Software and tasks for dexterous multi-fingered hand manipulation, powered by MuJoCo."
+version: 0.0.1
+date-released: 2022-05-01
+url: "https://github.com/kevinzakka/dexterity"
