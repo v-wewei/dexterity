@@ -1,4 +1,4 @@
-# The MuJoCo Dexterity Suite
+# The MuJoCo Dexterity Suite (alpha-release)
 
 Software and tasks for dexterous multi-fingered hand manipulation, powered by [MuJoCo](https://mujoco.org/).
 
