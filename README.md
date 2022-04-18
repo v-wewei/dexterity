@@ -9,7 +9,7 @@ Software and tasks for dexterous multi-fingered hand manipulation, powered by [M
 
 `dexterity` builds on [dm_control](https://github.com/deepmind/dm_control) and provides a collection of modular components that can be used to define rich Reinforcement Learning environments for dexterous manipulation. It also comes with a set of standardized tasks that can serve as a performance benchmark for the research community.
 
-An introductory tutorial is available as a Colab notebook: [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](tutorial.ipynb)
+An introductory tutorial is available as a Colab notebook: [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/kevinzakka/dexterity/blob/main/tutorial.ipynb)
 
 ## Installation
 
