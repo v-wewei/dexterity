@@ -13,8 +13,8 @@
 Software and tasks for dexterous multi-fingered hand manipulation, powered by [MuJoCo](https://mujoco.org/).
 
 <p float="left">
-  <img src="assets/reach.png" height="200">
-  <img src="assets/cube.png" height="200">
+  <img src="https://raw.githubusercontent.com/kevinzakka/dexterity/main/assets/reach.png" height="200">
+  <img src="https://raw.githubusercontent.com/kevinzakka/dexterity/main/assets/cube.png" height="200">
 </p>
 
 `dexterity` builds on [dm_control](https://github.com/deepmind/dm_control) and provides a collection of modular components that can be used to define rich Reinforcement Learning environments for dexterous manipulation. It also comes with a set of standardized tasks that can serve as a performance benchmark for the research community.
@@ -55,8 +55,8 @@ These components in conjunction with `dm_control` allow you to define and custom
 
 | Task Name   | Description | Preview |
 |-------------|-------------|---------|
-| `reach`     |Successively controlling the fingers of the hand to reach goal locations in 3D space.|<img src="assets/reach.gif" height="100">|
-| `reorient`  |Reorienting the OpenAI cube to a goal orientation.|<img src="assets/reorient.gif" height="100">|
+| `reach`     |Successively controlling the fingers of the hand to reach goal locations in 3D space.|<img src="https://raw.githubusercontent.com/kevinzakka/dexterity/main/assets/reach.gif" height="100">|
+| `reorient`  |Reorienting the OpenAI cube to a goal orientation.|<img src="https://raw.githubusercontent.com/kevinzakka/dexterity/main/assets/reorient.gif" height="100">|
 
 ## Roadmap
 
