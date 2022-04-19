@@ -255,15 +255,29 @@
             <default class="THJ1"/>
             <default class="THJ0"/>
         </default>
+
+        <default class="free">
+            <joint type="free" damping="0" armature="0" limited="false"/>
+        </default>
     </default>
 
+    <!-- <include file="shadow_hand_position_actuators.xml" /> -->
+
     <worldbody>
+        <!-- <body name="mocap" mocap="true" pos="0 -0.35 0.2" axisangle="0 0 1 3.141592">
+            <geom type="box" group="1" size="0.02 0.02 0.02" contype="0" conaffinity="0" rgba=".9 .5 .5 1"/>
+        </body> -->
+
+        <!-- Hand. -->
+        <!-- <body name="forearm" pos="0 -0.35 0.2" axisangle="0 0 1 3.141592"> -->
+            <!-- <joint class="free" /> -->
         <body name="forearm">
             <inertial pos="0 0 0.09" mass="3" diaginertia="0.0138 0.0138 0.00744" />
             <geom name="forearm" type="mesh" material="plastic" mesh="forearm_visual" class="visual" />
             <geom type="mesh" material="plastic" mesh="forearm_collision" class="collision" />
             <geom type="mesh" material="plastic" mesh="forearm_collision_wrist" class="collision" />
 
+            <!-- What the real-world geometry looks like for the forearm. -->
             <!-- <geom name="forearm" type="mesh" material="plastic" mesh="forearm_plus_visual" class="visual" /> -->
             <!-- <geom type="mesh" material="plastic" mesh="forearm_plus_collision_1" class="collision" /> -->
             <!-- <geom type="mesh" material="plastic" mesh="forearm_plus_collision_2" class="collision" /> -->
@@ -655,6 +669,10 @@
         <!-- <camera name="cam1" pos="0 -0.25 0.35" xyaxes="1 0 0 0 0 1"/> -->
         <!-- <light ambient="0.2 0.2 0.2" castshadow="false" diffuse="0.8 0.8 0.8" dir="0 0 -1" directional="true" name="light0" pos="0 0 4" specular="0.3 0.3 0.3" /> -->
     </worldbody>
+
+    <!-- <equality>
+        <weld body1="mocap" body2="forearm" solref="0.01 1" solimp=".9 .9 0.01"/>
+    </equality> -->
 
     <contact>
         <exclude body1="forearm" body2="wrist" />

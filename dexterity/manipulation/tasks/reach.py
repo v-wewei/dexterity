@@ -116,19 +116,24 @@ class Reach(task.Task):
         self.root_entity.mjcf_model.option.integrator = "RK4"
 
         # Attach the hand to the arena.
-        self._arena.attach_offset(hand, position=_HAND_POS, quaternion=_HAND_QUAT)
+        arena.add_mocap(hand, position=_HAND_POS, quaternion=_HAND_QUAT)
+
+        # Disable collisions for the ground plane. It's only here for visualization
+        # purposes.
+        arena.ground.contype = 0
+        arena.ground.conaffinity = 0
 
         self.set_timesteps(control_timestep, physics_timestep)
 
         # Create visible sites for the finger tips.
-        for i, site in enumerate(self._hand.fingertip_sites):
+        for i, site in enumerate(hand.fingertip_sites):
             site.group = None  # Make the sites visible.
             site.size = (_SITE_SIZE,) * 3  # Increase their size.
             site.rgba = _SITE_COLORS[i] + (_SITE_ALPHA,)  # Change their color.
 
         # Create target sites for each fingertip.
         self._target_sites: List[hints.MjcfElement] = []
-        for i, site in enumerate(self._hand.fingertip_sites):
+        for i, site in enumerate(hand.fingertip_sites):
             self._target_sites.append(
                 workspaces.add_target_site(
                     body=arena.mjcf_model.worldbody,
