@@ -8,12 +8,10 @@ from dm_control import viewer
 
 from dexterity import manipulation
 
-_ALL_NAMES = [".".join(domain_task) for domain_task in manipulation.ALL_TASKS]
-
 flags.DEFINE_enum(
     "environment_name",
     None,
-    _ALL_NAMES,
+    manipulation.ALL_NAMES,
     "Optional 'domain_name.task_name' pair specifying the environment to load.",
 )
 flags.DEFINE_integer("seed", None, "RNG seed.")
@@ -34,12 +32,12 @@ def prompt_environment_name(values: Sequence[str]) -> str:
 
 def main(_) -> None:
     if FLAGS.environment_name is None:
-        print("\n ".join(["Available environments:"] + _ALL_NAMES))
-        environment_name = prompt_environment_name(_ALL_NAMES)
+        print("\n ".join(["Available environments:"] + manipulation.ALL_NAMES))
+        environment_name = prompt_environment_name(manipulation.ALL_NAMES)
     else:
         environment_name = FLAGS.environment_name
 
-    index = _ALL_NAMES.index(environment_name)
+    index = manipulation.ALL_NAMES.index(environment_name)
     domain_name, task_name = manipulation.ALL_TASKS[index]
 
     env = manipulation.load(

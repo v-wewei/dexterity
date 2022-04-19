@@ -43,6 +43,9 @@ def _get_tasks_by_domain(tasks):
 # A sequence containing all (domain name, task name) pairs.
 ALL_TASKS = _get_tasks(tag=None)
 
+# A sequence containing all `domain_name.task_name` pairs.
+ALL_NAMES = [".".join(domain_task) for domain_task in ALL_TASKS]
+
 # A mapping from each domain name to a sequence of its task names.
 TASKS_BY_DOMAIN = _get_tasks_by_domain(ALL_TASKS)
 
