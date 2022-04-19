@@ -1,5 +1,15 @@
 # The MuJoCo Dexterity Suite (alpha-release)
 
+[![PyPI Python Version][pypi-versions-badge]][pypi]
+[![PyPI version][pypi-badge]][pypi]
+[![dexterity-tests][tests-badge]][tests]
+
+[pypi-versions-badge]: https://img.shields.io/pypi/pyversions/dexterity
+[pypi-badge]: https://badge.fury.io/py/dexterity.svg
+[pypi]: https://pypi.org/project/dexterity/
+[tests-badge]: https://github.com/kevinzakka/dexterity/actions/workflows/build.yml/badge.svg
+[tests]: https://github.com/kevinzakka/dexterity/actions/workflows/build.yml
+
 Software and tasks for dexterous multi-fingered hand manipulation, powered by [MuJoCo](https://mujoco.org/).
 
 <p float="left">
