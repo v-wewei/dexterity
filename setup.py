@@ -1,3 +1,5 @@
+import fnmatch
+import os
 import re
 from pathlib import Path
 
@@ -69,6 +71,32 @@ author_email = "kevinarmandzakka@gmail.com"
 
 description = "Software and tasks for dexterous multi-fingered hand manipulation, powered by MuJoCo"
 
+
+# Reference: https://github.com/deepmind/dm_control/blob/main/setup.py
+def find_data_files(package_dir, patterns, excludes=()):
+    """Recursively finds files whose names match the given shell patterns."""
+    paths = set()
+
+    def is_excluded(s):
+        for exclude in excludes:
+            if fnmatch.fnmatch(s, exclude):
+                return True
+        return False
+
+    for directory, _, filenames in os.walk(package_dir):
+        if is_excluded(directory):
+            continue
+        for pattern in patterns:
+            for filename in fnmatch.filter(filenames, pattern):
+                # NB: paths must be relative to the package directory.
+                relative_dirpath = os.path.relpath(directory, package_dir)
+                full_path = os.path.join(relative_dirpath, filename)
+                if not is_excluded(full_path):
+                    paths.add(full_path)
+
+    return list(paths)
+
+
 setup(
     name=name,
     version=version,
@@ -84,11 +112,11 @@ setup(
     license_files=("LICENSE",),
     packages=find_packages(),
     package_data={
-        "dexterity": [
-            "py.typed",
-            "models/*.xml",
-            "models/*.stl",
-        ],
+        "dexterity": find_data_files(
+            package_dir="dexterity",
+            patterns=["*.msh", "*.png", "*.skn", "*.stl", "*.xml", "*.typed"],
+            excludes=[],
+        ),
     },
     zip_safe=True,
     python_requires=">=3.7",
