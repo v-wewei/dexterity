@@ -116,7 +116,7 @@ class Reach(task.Task):
         self.root_entity.mjcf_model.option.integrator = "RK4"
 
         # Attach the hand to the arena.
-        arena.add_mocap(hand, position=_HAND_POS, quaternion=_HAND_QUAT)
+        arena.attach_offset(hand, position=_HAND_POS, quaternion=_HAND_QUAT)
 
         # Disable collisions for the ground plane. It's only here for visualization
         # purposes.
