@@ -20,9 +20,9 @@ from dexterity.manipulation.shared import observations
 from dexterity.manipulation.shared import rewards
 from dexterity.manipulation.shared import tags
 from dexterity.manipulation.shared import workspaces
+from dexterity.models.hands import adroit_hand
+from dexterity.models.hands import adroit_hand_constants as consts
 from dexterity.models.hands import fingered_hand
-from dexterity.models.hands import shadow_hand_e
-from dexterity.models.hands import shadow_hand_e_constants as consts
 
 # The position of the hand relative in the world frame, in meters.
 _HAND_POS = (0.0, 0.2, 0.1)
@@ -58,7 +58,7 @@ _PHYSICS_TIMESTEP: float = 0.02
 _CONTROL_TIMESTEP: float = 0.02  # 50 Hz.
 
 # The maximum number of consecutive solves until the task is terminated.
-_MAX_SOLVES: int = 25
+_MAX_SOLVES: int = 250
 
 # The maximum allowed time for reaching the current target, in seconds.
 # Corresponds to _MAX_TIME_SINGLE_SOLVE / _CONTROL_TIMESTEP steps.
@@ -105,15 +105,6 @@ class Reach(task.Task):
         self._visualize_reward = visualize_reward
         self._steps_before_moving_target = steps_before_moving_target
         self._max_solves = max_solves
-
-        # It seems that with the default Euler integrator, goal initialization can
-        # produce target positions that are solvable in the initialization phase, but
-        # result in a stalemate where fingers collide and get stuck in the actual policy
-        # rollout. This is probably due to compounding errors in the stepping. RK4 seems
-        # to be a bit more stable in this regard, so we use that instead. Unfortunately,
-        # it does make the runtime a bit longer. The correct thing to do would be to
-        # probably reuse the same warmstart state and stick to Euler.
-        self.root_entity.mjcf_model.option.integrator = "RK4"
 
         # Attach the hand to the arena.
         arena.attach_offset(hand, position=_HAND_POS, quaternion=_HAND_QUAT)
@@ -309,7 +300,7 @@ def reach_task(
     """Configure and instantiate a `Reach` task."""
     arena = arenas.Standard()
 
-    hand = shadow_hand_e.ShadowHandSeriesE(
+    hand = adroit_hand.AdroitHand(
         observable_options=observations.make_options(
             observation_set.value,
             observations.HAND_OBSERVABLES,

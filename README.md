@@ -51,17 +51,7 @@ The MuJoCo `dexterity` suite is composed of the following core components:
 
 These components in conjunction with `dm_control` allow you to define and customize rich environments for reinforcement learning.
 
-`dexterity` also comes pre-packaged with a suite of benchmark RL environments. Our hope is to grow it over time with crowd-sourced contributions from the research community.
-
-| Task Name   | Description | Preview |
-|-------------|-------------|---------|
-| `reach`     |Successively controlling the fingers of the hand to reach goal locations in 3D space.|<img src="https://raw.githubusercontent.com/kevinzakka/dexterity/main/assets/reach.gif" height="100">|
-| `reorient`  |Reorienting the OpenAI cube to a goal orientation.|<img src="https://raw.githubusercontent.com/kevinzakka/dexterity/main/assets/reorient.gif" height="100">|
-
-## Roadmap
-
-- [ ] Add support for bi-manual tasks.
-- [ ] Add more tasks to the suite.
+`dexterity` also comes pre-packaged with a suite of benchmark RL environments. Our hope is to grow it over time with crowd-sourced contributions from the research community. For an overview of the current tasks, see the [task library](dexterity/manipulation/README.md).
 
 ## Acknowledgements
 
