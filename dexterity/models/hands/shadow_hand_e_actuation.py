@@ -17,8 +17,6 @@ class Actuation(enum.Enum):
     these positions.
     """
 
-    EFFORT = enum.auto()
-
 
 @dataclasses.dataclass(frozen=True)
 class ActuatorParams:

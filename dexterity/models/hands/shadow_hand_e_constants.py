@@ -231,25 +231,32 @@ JOINT_ACTUATOR_MAPPING: Dict[Joints, Actuators] = {
 }
 
 
-def _compute_projection_matrices() -> Tuple[np.ndarray, np.ndarray]:
+def _compute_projection_matrices() -> Tuple[np.ndarray, np.ndarray, List[List[int]]]:
     position_to_control = np.zeros((NUM_ACTUATORS, NUM_JOINTS))
     control_to_position = np.zeros((NUM_JOINTS, NUM_ACTUATORS))
+    coupled_joint_ids = []
     actuator_ids = dict(zip(Actuators, range(NUM_ACTUATORS)))
     joint_ids = dict(zip(Joints, range(NUM_JOINTS)))
     for actuator, joints in ACTUATOR_JOINT_MAPPING.items():
         value = 1.0 / len(joints)
         a_id = actuator_ids[actuator]
         j_ids = np.array([joint_ids[joint] for joint in joints])
+        if len(joints) > 1:
+            coupled_joint_ids.append([joint_ids[joint] for joint in joints])
         position_to_control[a_id, j_ids] = 1.0
         control_to_position[j_ids, a_id] = value
-    return position_to_control, control_to_position
+    return position_to_control, control_to_position, coupled_joint_ids
 
 
 # Projection matrices for mapping control space to joint space and vice versa. These
 # matrices should premultiply the vector to be projected.
 # POSITION_TO_CONTROL maps a control vector to a joint vector.
 # CONTROL_TO_POSITION maps a joint vector to a control vector.
-POSITION_TO_CONTROL, CONTROL_TO_POSITION = _compute_projection_matrices()
+(
+    POSITION_TO_CONTROL,
+    CONTROL_TO_POSITION,
+    COUPLED_JOINT_IDS,
+) = _compute_projection_matrices()
 
 # ====================== #
 # Limits
@@ -267,8 +274,8 @@ POSITION_TO_CONTROL, CONTROL_TO_POSITION = _compute_projection_matrices()
 # A mapping from `Actuators` to the corresponding control range, in radians.
 ACTUATOR_CTRLRANGE: Dict[Actuators, Tuple[float, float]] = {
     # Wrist.
-    Actuators.A_WRJ1: (rad(-28), rad(8)),  # (-0.4886921905584123, 0.13962634015954636)
-    Actuators.A_WRJ0: (rad(-40), rad(28)),  # (-0.6981317007977318, 0.4886921905584123)
+    Actuators.A_WRJ1: (rad(-28), rad(8)),
+    Actuators.A_WRJ0: (rad(-40), rad(28)),
     # First finger.
     Actuators.A_FFJ3: (rad(-20), rad(20)),
     Actuators.A_FFJ2: (rad(0), rad(90)),
@@ -291,7 +298,7 @@ ACTUATOR_CTRLRANGE: Dict[Actuators, Tuple[float, float]] = {
     Actuators.A_THJ3: (rad(0), rad(70)),
     Actuators.A_THJ2: (rad(-12), rad(12)),
     Actuators.A_THJ1: (rad(-30), rad(30)),
-    # OpenAI uses (-90, 0) here. Why?
+    # TODO(kevin): OpenAI uses (-90, 0) here, figure out why.
     Actuators.A_THJ0: (rad(0), rad(90)),
 }
 

@@ -128,10 +128,12 @@ class ShadowHandSeriesE(fingered_hand.FingeredHand):
         self, physics: mjcf.Physics, random_state: np.random.RandomState
     ) -> np.ndarray:
         qpos = random_state.uniform(*physics.bind(self._joints).range.T)
-        qpos[4] = qpos[5]
-        qpos[8] = qpos[9]
-        qpos[12] = qpos[13]
-        qpos[17] = qpos[18]
+
+        # Ensure coupled joints have the same joint values.
+        for coupled_ids in consts.COUPLED_JOINT_IDS:
+            val = qpos[coupled_ids[-1]]
+            qpos[coupled_ids] = val
+
         return qpos
 
     # ================= #
@@ -149,20 +151,6 @@ class ShadowHandSeriesE(fingered_hand.FingeredHand):
                 raise ValueError(f"Could not find joint {joint.name} in MJCF model.")
             self._joints.append(joint_elem)
             self._joint_elem_mapping[joint] = joint_elem
-
-    def _add_palm_site(self) -> None:
-        """Adds a site to the palm of the hand."""
-        palm_elem = self._mjcf_root.find("body", "palm")
-        if palm_elem is None:
-            raise ValueError("Could not find palm in MJCF model.")
-        self._palm_site: mjcf.Element = palm_elem.add(
-            "site",
-            name="palm_site",
-            pos="0 0 0.0475",
-            size="0.001 0.001 0.001",
-            type="sphere",
-            rgba="1 0 0 1",
-        )
 
     def _add_fingertip_sites(self) -> None:
         """Adds sites to the tips of the fingers of the hand."""
@@ -207,8 +195,6 @@ class ShadowHandSeriesE(fingered_hand.FingeredHand):
 
         if self._actuation == sh_actuation.Actuation.POSITION:
             self._add_position_actuators()
-        elif self._actuation == sh_actuation.Actuation.EFFORT:
-            raise NotImplementedError("Effort actuation is not yet implemented.")
 
     def _add_position_actuators(self) -> None:
         """Adds position actuators to the mjcf model."""
