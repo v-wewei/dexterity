@@ -173,5 +173,7 @@ def compensate_gravity(
 ) -> None:
     """Counteracts gravity by applying forces to body elements."""
     gravity = np.hstack([physics.model.opt.gravity, [0.0, 0.0, 0.0]])
-    bodies = physics.bind(body_elements)
-    bodies.xfrc_applied = -gravity * bodies.mass[..., None]
+    physics_bodies = physics.bind(body_elements)
+    if physics_bodies is None:
+        raise ValueError("Calling bind() on the body elements returned None.")
+    physics_bodies.xfrc_applied[:] = -gravity * physics_bodies.mass[..., None]

@@ -6,7 +6,7 @@ from dm_control import mjcf
 from dm_env import specs
 
 from dexterity import effector
-from dexterity.models.hands import fingered_hand
+from dexterity.models.hands import dexterous_hand
 
 
 class Task(composer.Task):
@@ -19,7 +19,7 @@ class Task(composer.Task):
     def __init__(
         self,
         arena: composer.Arena,
-        hand: fingered_hand.FingeredHand,
+        hand: dexterous_hand.DexterousHand,
         hand_effector: effector.Effector,
     ) -> None:
         self._arena = arena

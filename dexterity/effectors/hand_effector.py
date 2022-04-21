@@ -4,13 +4,13 @@ from dm_env import specs
 
 from dexterity import effector
 from dexterity.effectors import mujoco_actuation
-from dexterity.models.hands import fingered_hand
+from dexterity.models.hands import dexterous_hand
 
 
 class HandEffector(effector.Effector):
     def __init__(
         self,
-        hand: fingered_hand.FingeredHand,
+        hand: dexterous_hand.DexterousHand,
         hand_name: str,
     ) -> None:
         self._hand = hand
@@ -22,10 +22,10 @@ class HandEffector(effector.Effector):
         )
 
     def after_compile(self, mjcf_model: mjcf.RootElement) -> None:
-        pass
+        del mjcf_model  # Unused.
 
     def initialize_episode(self, physics, random_state) -> None:
-        pass
+        del physics, random_state  # Unused.
 
     def action_spec(self, physics: mjcf.Physics) -> specs.BoundedArray:
         return self._mujoco_effector.action_spec(physics)

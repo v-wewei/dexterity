@@ -4,12 +4,9 @@ import time
 
 import dm_env
 import imageio
-import mujoco
 import numpy as np
 from absl import app
 from absl import flags
-from dm_control import mjcf
-from dm_control.mujoco import wrapper
 
 from dexterity import manipulation
 
@@ -21,15 +18,6 @@ flags.DEFINE_integer("seed", None, "RNG seed.")
 flags.DEFINE_integer("num_episodes", 1, "Number of episodes to run.")
 
 FLAGS = flags.FLAGS
-
-
-def render(physics: mjcf.Physics) -> np.ndarray:
-    """Custom rendering with contact points and forces."""
-    scene_option = wrapper.core.MjvOption()
-    scene_option.flags[mujoco.mjtVisFlag.mjVIS_CONTACTFORCE] = True
-    return physics.render(
-        height=480, width=640, camera_id="front_close", scene_option=scene_option
-    )
 
 
 def main(_) -> None:
@@ -48,10 +36,12 @@ def main(_) -> None:
         ctrl = ctrl.astype(action_spec.dtype)
         return ctrl
 
+    render_kwargs = dict(height=480, width=640, camera_id=0)
+
     for _ in range(FLAGS.num_episodes):
         frames = []
         timestep = env.reset()
-        frames.append(render(env.physics))
+        frames.append(env.physics.render(**render_kwargs))
         actions = []
         num_steps = 0
         returns = 0.0
@@ -61,7 +51,7 @@ def main(_) -> None:
             action = oracle(timestep)
             actions.append(action)
             timestep = env.step(action)
-            frames.append(render(env.physics))
+            frames.append(env.physics.render(**render_kwargs))
             returns += timestep.reward
             rewards.append(timestep.reward)
             num_steps += 1

@@ -39,12 +39,12 @@ class MujocoEffector(effector.Effector):
         return self._prefix
 
     def after_compile(self, mjcf_model: mjcf.RootElement) -> None:
-        pass
+        del mjcf_model  # Unused.
 
     def initialize_episode(
         self, physics: mjcf.Physics, random_state: np.random.RandomState
     ) -> None:
-        pass
+        del physics, random_state  # Unused.
 
 
 def create_action_spec(

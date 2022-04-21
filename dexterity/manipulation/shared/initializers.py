@@ -8,7 +8,7 @@ from dm_control import mjcf
 from dm_control.composer.initializers import utils
 
 from dexterity import hints
-from dexterity.models.hands import fingered_hand
+from dexterity.models.hands import dexterous_hand
 from dexterity.utils import mujoco_collisions
 from dexterity.utils import mujoco_utils
 
@@ -29,7 +29,7 @@ class FingertipPositionPlacer(composer.Initializer):
     def __init__(
         self,
         target_sites: Sequence[hints.MjcfElement],
-        hand: fingered_hand.FingeredHand,
+        hand: dexterous_hand.DexterousHand,
         ignore_self_collisions: bool = False,
         max_rejection_samples: int = 100,
     ) -> None:

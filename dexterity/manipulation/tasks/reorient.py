@@ -26,7 +26,7 @@ from dexterity.manipulation.shared import observations
 from dexterity.manipulation.shared import rewards
 from dexterity.manipulation.shared import tags
 from dexterity.manipulation.shared import workspaces
-from dexterity.models.hands import fingered_hand
+from dexterity.models.hands import dexterous_hand
 from dexterity.models.hands import shadow_hand_e
 from dexterity.utils import geometry_utils
 from dexterity.utils import mujoco_collisions
@@ -95,7 +95,7 @@ class ReOrient(task.Task):
     def __init__(
         self,
         arena: composer.Arena,
-        hand: fingered_hand.FingeredHand,
+        hand: dexterous_hand.DexterousHand,
         hand_effector: effector.Effector,
         observable_settings: observations.ObservationSettings,
         workspace: Workspace = _WORKSPACE,

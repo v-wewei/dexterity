@@ -15,6 +15,14 @@ ADROIT_HAND_E_XML: Path = (
     / "adroit_hand.xml"
 )
 
+FINGERTIP_SITE_NAMES: Tuple[str, ...] = (
+    "S_fftip",
+    "S_mftip",
+    "S_rftip",
+    "S_lftip",
+    "S_thtip",
+)
+
 # Mapping from finger `Components` to its associated geoms.
 FINGER_GEOM_MAPPING: Dict[Components, Tuple[str, ...]] = {
     Components.FF: ("V_ffproximal", "V_ffmiddle", "V_ffdistal"),

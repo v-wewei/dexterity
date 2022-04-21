@@ -11,11 +11,11 @@ from dexterity.hints import MjcfElement
 from dexterity.utils import mujoco_utils
 
 
-class FingeredHand(abc.ABC, composer.Entity):
-    """Base composer class for a multi-fingered hand."""
+class DexterousHand(abc.ABC, composer.Entity):
+    """Base composer class for a dexterous multi-fingered hand."""
 
     def _build_observables(self) -> composer.Observables:
-        return RobotHandObservables(self)
+        return DexterousHandObservables(self)
 
     @abc.abstractmethod
     def _build(self) -> None:
@@ -52,9 +52,27 @@ class FingeredHand(abc.ABC, composer.Entity):
         """List of joint torque sensor elements belonging to the hand."""
 
     @abc.abstractmethod
+    def control_to_joint_positions(self, control: np.ndarray) -> np.ndarray:
+        """Maps a control command to a joint position command.
+
+        This method is necessary for underactuated hands.
+        """
+
+    @abc.abstractmethod
+    def joint_positions_to_control(self, qpos: np.ndarray) -> np.ndarray:
+        """Maps a joint position command to a control command.
+
+        This method is necessary for underactuated hands.
+        """
+
+    # Note: This method is abstract because a hand might have to perform extra logic
+    # specific to its actuation after setting the joint angles.
+    @abc.abstractmethod
     def set_joint_angles(self, physics: mjcf.Physics, joint_angles: np.ndarray) -> None:
         """Sets the joints of the hand to a given configuration."""
 
+    # Note: This method is abstract because a hand might have to perform extra logic
+    # pertaining to its underactuation after randomly sampling joint angles.
     @abc.abstractmethod
     def sample_joint_angles(
         self, physics: mjcf.Physics, random_state: np.random.RandomState
@@ -62,17 +80,15 @@ class FingeredHand(abc.ABC, composer.Entity):
         """Samples a random joint configuration for the hand."""
 
 
-class RobotHandObservables(composer.Observables):
+class DexterousHandObservables(composer.Observables):
     """Observables for a fingered hand."""
 
-    _entity: FingeredHand
+    _entity: DexterousHand
 
-    # shape: (1, 24)
     @composer.observable
     def joint_positions(self) -> observable.MJCFFeature:
         return observable.MJCFFeature(kind="qpos", mjcf_element=self._entity.joints)
 
-    # shape: (1, 48)
     @composer.observable
     def joint_positions_sin_cos(self) -> observable.MJCFFeature:
         def _get_joint_pos_sin_cos(physics: mjcf.Physics) -> np.ndarray:
@@ -83,12 +99,10 @@ class RobotHandObservables(composer.Observables):
 
         return observable.Generic(raw_observation_callable=_get_joint_pos_sin_cos)
 
-    # shape: (1, 24)
     @composer.observable
     def joint_velocities(self) -> observable.MJCFFeature:
         return observable.MJCFFeature(kind="qvel", mjcf_element=self._entity.joints)
 
-    # shape: (1, 24)
     @composer.observable
     def joint_torques(self) -> observable.Generic:
         def _get_joint_torques(physics: mjcf.Physics) -> np.ndarray:
@@ -99,7 +113,6 @@ class RobotHandObservables(composer.Observables):
 
         return observable.Generic(raw_observation_callable=_get_joint_torques)
 
-    # shape: (1, 15)
     @composer.observable
     def fingertip_positions(self) -> observable.Generic:
         def _get_fingertip_positions(physics: mjcf.Physics) -> np.ndarray:
@@ -107,7 +120,6 @@ class RobotHandObservables(composer.Observables):
 
         return observable.Generic(raw_observation_callable=_get_fingertip_positions)
 
-    # shape: (1, 20)
     @composer.observable
     def fingertip_orientations(self) -> observable.Generic:
         def _get_fingertip_orientations(physics: mjcf.Physics) -> np.ndarray:
@@ -117,7 +129,6 @@ class RobotHandObservables(composer.Observables):
 
         return observable.Generic(raw_observation_callable=_get_fingertip_orientations)
 
-    # shape: (1, 15)
     @composer.observable
     def fingertip_linear_velocities(self) -> observable.Generic:
         def _get_fingertip_linear_velocities(physics: mjcf.Physics) -> np.ndarray:
@@ -131,7 +142,6 @@ class RobotHandObservables(composer.Observables):
             raw_observation_callable=_get_fingertip_linear_velocities
         )
 
-    # shape: (1, 15)
     @composer.observable
     def fingertip_angular_velocities(self) -> observable.Generic:
         def _get_fingertip_angular_velocities(physics: mjcf.Physics) -> np.ndarray:

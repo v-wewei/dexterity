@@ -22,7 +22,7 @@ from dexterity.manipulation.shared import tags
 from dexterity.manipulation.shared import workspaces
 from dexterity.models.hands import adroit_hand
 from dexterity.models.hands import adroit_hand_constants as consts
-from dexterity.models.hands import fingered_hand
+from dexterity.models.hands import dexterous_hand
 
 # The position of the hand relative in the world frame, in meters.
 _HAND_POS = (0.0, 0.2, 0.1)
@@ -51,6 +51,8 @@ _DISTANCE_TO_TARGET_THRESHOLD = 0.01  # 1 cm.
 # Assign this color to the finger geoms if the finger is within the target threshold.
 _THRESHOLD_COLOR = (0.0, 1.0, 0.0)  # Green.
 
+# TODO(kevin): This should probably be reduced to make the physics more stable -- I've
+# noticed fingers can go through each other if the control frequency is increased.
 # Timestep of the physics simulation.
 _PHYSICS_TIMESTEP: float = 0.02
 
@@ -73,7 +75,7 @@ class Reach(task.Task):
     def __init__(
         self,
         arena: composer.Arena,
-        hand: fingered_hand.FingeredHand,
+        hand: dexterous_hand.DexterousHand,
         hand_effector: effector.Effector,
         observable_settings: observations.ObservationSettings,
         use_dense_reward: bool,
@@ -162,7 +164,7 @@ class Reach(task.Task):
         return self._arena
 
     @property
-    def hand(self) -> fingered_hand.FingeredHand:
+    def hand(self) -> dexterous_hand.DexterousHand:
         return self._hand
 
     def initialize_episode(
@@ -270,17 +272,11 @@ class Reach(task.Task):
     # Helper methods.
 
     def _get_target_positions(self, physics: mjcf.Physics) -> np.ndarray:
-        """Returns the desired fingertip Cartesian positions in the world frame.
-
-        The returned array is of shape (15,).
-        """
+        """Returns the desired fingertip Cartesian positions in the world frame."""
         return np.array(physics.bind(self._target_sites).xpos).ravel()
 
     def _get_fingertip_positions(self, physics: mjcf.Physics) -> np.ndarray:
-        """Returns the current fingertip Cartesian positions in the world frame.
-
-        The returned array is of shape (15,).
-        """
+        """Returns the current fingertip Cartesian positions in the world frame."""
         return np.array(physics.bind(self._hand.fingertip_sites).xpos).ravel()
 
     def _maybe_color_fingers(self, physics: mjcf.Physics) -> None:

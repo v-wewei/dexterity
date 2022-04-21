@@ -5,14 +5,14 @@ from dm_control import composer
 from dm_control import mjcf
 
 from dexterity.hints import MjcfElement
-from dexterity.models.hands import fingered_hand
+from dexterity.models.hands import dexterous_hand
 from dexterity.models.hands import shadow_hand_e_actuation as sh_actuation
 from dexterity.models.hands import shadow_hand_e_constants as consts
 from dexterity.utils import mujoco_actuation
 from dexterity.utils import mujoco_utils
 
 
-class ShadowHandSeriesE(fingered_hand.FingeredHand):
+class ShadowHandSeriesE(dexterous_hand.DexterousHand):
     """Shadow Dexterous Hand E Series."""
 
     def _build(
@@ -86,37 +86,27 @@ class ShadowHandSeriesE(fingered_hand.FingeredHand):
     # Public methods.
     # ================= #
 
-    @classmethod
-    def zero_joint_positions(cls) -> np.ndarray:
-        return np.zeros(consts.NUM_JOINTS, dtype=float)
-
-    @classmethod
-    def zero_control(cls) -> np.ndarray:
-        return np.zeros(consts.NUM_ACTUATORS, dtype=float)
-
-    @classmethod
-    def control_to_joint_positions(cls, control: np.ndarray) -> np.ndarray:
+    def control_to_joint_positions(self, control: np.ndarray) -> np.ndarray:
         """Maps a 20-D position control command to a 24-D joint position command.
 
         The control commands for the coupled joints are evenly split amongst them.
         """
-        if control.shape != (consts.NUM_ACTUATORS,):
+        if control.shape != (self._num_actuators,):
             raise ValueError(
-                f"Expected control of shape ({consts.NUM_ACTUATORS}), got"
+                f"Expected control of shape ({self._num_actuators}), got"
                 f" {control.shape}"
             )
         return consts.CONTROL_TO_POSITION @ control
 
-    @classmethod
-    def joint_positions_to_control(cls, qpos: np.ndarray) -> np.ndarray:
+    def joint_positions_to_control(self, qpos: np.ndarray) -> np.ndarray:
         """Maps a 24-D joint position command to a 20-D control command.
 
         The position commands for the coupled joints are summed up to form the control
         for their corresponding actuator.
         """
-        if qpos.shape != (consts.NUM_JOINTS,):
+        if qpos.shape != (self._num_joints,):
             raise ValueError(
-                f"Expected qpos of shape ({consts.NUM_JOINTS}), got {qpos.shape}"
+                f"Expected qpos of shape ({self._num_joints}), got {qpos.shape}"
             )
         return consts.POSITION_TO_CONTROL @ qpos
 
@@ -151,6 +141,7 @@ class ShadowHandSeriesE(fingered_hand.FingeredHand):
                 raise ValueError(f"Could not find joint {joint.name} in MJCF model.")
             self._joints.append(joint_elem)
             self._joint_elem_mapping[joint] = joint_elem
+        self._num_joints = len(self._joints)
 
     def _add_fingertip_sites(self) -> None:
         """Adds sites to the tips of the fingers of the hand."""
@@ -232,6 +223,8 @@ class ShadowHandSeriesE(fingered_hand.FingeredHand):
 
             self._actuator_elem_mapping[actuator] = actuator_elem
             self._actuators.append(actuator_elem)
+
+        self._num_actuators = len(self._actuators)
 
     def _add_sensors(self) -> None:
         """Add sensors to the mjcf model."""

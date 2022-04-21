@@ -6,11 +6,11 @@ from dm_control import mjcf
 
 from dexterity.hints import MjcfElement
 from dexterity.models.hands import adroit_hand_constants as consts
-from dexterity.models.hands import fingered_hand
+from dexterity.models.hands import dexterous_hand
 from dexterity.utils import mujoco_utils
 
 
-class AdroitHand(fingered_hand.FingeredHand):
+class AdroitHand(dexterous_hand.DexterousHand):
     def _build(
         self,
         name: str = "adroit_hand",
@@ -69,18 +69,12 @@ class AdroitHand(fingered_hand.FingeredHand):
     # Public methods.
     # ================= #
 
-    def zero_joint_positions(self) -> np.ndarray:
-        return np.zeros(self._num_joints, dtype=float)
-
-    def zero_control(self) -> np.ndarray:
-        return np.zeros(self._num_actuators, dtype=float)
-
-    @classmethod
-    def control_to_joint_positions(cls, control: np.ndarray) -> np.ndarray:
+    def control_to_joint_positions(self, control: np.ndarray) -> np.ndarray:
+        # The Adroit hand is fully-actuated, so ctrl = qpos.
         return control
 
-    @classmethod
-    def joint_positions_to_control(cls, qpos: np.ndarray) -> np.ndarray:
+    def joint_positions_to_control(self, qpos: np.ndarray) -> np.ndarray:
+        # The Adroit hand is fully-actuated, so ctrl = qpos.
         return qpos
 
     def set_joint_angles(self, physics: mjcf.Physics, joint_angles: np.ndarray) -> None:
@@ -97,20 +91,27 @@ class AdroitHand(fingered_hand.FingeredHand):
 
     def _parse_mjcf_elements(self) -> None:
         """Parses MJCF elements that will be exposed as attributes."""
+
         self._joints: List[mjcf.Element] = self._mjcf_root.find_all("joint")
-        self._num_joints = len(self._joints)
+        if not self._joints:
+            raise ValueError("No joints found in the MJCF model.")
 
         self._tendons: List[mjcf.Element] = self._mjcf_root.find_all("tendon")
-        self._num_tendons = len(self._tendons)
+        if not self._tendons:
+            raise ValueError("No tendons found in the MJCF model.")
 
         self._actuators: List[mjcf.Element] = self._mjcf_root.find_all("actuator")
-        self._num_actuators = len(self._actuators)
+        if not self._actuators:
+            raise ValueError("No actuators found in the MJCF model.")
 
-        self._fingertip_sites: List[mjcf.Element] = [
-            elem
-            for elem in self._mjcf_root.find_all("site")
-            if elem.name.endswith("tip") and elem.name.startswith("S")
-        ]
+        self._fingertip_sites: List[mjcf.Element] = []
+        for fingertip_site_name in consts.FINGERTIP_SITE_NAMES:
+            fingertip_site_elem = self._mjcf_root.find("site", fingertip_site_name)
+            if fingertip_site_elem is None:
+                raise ValueError(
+                    f"No fingertip site found with name {fingertip_site_name}."
+                )
+            self._fingertip_sites.append(fingertip_site_elem)
 
         self._joint_torque_sensors: List[mjcf.Element] = []
         for joint_elem in self._joints:

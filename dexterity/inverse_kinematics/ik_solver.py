@@ -1,3 +1,6 @@
+# TODO(kevin): Make this work for all hands.
+# TODO(kevin): In the future, we'd like to solve for finger orientation as well.
+
 import copy
 import dataclasses
 from typing import Mapping, Optional, Sequence, Tuple
