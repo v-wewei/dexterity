@@ -1,6 +1,6 @@
 from pathlib import Path
 
-__version__ = "0.0.4"
+__version__ = "0.0.5"
 
 # Path to the root of the project.
 _PROJECT_ROOT: Path = Path(__file__).parent.parent

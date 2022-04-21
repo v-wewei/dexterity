@@ -59,7 +59,7 @@ classifiers = [
     "Development Status :: 3 - Alpha",
     "Intended Audience :: Developers",
     "Intended Audience :: Science/Research",
-    "License :: OSI Approved :: BSD License",
+    "License :: OSI Approved :: MIT License",
     "Natural Language :: English",
     "Programming Language :: Python :: 3",
     "Programming Language :: Python :: 3.7",
@@ -111,7 +111,7 @@ setup(
     long_description=readme,
     long_description_content_type="text/markdown",
     url=f"https://github.com/kevinzakka/{name}",
-    license="BSD",
+    license="MIT",
     license_files=("LICENSE",),
     packages=find_packages(),
     package_data={

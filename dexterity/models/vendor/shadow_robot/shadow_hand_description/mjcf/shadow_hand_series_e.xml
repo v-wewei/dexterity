@@ -273,17 +273,17 @@
             <!-- <joint class="free" /> -->
         <body name="forearm">
             <inertial pos="0 0 0.09" mass="3" diaginertia="0.0138 0.0138 0.00744" />
-            <geom name="forearm" type="mesh" material="plastic" mesh="forearm_visual" class="visual" />
-            <geom type="mesh" material="plastic" mesh="forearm_collision" class="collision" />
-            <geom type="mesh" material="plastic" mesh="forearm_collision_wrist" class="collision" />
+            <!-- <geom name="forearm" type="mesh" material="plastic" mesh="forearm_visual" class="visual" /> -->
+            <!-- <geom type="mesh" material="plastic" mesh="forearm_collision" class="collision" /> -->
+            <!-- <geom type="mesh" material="plastic" mesh="forearm_collision_wrist" class="collision" /> -->
 
             <!-- What the real-world geometry looks like for the forearm. -->
-            <!-- <geom name="forearm" type="mesh" material="plastic" mesh="forearm_plus_visual" class="visual" /> -->
-            <!-- <geom type="mesh" material="plastic" mesh="forearm_plus_collision_1" class="collision" /> -->
-            <!-- <geom type="mesh" material="plastic" mesh="forearm_plus_collision_2" class="collision" /> -->
-            <!-- <geom type="mesh" material="plastic" mesh="forearm_plus_collision_3" class="collision" /> -->
-            <!-- <geom type="mesh" material="plastic" mesh="forearm_plus_collision_4" class="collision" /> -->
-            <!-- <geom type="mesh" material="plastic" mesh="forearm_plus_collision_5" class="collision" /> -->
+            <geom name="forearm" type="mesh" material="plastic" mesh="forearm_plus_visual" class="visual" />
+            <geom type="mesh" material="plastic" mesh="forearm_plus_collision_1" class="collision" />
+            <geom type="mesh" material="plastic" mesh="forearm_plus_collision_2" class="collision" />
+            <geom type="mesh" material="plastic" mesh="forearm_plus_collision_3" class="collision" />
+            <geom type="mesh" material="plastic" mesh="forearm_plus_collision_4" class="collision" />
+            <geom type="mesh" material="plastic" mesh="forearm_plus_collision_5" class="collision" />
 
             <body name="wrist" pos="0 -0.01 0.213">
                 <inertial pos="0 0 0.029" quat="0.5 0.5 0.5 0.5" mass="0.1" diaginertia="6.4e-05 4.38e-05 3.5e-05" />
