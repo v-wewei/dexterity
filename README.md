@@ -33,12 +33,14 @@ pip install dexterity
 
 ### Source
 
-We use Python 3.8 and [Miniconda](https://docs.conda.io/en/latest/miniconda.html) for development. To create an environment and install dependencies, run the following steps:
+We provide a [Miniconda](https://docs.conda.io/en/latest/miniconda.html) environment with Python 3.8 for development. To create it and install dependencies, run the following steps:
 
 ```bash
+git clone https://github.com/kevinzakka/dexterity
+cd dexterity
 conda env create -f environment.yml  # Creates a dexterity env.
 conda activate dexterity
-pip install -e ".[dev]"
+pip install .
 ```
 
 ## Overview
