@@ -45,8 +45,8 @@ _TARGET_ALPHA = 1.0
 _STEPS_BEFORE_MOVING_TARGET: int = 5
 
 # Threshold for the distance between a finger and its target below which we consider the
-# target reached.
-_DISTANCE_TO_TARGET_THRESHOLD = 0.01  # 1 cm.
+# target reached, in meters.
+_DISTANCE_TO_TARGET_THRESHOLD = 0.025
 
 # Assign this color to the finger geoms if the finger is within the target threshold.
 _THRESHOLD_COLOR = (0.0, 1.0, 0.0)  # Green.
@@ -54,17 +54,18 @@ _THRESHOLD_COLOR = (0.0, 1.0, 0.0)  # Green.
 # TODO(kevin): This should probably be reduced to make the physics more stable -- I've
 # noticed fingers can go through each other if the control frequency is increased.
 # Timestep of the physics simulation.
-_PHYSICS_TIMESTEP: float = 0.02
+_PHYSICS_TIMESTEP: float = 0.002
 
 # Interval between agent actions, in seconds.
+# We send a control signal every (_CONTROL_TIMESTEP / _PHYSICS_TIMESTEP) physics steps.
 _CONTROL_TIMESTEP: float = 0.02  # 50 Hz.
 
 # The maximum number of consecutive solves until the task is terminated.
 _MAX_SOLVES: int = 25
 
 # The maximum allowed time for reaching the current target, in seconds.
-# Corresponds to _MAX_TIME_SINGLE_SOLVE / _CONTROL_TIMESTEP steps.
-_MAX_TIME_SINGLE_SOLVE: float = 1.0
+_MAX_STEPS_SINGLE_SOLVE: int = 150
+_MAX_TIME_SINGLE_SOLVE: float = _MAX_STEPS_SINGLE_SOLVE * _CONTROL_TIMESTEP
 
 SUITE = containers.TaggedTasks()
 

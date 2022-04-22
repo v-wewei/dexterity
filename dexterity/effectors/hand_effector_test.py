@@ -14,10 +14,7 @@ class HandEffectorTest(absltest.TestCase):
         effector = hand_effector.HandEffector(hand=hand, hand_name=hand.name)
         physics = mjcf.Physics.from_mjcf_model(hand.mjcf_model)
         action_spec = effector.action_spec(physics)
-        rand_ctrl = np.random.uniform(
-            low=physics.bind(hand.actuators).ctrlrange[:, 0],
-            high=physics.bind(hand.actuators).ctrlrange[:, 1],
-        )
+        rand_ctrl = np.random.uniform(*physics.bind(hand.actuators).ctrlrange.T)
         rand_ctrl = rand_ctrl.astype(action_spec.dtype)
         effector.set_control(physics, rand_ctrl)
         np.testing.assert_allclose(physics.bind(hand.actuators).ctrl, rand_ctrl)

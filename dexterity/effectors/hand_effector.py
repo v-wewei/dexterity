@@ -14,7 +14,7 @@ class HandEffector(effector.Effector):
         hand_name: str,
     ) -> None:
         self._hand = hand
-        self._effector_prefix = f"{hand_name}_joint_tendon"
+        self._effector_prefix = f"{hand_name}_joint"
 
         self._mujoco_effector = mujoco_actuation.MujocoEffector(
             actuators=self._hand.actuators, prefix=self._effector_prefix
