@@ -28,11 +28,8 @@ class MujocoEffector(effector.Effector):
         return self._action_spec
 
     def set_control(self, physics: mjcf.Physics, command: np.ndarray) -> None:
-        command = np.clip(
-            command,
-            self.action_spec(physics).minimum,
-            self.action_spec(physics).maximum,
-        )
+        # Note: MuJoCo automatically clips out-of-bounds control inputs so we don't
+        # need to do anything special here.
         physics.bind(self._actuators).ctrl[:] = command
 
     @property

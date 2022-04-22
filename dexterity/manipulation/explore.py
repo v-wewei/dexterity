@@ -7,6 +7,7 @@ from absl import flags
 from dm_control import viewer
 
 from dexterity import manipulation
+from dexterity.manipulation.wrappers import ActionNoise
 
 flags.DEFINE_enum(
     "environment_name",
@@ -16,6 +17,7 @@ flags.DEFINE_enum(
 )
 flags.DEFINE_integer("seed", None, "RNG seed.")
 flags.DEFINE_bool("timeout", True, "Whether episodes should have a time limit.")
+flags.DEFINE_float("action_noise", 0.0, "Action noise scale.")
 
 FLAGS = flags.FLAGS
 
@@ -46,6 +48,9 @@ def main(_) -> None:
         seed=FLAGS.seed,
         time_limit=float("inf") if not FLAGS.timeout else None,
     )
+
+    if FLAGS.action_noise > 0.0:
+        env = ActionNoise(env, scale=FLAGS.action_noise)
 
     # Print entity and task observables.
     timestep = env.reset()
