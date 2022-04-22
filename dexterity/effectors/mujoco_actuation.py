@@ -23,15 +23,16 @@ class MujocoEffector(effector.Effector):
     def action_spec(self, physics: mjcf.Physics) -> specs.BoundedArray:
         if self._action_spec is None:
             self._action_spec = create_action_spec(
-                physics,
-                self._actuators,
-                self._prefix,
+                physics, self._actuators, self._prefix
             )
         return self._action_spec
 
     def set_control(self, physics: mjcf.Physics, command: np.ndarray) -> None:
-        # NOTE(kevin): Commenting out for now until I figure out where to clip.
-        # self.action_spec(physics).validate(command)
+        command = np.clip(
+            command,
+            self.action_spec(physics).minimum,
+            self.action_spec(physics).maximum,
+        )
         physics.bind(self._actuators).ctrl[:] = command
 
     @property

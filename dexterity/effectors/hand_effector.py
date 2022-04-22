@@ -17,8 +17,7 @@ class HandEffector(effector.Effector):
         self._effector_prefix = f"{hand_name}_joint_tendon"
 
         self._mujoco_effector = mujoco_actuation.MujocoEffector(
-            actuators=self._hand.actuators,
-            prefix=self._effector_prefix,
+            actuators=self._hand.actuators, prefix=self._effector_prefix
         )
 
     def after_compile(self, mjcf_model: mjcf.RootElement) -> None:
