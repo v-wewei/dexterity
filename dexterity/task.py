@@ -129,7 +129,7 @@ class GoalTask(Task):
     def before_step(self, physics, action, random_state):
         super().before_step(physics, action, random_state)
 
-        if self._success_change_counter >= self._steps_before_changing_goal:
+        if self._success_change_counter > self._steps_before_changing_goal:
             self._goal = self._goal_generator.next_goal(physics, random_state)
             self._success_change_counter = 0
             self._exceeded_single_goal_time = False
