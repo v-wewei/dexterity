@@ -1,6 +1,7 @@
 """Rollout and visualize an oracle policy for the reaching domain."""
 
 import time
+from pathlib import Path
 
 import dm_env
 import imageio
@@ -17,6 +18,7 @@ flags.DEFINE_enum("task_name", "state_dense", _REACH_TASKS, "Which reach task to
 flags.DEFINE_integer("seed", None, "RNG seed.")
 flags.DEFINE_integer("num_episodes", 1, "Number of episodes to run.")
 flags.DEFINE_boolean("render", False, "Whether to render the episode and save to disk.")
+flags.DEFINE_string("save_dir", "./temp", "Where to save the video, if rendering.")
 
 FLAGS = flags.FLAGS
 
@@ -69,7 +71,9 @@ def main(_) -> None:
         print(f"Success rate: {env.task.successes}/{env.task.successes_needed}")
 
     if FLAGS.render:
-        imageio.mimsave("temp/oracle_reach.mp4", frames, fps=60, quality=8)
+        save_dir = Path(FLAGS.save_dir)
+        save_dir.mkdir(exist_ok=True, parents=True)
+        imageio.mimsave(save_dir / "oracle_reach.mp4", frames, fps=60, quality=8)
 
 
 if __name__ == "__main__":
