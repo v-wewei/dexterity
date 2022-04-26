@@ -1,4 +1,4 @@
-# Models
+# Hands
 
 This module contains [PyMJCF](https://github.com/deepmind/dm_control/tree/main/dm_control/mjcf) models for various dexterous multi-fingered hands.
 
