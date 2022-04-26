@@ -10,9 +10,9 @@ from dm_robotics.transformations import transformations as tr
 from matplotlib import pyplot as plt
 
 from dexterity.inverse_kinematics import ik_solver
-from dexterity.manipulation.arenas import Empty
 from dexterity.manipulation.shared import cameras
 from dexterity.manipulation.shared import workspaces
+from dexterity.models.arenas import Arena
 from dexterity.models.hands import shadow_hand_e
 
 flags.DEFINE_integer("seed", None, "Random seed.")
@@ -39,7 +39,7 @@ def main(_) -> None:
     random_state = np.random.RandomState(seed=FLAGS.seed)
 
     # Build the scene.
-    arena = Empty()
+    arena = Arena()
     axis_angle = np.radians(180) * np.array([0, np.sqrt(2) / 2, -np.sqrt(2) / 2])
     quat = tr.axisangle_to_quat(axis_angle)
     hand = shadow_hand_e.ShadowHandSeriesE()

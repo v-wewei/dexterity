@@ -19,7 +19,6 @@ from dexterity import effector
 from dexterity import effectors
 from dexterity import goal
 from dexterity import task
-from dexterity.manipulation import arenas
 from dexterity.manipulation import props
 from dexterity.manipulation.goals import prop_orientation
 from dexterity.manipulation.shared import cameras
@@ -28,6 +27,7 @@ from dexterity.manipulation.shared import observations
 from dexterity.manipulation.shared import rewards
 from dexterity.manipulation.shared import tags
 from dexterity.manipulation.shared import workspaces
+from dexterity.models import arenas
 from dexterity.models.hands import dexterous_hand
 from dexterity.models.hands import shadow_hand_e
 from dexterity.utils import mujoco_collisions

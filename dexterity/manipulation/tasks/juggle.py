@@ -11,11 +11,11 @@ from dm_control.utils import containers
 from dexterity import effector
 from dexterity import effectors
 from dexterity import task
-from dexterity.manipulation import arenas
 from dexterity.manipulation import props
 from dexterity.manipulation.shared import cameras
 from dexterity.manipulation.shared import observations
 from dexterity.manipulation.shared import tags
+from dexterity.models import arenas
 from dexterity.models.hands import dexterous_hand
 from dexterity.models.hands import mpl_hand
 
