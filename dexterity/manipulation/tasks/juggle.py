@@ -4,7 +4,6 @@ import dataclasses
 from typing import Sequence
 
 import numpy as np
-from dm_control import composer
 from dm_control import mjcf
 from dm_control.utils import containers
 
@@ -48,7 +47,7 @@ class Juggle(task.Task):
 
     def __init__(
         self,
-        arena: composer.Arena,
+        arena: arenas.Arena,
         hands: Sequence[dexterous_hand.DexterousHand],
         hand_effectors: Sequence[effector.Effector],
         use_dense_reward: bool,

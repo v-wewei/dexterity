@@ -4,7 +4,6 @@ import dataclasses
 from typing import Optional
 
 import numpy as np
-from dm_control import composer
 from dm_control import mjcf
 from dm_control.utils import containers
 
@@ -75,7 +74,7 @@ class Reach(task.GoalTask):
 
     def __init__(
         self,
-        arena: composer.Arena,
+        arena: arenas.Arena,
         hand: dexterous_hand.DexterousHand,
         hand_effector: effector.Effector,
         goal_generator: goal.GoalGenerator,

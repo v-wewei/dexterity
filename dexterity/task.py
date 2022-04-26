@@ -9,6 +9,7 @@ from dm_env import specs
 
 from dexterity import effector
 from dexterity import goal
+from dexterity.models.arenas import Arena
 from dexterity.models.hands import dexterous_hand
 from dexterity.utils import spec_utils
 
@@ -18,7 +19,7 @@ class Task(composer.Task):
 
     def __init__(
         self,
-        arena: composer.Arena,
+        arena: Arena,
         hands: Sequence[dexterous_hand.DexterousHand],
         hand_effectors: Sequence[effector.Effector],
     ) -> None:
@@ -79,7 +80,7 @@ class Task(composer.Task):
         return self._arena
 
     @property
-    def arena(self) -> composer.Arena:
+    def arena(self) -> Arena:
         return self._arena
 
     @property

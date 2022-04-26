@@ -101,7 +101,7 @@ class ReOrient(task.GoalTask):
 
     def __init__(
         self,
-        arena: composer.Arena,
+        arena: arenas.Arena,
         hand: dexterous_hand.DexterousHand,
         hand_effector: effector.Effector,
         goal_generator: goal.GoalGenerator,
