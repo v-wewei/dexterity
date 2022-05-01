@@ -1,4 +1,4 @@
-from typing import Optional, Sequence, Tuple
+from typing import Optional
 
 from dm_control import composer
 from dm_control import mjcf
@@ -40,8 +40,8 @@ class Arena(composer.Arena):
     def attach_offset(
         self,
         entity: composer.Entity,
-        position: Optional[Sequence[float]] = None,
-        quaternion: Optional[Sequence[float]] = None,
+        position: Optional[hints.FloatArray] = None,
+        quaternion: Optional[hints.FloatArray] = None,
         attach_site: Optional[hints.MjcfAttachmentFrame] = None,
     ):
         frame = self.attach(entity, attach_site=attach_site)
@@ -58,10 +58,10 @@ class Arena(composer.Arena):
     def add_mocap(
         self,
         entity: composer.Entity,
-        position: Optional[Sequence[float]] = None,
-        quaternion: Optional[Sequence[float]] = None,
+        position: Optional[hints.FloatArray] = None,
+        quaternion: Optional[hints.FloatArray] = None,
         visible: bool = False,
-        color: Tuple[float, float, float, float] = (0.9, 0.5, 0.5, 1.0),
+        color: hints.RgbaColor = (0.9, 0.5, 0.5, 1.0),
         name: str = "mocap",
     ) -> hints.MjcfElement:
         # Add mocap body.

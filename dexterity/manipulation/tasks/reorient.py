@@ -13,7 +13,6 @@ from dm_control.composer.variation import rotations
 from dm_control.entities.props import primitive
 from dm_control.utils import containers
 from dm_control.utils import rewards as reward_utils
-from dm_robotics.transformations import transformations as tr
 
 from dexterity import effector
 from dexterity import effectors
@@ -37,13 +36,6 @@ from dexterity.utils import mujoco_collisions
 class Workspace:
     prop_bbox: workspaces.BoundingBox
 
-
-# The position of the hand relative in the world frame, in meters.
-_HAND_POS = (0, 0.2, 0.1)
-# The orientation of the hand relative to the world frame.
-_HAND_QUAT = tr.axisangle_to_quat(
-    np.pi * np.array([0, np.sqrt(2) / 2, -np.sqrt(2) / 2])
-)
 
 # Alpha value of the visual goal hint.
 _HINT_ALPHA = 0.4
@@ -132,7 +124,11 @@ class ReOrient(task.GoalTask):
         self._fall_termination = fall_termination
 
         # Attach the hand to the arena.
-        arena.attach_offset(hand, position=_HAND_POS, quaternion=_HAND_QUAT)
+        arena.attach_offset(
+            hand,
+            position=hand.palm_upright_pose.xpos,
+            quaternion=hand.palm_upright_pose.xquat,
+        )
 
         # Add prop to the arena.
         arena.add_free_entity(prop)

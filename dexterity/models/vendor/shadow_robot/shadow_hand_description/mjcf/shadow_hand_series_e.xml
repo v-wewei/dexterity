@@ -8,7 +8,6 @@
     <size njmax="500" nconmax="200"/>
 
     <asset>
-        <texture type="skybox" builtin="gradient" rgb1="0.4 0.6 0.8" rgb2="0 0 0" width="100" height="600"/>
         <material name="metal" reflectance="1.0" rgba="0.6 0.6 0.6 1.0" shininess="0.5" specular="1.0"/>
         <material name="plastic" specular="0.75" shininess=".1" reflectance="0.5" rgba=".15 .15 .15 1"/>
         <material name="rubber" rgba="0.3 0.3 0.3 1.0" shininess="0.0"/>

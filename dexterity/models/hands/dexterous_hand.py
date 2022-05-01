@@ -1,7 +1,7 @@
 import abc
 import dataclasses
 import enum
-from typing import List, Tuple
+from typing import Callable, List, Optional, Sequence, Tuple
 
 import numpy as np
 from dm_control import composer
@@ -11,6 +11,9 @@ from dm_robotics.transformations import transformations as tr
 
 from dexterity.hints import MjcfElement
 from dexterity.utils import mujoco_utils
+
+_DEFAULT_XPOS = (0.0, 0.0, 0.0)
+_DEFAULT_XQUAT = (1.0, 0.0, 0.0, 0.0)
 
 
 class HandSide(enum.Enum):
@@ -32,23 +35,80 @@ class JointGrouping:
         return tuple([joint.name for joint in self.joints])
 
 
-class DexterousHand(abc.ABC, composer.Entity):
+def _make_readonly_float64_copy(value: Sequence[float]) -> np.ndarray:
+    out = np.array(value, dtype=np.float64)
+    out.flags.writeable = False
+    return out
+
+
+@dataclasses.dataclass(frozen=True)
+class HandPose:
+    qpos: Optional[np.ndarray] = None
+    xpos: np.ndarray = _make_readonly_float64_copy(_DEFAULT_XPOS)
+    xquat: np.ndarray = _make_readonly_float64_copy(_DEFAULT_XQUAT)
+
+    @staticmethod
+    def create(
+        xpos: Tuple[float, ...],
+        xquat: Tuple[float, ...],
+        qpos: Optional[Tuple[float, ...]] = None,
+    ) -> "HandPose":
+        return HandPose(
+            xpos=_make_readonly_float64_copy(xpos),
+            xquat=_make_readonly_float64_copy(xquat),
+            qpos=None if qpos is None else _make_readonly_float64_copy(qpos),
+        )
+
+    def __eq__(self, other: object) -> bool:
+        if not isinstance(other, HandPose):
+            return NotImplemented
+
+        return bool(
+            (
+                np.all(self.qpos == other.qpos)
+                and np.all(self.xpos == other.xpos)
+                and np.all(self.xquat == other.xquat)
+            )
+        )
+
+
+class DexterousHand(composer.Entity, metaclass=abc.ABCMeta):
     """Base composer class for a dexterous multi-fingered hand."""
+
+    def _build(self) -> None:
+        self._fingers_pos_sensors: List[MjcfElement] = []
 
     def _build_observables(self) -> composer.Observables:
         return DexterousHandObservables(self)
 
     @property
+    def palm_upright_pose(self) -> HandPose:
+        return HandPose()
+
+    @property
     def num_joints(self) -> int:
+        """Returns the number of joints (aka degrees of freedom) in the hand."""
         return len(self._joints)
+
+    dofs = num_joints
 
     @property
     def num_actuators(self) -> int:
+        """Returns the number of actuators in the hand."""
         return len(self._actuators)
 
     @property
     def underactuated(self) -> bool:
-        return self.num_joints > self._num_actuators
+        """Returns True if the hand has less actuators than degrees of freedom."""
+        return self.num_actuators < self.num_joints
+
+    @property
+    def fingers_pos_sensors(self) -> List[MjcfElement]:
+        return self._fingers_pos_sensors
+
+    @property
+    def tendons(self) -> List[MjcfElement]:
+        raise NotImplementedError
 
     # Abstract properties.
 
@@ -64,8 +124,16 @@ class DexterousHand(abc.ABC, composer.Entity):
 
     @property
     @abc.abstractmethod
-    def joint_groups(self) -> List[JointGrouping]:
-        """A list of `JointGrouping` objects corresponding to hand parts."""
+    def root_body(self) -> MjcfElement:
+        """Returns the root body of the hand.
+
+        Egocentric observations will be computed relative to this body.
+        """
+
+    @property
+    @abc.abstractmethod
+    def bodies(self) -> Tuple[MjcfElement, ...]:
+        ...
 
     @property
     @abc.abstractmethod
@@ -87,11 +155,12 @@ class DexterousHand(abc.ABC, composer.Entity):
     def joint_torque_sensors(self) -> List[MjcfElement]:
         """List of joint torque sensor elements belonging to the hand."""
 
-    # Abstract methods.
-
+    @property
     @abc.abstractmethod
-    def _build(self) -> None:
-        """Entity initialization method to be overridden by subclasses."""
+    def joint_groups(self) -> List[JointGrouping]:
+        """A list of `JointGrouping` objects corresponding to hand parts."""
+
+    # Abstract methods.
 
     @abc.abstractmethod
     def control_to_joint_positions(self, control: np.ndarray) -> np.ndarray:
@@ -157,6 +226,8 @@ class DexterousHandObservables(composer.Observables):
 
     @composer.observable
     def fingertip_positions(self) -> observable.Generic:
+        """3D position of the fingertips relative to the world frame."""
+
         def _get_fingertip_positions(physics: mjcf.Physics) -> np.ndarray:
             return physics.bind(self._entity.fingertip_sites).xpos.ravel()
 
@@ -164,6 +235,8 @@ class DexterousHandObservables(composer.Observables):
 
     @composer.observable
     def fingertip_orientations(self) -> observable.Generic:
+        """3D orientation of the fingertips relative to the world frame."""
+
         def _get_fingertip_orientations(physics: mjcf.Physics) -> np.ndarray:
             xmats = physics.bind(self._entity.fingertip_sites).xmat.reshape(-1, 3, 3)
             quats = [tr.mat_to_quat(xmat) for xmat in xmats]
@@ -176,7 +249,9 @@ class DexterousHandObservables(composer.Observables):
         def _get_fingertip_linear_velocities(physics: mjcf.Physics) -> np.ndarray:
             linear_velocities = []
             for fingertip_site in self._entity.fingertip_sites:
-                lin_vel = mujoco_utils.get_site_velocity(physics, fingertip_site)
+                lin_vel = mujoco_utils.get_site_velocity(
+                    physics, fingertip_site, world_frame=True
+                )
                 linear_velocities.append(lin_vel[:3])
             return np.concatenate(linear_velocities)
 
@@ -189,10 +264,58 @@ class DexterousHandObservables(composer.Observables):
         def _get_fingertip_angular_velocities(physics: mjcf.Physics) -> np.ndarray:
             angular_velocities = []
             for fingertip_site in self._entity.fingertip_sites:
-                ang_vel = mujoco_utils.get_site_velocity(physics, fingertip_site)
+                ang_vel = mujoco_utils.get_site_velocity(
+                    physics, fingertip_site, world_frame=True
+                )
                 angular_velocities.append(ang_vel[3:])
             return np.concatenate(angular_velocities)
 
         return observable.Generic(
             raw_observation_callable=_get_fingertip_angular_velocities
         )
+
+    @composer.observable
+    def fingertip_positions_ego(self):
+        """3D position of the fingers, relative to the root, in the egocentric frame."""
+
+        self._entity.fingers_pos_sensors[:] = []
+        for fingertip_site in self._entity.fingertip_sites:
+            self._entity.fingers_pos_sensors.append(
+                self._entity.mjcf_model.sensor.add(
+                    "framepos",
+                    name=fingertip_site.name + "_ego_pos_sensor",
+                    objtype=fingertip_site.tag,
+                    objname=fingertip_site.name,
+                    reftype="body",
+                    refname=self._entity.root_body,
+                )
+            )
+
+        def _get_relative_pos_in_egocentric_frame(physics: mjcf.Physics) -> np.ndarray:
+            return np.reshape(
+                physics.bind(self._entity.fingers_pos_sensors).sensordata, -1
+            )
+
+        return observable.Generic(_get_relative_pos_in_egocentric_frame)
+
+    # Semantic grouping of the above observables.
+
+    def _collect_from_attachments(
+        self, attribute_name: str
+    ) -> List[Callable[..., np.ndarray]]:
+        out: List[Callable[..., np.ndarray]] = []
+        for entity in self._entity.iter_entities(exclude_self=True):
+            out.extend(getattr(entity.observables, attribute_name, []))
+        return out
+
+    @property
+    def proprioception(self) -> List[Callable[..., np.ndarray]]:
+        return [
+            self.joint_positions,
+            self.joint_positions_sin_cos,
+            self.joint_torques,
+            self.fingertip_positions,
+            self.fingertip_orientations,
+            self.fingertip_linear_velocities,
+            self.fingertip_angular_velocities,
+        ] + self._collect_from_attachments("proprioception")

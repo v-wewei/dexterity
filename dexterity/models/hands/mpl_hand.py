@@ -1,4 +1,4 @@
-from typing import List
+from typing import List, Tuple
 
 import numpy as np
 from dm_control import composer
@@ -20,6 +20,7 @@ class MPLHand(dexterous_hand.DexterousHand):
         side: HandSide = HandSide.RIGHT,
         name: str = "mpl_hand",
     ) -> None:
+        super()._build()
 
         if side == HandSide.RIGHT:
             self._mjcf_root = mjcf.from_path(str(consts.MPL_HAND_RIGHT_XML))
@@ -50,6 +51,14 @@ class MPLHand(dexterous_hand.DexterousHand):
     @property
     def name(self) -> str:
         return self._mjcf_root.model
+
+    @composer.cached_property
+    def root_body(self):
+        return self._mjcf_root.find("body", "forearm")
+
+    @composer.cached_property
+    def bodies(self) -> Tuple[MjcfElement, ...]:
+        return tuple(self.mjcf_model.find_all("body"))
 
     @property
     def joints(self) -> List[MjcfElement]:

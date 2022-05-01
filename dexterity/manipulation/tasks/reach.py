@@ -22,11 +22,6 @@ from dexterity.models.hands import adroit_hand
 from dexterity.models.hands import adroit_hand_constants as consts
 from dexterity.models.hands import dexterous_hand
 
-# The position of the hand relative in the world frame, in meters.
-_HAND_POS = (0.0, 0.2, 0.1)
-# The orientation of the hand relative to the world frame.
-_HAND_QUAT = (0.0, 0.0, 0.707106781186, -0.707106781186)
-
 _SITE_SIZE = 1e-2
 _SITE_ALPHA = 0.1
 _SITE_COLORS = (
@@ -104,11 +99,15 @@ class Reach(task.GoalTask):
         self._visualize_reward = visualize_reward
 
         # Attach the hand to the arena.
-        arena.attach_offset(hand, position=_HAND_POS, quaternion=_HAND_QUAT)
+        arena.attach_offset(
+            hand,
+            position=hand.palm_upright_pose.xpos,
+            quaternion=hand.palm_upright_pose.xquat,
+        )
 
         # Make the hand fingertip sites visible and recolor them.
         for i, site in enumerate(hand.fingertip_sites):
-            site.group = None  # Make the sites visible.
+            site.group = None  # Make the sites visible by default.
             site.size = (_SITE_SIZE,) * 3  # Increase their size.
             site.rgba = _SITE_COLORS[i] + (_SITE_ALPHA,)  # Change their color.
 

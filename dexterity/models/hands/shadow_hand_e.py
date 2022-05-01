@@ -1,4 +1,4 @@
-from typing import List
+from typing import List, Tuple
 
 import numpy as np
 from dm_control import composer
@@ -8,6 +8,9 @@ from dexterity.hints import MjcfElement
 from dexterity.models.hands import dexterous_hand
 from dexterity.models.hands import shadow_hand_e_constants as consts
 from dexterity.utils import mujoco_utils
+
+_PALM_UPRIGHT_POS = (0.0, 0.2, 0.1)
+_PALM_UPRIGHT_QUAT = (0.0, 0.0, 0.707106781186, -0.707106781186)
 
 
 class ShadowHandSeriesE(dexterous_hand.DexterousHand):
@@ -19,6 +22,8 @@ class ShadowHandSeriesE(dexterous_hand.DexterousHand):
         Args:
             name: The name of the hand. Used as a prefix in the MJCF name attributes.
         """
+        super()._build()
+
         self._mjcf_root = mjcf.from_path(str(consts.SHADOW_HAND_E_XML))
         self._mjcf_root.model = name
 
@@ -39,12 +44,26 @@ class ShadowHandSeriesE(dexterous_hand.DexterousHand):
     # ================= #
 
     @property
+    def palm_upright_pose(self) -> dexterous_hand.HandPose:
+        return dexterous_hand.HandPose.create(
+            xpos=_PALM_UPRIGHT_POS, xquat=_PALM_UPRIGHT_QUAT
+        )
+
+    @property
     def mjcf_model(self) -> mjcf.RootElement:
         return self._mjcf_root
 
     @property
     def name(self) -> str:
         return self._mjcf_root.model
+
+    @composer.cached_property
+    def root_body(self):
+        return self._mjcf_root.find("body", "forearm")
+
+    @composer.cached_property
+    def bodies(self) -> Tuple[MjcfElement, ...]:
+        return tuple(self.mjcf_model.find_all("body"))
 
     @property
     def joints(self) -> List[MjcfElement]:
