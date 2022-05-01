@@ -1,4 +1,8 @@
-"""Rollout and visualize an oracle policy for the reaching domain."""
+"""Rollout and visualize an oracle policy for the reaching domain.
+
+Example usage:
+$ python examples/oracle_reach.py --num_episodes 1 --seed 0 --render
+"""
 
 import time
 from pathlib import Path

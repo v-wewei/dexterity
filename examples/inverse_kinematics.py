@@ -1,4 +1,8 @@
-"""Placing fingertip locations at target sites using inverse kinematics."""
+"""Place fingertip locations at target sites using inverse kinematics.
+
+Example usage:
+$ python examples/inverse_kinematics.py --num_solves 2 --linear_tol 1e-3
+"""
 
 import time
 

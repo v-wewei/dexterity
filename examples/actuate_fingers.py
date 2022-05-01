@@ -1,3 +1,5 @@
+"""Makes a cute animation with a Shadow Hand."""
+
 from typing import List
 
 import imageio

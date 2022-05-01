@@ -8,17 +8,6 @@ from dm_robotics.transformations import transformations as tr
 from dexterity import hints
 
 
-def prefix_identifier(identifier: str, prefix: str) -> str:
-    """Prefixes the identifier with the provided string.
-
-    This helper function deals with possibly empty prefixes and does not add the slash
-    delimiter.
-    """
-    if not prefix:
-        return identifier
-    return f"{prefix}/{identifier}"
-
-
 def get_site_pose(physics: mjcf.Physics, site_elem: hints.MjcfElement) -> np.ndarray:
     """Returns the world pose of the site as a 4x4 transform.
 
