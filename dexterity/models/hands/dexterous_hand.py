@@ -71,7 +71,7 @@ class HandPose:
         return qpos_eq and xpos_eq and xquat_eq
 
 
-class DexterousHand(composer.Entity, metaclass=abc.ABCMeta):
+class DexterousHand(composer.Entity, abc.ABC):
     """Base composer class for a dexterous multi-fingered hand."""
 
     def _build(self) -> None:
