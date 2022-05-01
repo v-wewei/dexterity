@@ -30,3 +30,8 @@ class PreviousActionTest(absltest.TestCase):
 
         assert effector.previous_action is not None  # For mypy's sake.
         np.testing.assert_array_equal(effector.previous_action, rand_ctrl)
+
+        # Mutate the control and check that the previous action is not affected.
+        prev_ctrl = rand_ctrl.copy()
+        rand_ctrl[:] = -np.nan
+        np.testing.assert_array_equal(effector.previous_action, prev_ctrl)
