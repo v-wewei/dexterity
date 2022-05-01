@@ -1,7 +1,7 @@
 import abc
 import dataclasses
 import enum
-from typing import Callable, List, Optional, Sequence, Tuple
+from typing import Callable, List, Optional, Tuple
 
 import numpy as np
 from dm_control import composer
@@ -9,6 +9,7 @@ from dm_control import mjcf
 from dm_control.composer.observation import observable
 from dm_robotics.transformations import transformations as tr
 
+from dexterity.hints import FloatArray
 from dexterity.hints import MjcfElement
 from dexterity.utils import mujoco_utils
 
@@ -35,7 +36,7 @@ class JointGrouping:
         return tuple([joint.name for joint in self.joints])
 
 
-def _make_readonly_float64_copy(value: Sequence[float]) -> np.ndarray:
+def _make_readonly_float64_copy(value: FloatArray) -> np.ndarray:
     out = np.array(value, dtype=np.float64)
     out.flags.writeable = False
     return out
@@ -43,15 +44,17 @@ def _make_readonly_float64_copy(value: Sequence[float]) -> np.ndarray:
 
 @dataclasses.dataclass(frozen=True)
 class HandPose:
+    """A container for a hand's joint and Cartesian pose."""
+
     qpos: Optional[np.ndarray] = None
     xpos: np.ndarray = _make_readonly_float64_copy(_DEFAULT_XPOS)
     xquat: np.ndarray = _make_readonly_float64_copy(_DEFAULT_XQUAT)
 
     @staticmethod
     def create(
-        xpos: Tuple[float, ...],
-        xquat: Tuple[float, ...],
-        qpos: Optional[Tuple[float, ...]] = None,
+        xpos: FloatArray,
+        xquat: FloatArray,
+        qpos: Optional[FloatArray] = None,
     ) -> "HandPose":
         return HandPose(
             xpos=_make_readonly_float64_copy(xpos),
@@ -62,14 +65,10 @@ class HandPose:
     def __eq__(self, other: object) -> bool:
         if not isinstance(other, HandPose):
             return NotImplemented
-
-        return bool(
-            (
-                np.all(self.qpos == other.qpos)
-                and np.all(self.xpos == other.xpos)
-                and np.all(self.xquat == other.xquat)
-            )
-        )
+        qpos_eq = bool(np.all(self.qpos == other.qpos))
+        xpos_eq = bool(np.all(self.xpos == other.xpos))
+        xquat_eq = bool(np.all(self.xquat == other.xquat))
+        return qpos_eq and xpos_eq and xquat_eq
 
 
 class DexterousHand(composer.Entity, metaclass=abc.ABCMeta):
@@ -283,7 +282,7 @@ class DexterousHandObservables(composer.Observables):
             self._entity.fingers_pos_sensors.append(
                 self._entity.mjcf_model.sensor.add(
                     "framepos",
-                    name=fingertip_site.name + "_ego_pos_sensor",
+                    name=fingertip_site.name + "_pos_sensor",
                     objtype=fingertip_site.tag,
                     objname=fingertip_site.name,
                     reftype="body",
