@@ -15,6 +15,13 @@ _NUM_SOLVES = 50
 
 
 class IKSolverTest(absltest.TestCase):
+    def test_raises_value_error_if_target_wrong_shape(self) -> None:
+        hand = hands.ShadowHandSeriesE()
+        target_positions = np.full(shape=(1, 3), fill_value=10.0)
+        solver = ik_solver.IKSolver(hand)
+        with self.assertRaises(ValueError):
+            solver.solve(target_positions)
+
     def test_return_none_when_passing_impossible_target(self) -> None:
         hand = hands.ShadowHandSeriesE()
         target_positions = np.full(shape=(5, 3), fill_value=10.0)

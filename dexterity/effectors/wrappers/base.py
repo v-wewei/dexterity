@@ -12,12 +12,12 @@ class Wrapper(effector.Effector):
         self._delegate_effector = effector
 
     def after_compile(self, mjcf_model: mjcf.RootElement) -> None:
-        return self._delegate_effector.after_compile(mjcf_model)
+        self._delegate_effector.after_compile(mjcf_model)
 
     def initialize_episode(
         self, physics: mjcf.Physics, random_state: np.random.RandomState
     ) -> None:
-        return self._delegate_effector.initialize_episode(physics, random_state)
+        self._delegate_effector.initialize_episode(physics, random_state)
 
     def action_spec(self, physics: mjcf.Physics) -> specs.BoundedArray:
         return self._delegate_effector.action_spec(physics)
