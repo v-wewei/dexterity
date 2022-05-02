@@ -20,7 +20,7 @@ from dexterity.models.arenas import Arena
 
 flags.DEFINE_integer("seed", 0, "Random seed.")
 flags.DEFINE_integer("num_solves", 1, "Number of IK solves.")
-flags.DEFINE_float("linear_tol", 1e-4, "Linear tolerance.")
+flags.DEFINE_float("linear_tol", 1e-3, "Linear tolerance.")
 flags.DEFINE_boolean("disable_plot", False, "Angular tolerance.")
 
 FLAGS = flags.FLAGS
@@ -86,8 +86,8 @@ def main(_) -> None:
         physics = mjcf.Physics.from_mjcf_model(arena.mjcf_model)
 
         # Randomly sample a joint configuration.
-        qpos_desired = hand.sample_collision_free_joint_angles(physics, random_state)
         qpos_initial = physics.bind(hand.joints).qpos.copy()
+        qpos_desired = hand.sample_collision_free_joint_angles(physics, random_state)
         physics.bind(hand.joints).qpos[:] = qpos_desired
 
         # Forward kinematics to compute Cartesian fingertip positions.
@@ -99,7 +99,7 @@ def main(_) -> None:
         # Restore joints to their initial configuration.
         physics.bind(hand.joints).qpos[:] = qpos_initial
 
-        # Forward dynamics to update all the positions.
+        # Forward dynamics to update the target site positions.
         physics.forward()
         im_start = physics.render(**render_kwargs)
 
@@ -107,9 +107,7 @@ def main(_) -> None:
         qpos = solver.solve(
             target_positions=target_positions,
             linear_tol=FLAGS.linear_tol,
-            max_steps=1_000,
             early_stop=True,
-            num_attempts=15,
             stop_on_first_successful_attempt=True,
         )
         ik_end = time.time()

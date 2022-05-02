@@ -35,7 +35,7 @@ class _Solution(NamedTuple):
     """Return value of an IK solution."""
 
     qpos: np.ndarray
-    linear_err: float
+    linear_err: List[float]
 
 
 class IKSolver:
@@ -81,6 +81,35 @@ class IKSolver:
         num_attempts: int = 30,
         stop_on_first_successful_attempt: bool = False,
     ) -> Optional[np.ndarray]:
+        """Attemps to solve the inverse kinematics problem.
+
+        Args:
+            target_positions (np.ndarray): A 2D array of Cartesian fingertip positions,
+                one for each finger.
+            linear_tol (float, optional): The linear tolerance, in meters, that
+                determines if the solution found is valid. Defaults to 1e-3.
+            max_steps (int, optional): Maximum number of integration steps used for a
+                single IK solve. The larger, the more likely a solution can be found at
+                a the cost of increased computation time. Defaults to 100.
+            early_stop (bool, optional): If True, stops an IK attempt as soon as the
+                joint configuration is within the linear tolerance for all fingers. If
+                False, it will always run `max_steps` iterations per attempt and return
+                the last configuration. Defaults to False.
+            num_attempts (int, optional): The number of different IK attempts the solver
+                should do. Having more attempts increases the chances of finding a
+                correct solution, at the cost of computation time. Defaults to 30.
+            stop_on_first_successful_attempt (bool, optional): If True, the method will
+                return the first solution that meets the tolerance criteria. If False,
+                it returns the solution where the joints are closer to their respective
+                operating range. Defaults to False.
+
+        Raises:
+            ValueError: If target_positions does not have a shape of (num_fingers, 3).
+
+        Returns:
+            Optional[np.ndarray]: Returns the corresponding joint configuration if a
+            solution is found. If IK fails, it returns None.
+        """
         target_positions = target_positions.reshape(-1, 3)
         if target_positions.shape[0] != len(self._elements):
             raise ValueError(
@@ -88,14 +117,15 @@ class IKSolver:
                 "end-effector sites."
             )
 
+        # Initialize solution variables.
         nullspace_jnt_qpos_min_err: float = np.inf
         success: bool = False
         sol_qpos: Optional[np.ndarray] = None
 
         # Each iteration of this loop attempts to solve the IK problem.
         for attempt in range(num_attempts):
-            # Randomize the initial joint configuration so that the IK can find
-            # different solutions.
+            # Randomize the initial joint configuration so that IK can find different
+            # solutions.
             if attempt == 0:
                 self._all_joints_binding.qpos = self._nullspace_reference
             else:
@@ -103,16 +133,17 @@ class IKSolver:
                     *self._all_joints_binding.range.T
                 )
 
-            qpos, linear_err = self._solve_ik(
+            # Solve!
+            qpos, linear_errors = self._solve_ik(
                 target_positions,
                 linear_tol,
                 max_steps,
                 early_stop,
             )
 
-            if linear_err <= linear_tol:
+            # Check that all fingers are within the desired tolerance.
+            if all(err < linear_tol for err in linear_errors):
                 success = True
-
                 nullspace_jnt_qpos_err = float(
                     np.linalg.norm(qpos - self._nullspace_reference)
                 )
@@ -120,8 +151,8 @@ class IKSolver:
                     nullspace_jnt_qpos_min_err = nullspace_jnt_qpos_err
                     sol_qpos = qpos
 
-            if success and stop_on_first_successful_attempt:
-                break
+                if stop_on_first_successful_attempt:
+                    break
 
         if not success:
             logging.warning(f"{self.__class__.__name__} failed to find a solution.")
@@ -168,7 +199,7 @@ class IKSolver:
             )
             self._update_physics_data()
 
-            avg_linear_err: float = 0.0
+            linear_errors: List[float] = []
             close_enough: bool = True
             not_enough_progress: bool = False
 
@@ -176,7 +207,7 @@ class IKSolver:
                 # Get the distance between the current pose and the target pose.
                 cur_pose = cur_frames[i].get_world_pose(self._geometry_physics)
                 linear_err = float(np.linalg.norm(target_position - cur_pose.position))
-                avg_linear_err += linear_err
+                linear_errors.append(linear_err)
 
                 # Stop if the pose is close enough to the target pose.
                 if linear_err > linear_tol:
@@ -190,18 +221,16 @@ class IKSolver:
                 if linear_err / (linear_change + 1e-10) > _PROGRESS_THRESHOLD:
                     not_enough_progress = True
 
+                # Update the previous pose.
                 previous_poses[i] = copy.copy(cur_pose)
                 cur_poses[i] = cur_pose
-
-            # Average out the linear error.
-            avg_linear_err /= len(target_positions)
 
             # Break conditions.
             if (early_stop and close_enough) or not_enough_progress:
                 break
 
         qpos = np.array(self._all_joints_binding.qpos)
-        return _Solution(qpos=qpos, linear_err=avg_linear_err)
+        return _Solution(qpos=qpos, linear_err=linear_errors)
 
     def _compute_joint_velocities(
         self, cartesian_6d_target: Sequence[np.ndarray]
