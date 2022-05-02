@@ -40,9 +40,6 @@ class DampedLeastSquaresMapper(mapper.CartesianVelocitytoJointVelocityMapper):
 
     params: DampedLeastSquaresParameters
 
-    def __post_init__(self) -> None:
-        self.params.validate_parameters()
-
     def compute_joint_velocities(
         self,
         data: hints.MjData,

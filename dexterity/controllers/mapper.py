@@ -54,6 +54,9 @@ class Parameters:
     object_names: Sequence[str]
     """MuJoCo name of the object being controlled."""
 
+    def __post_init__(self) -> None:
+        self.validate_parameters()
+
     def validate_parameters(self) -> None:
         """Validates the parameters."""
 
@@ -69,7 +72,11 @@ class Parameters:
                 )
 
         for object_name, object_type in zip(self.object_names, self.object_types):
-            if self.model.name2id(object_name, object_type) < 0:
+            try:
+                # This will raise an exception if no object with the corresponding name
+                # and type was found.
+                self.model.name2id(object_name, object_type)
+            except Exception:
                 raise ValueError(
                     f"Could not find MuJoCo object with name {object_name} and"
                     f" type {object_type} in the provided model."
