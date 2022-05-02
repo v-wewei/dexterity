@@ -1,4 +1,4 @@
-"""Tests for dls."""
+"""Tests for mapper."""
 
 import mujoco
 from absl.testing import absltest

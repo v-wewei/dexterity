@@ -14,14 +14,14 @@ class DampedLeastSquaresParameters(mapper.Parameters):
     regularization_weight: float
     """Damping factor used to regularize the pseudoinverse."""
 
-    def validate_parameters(self) -> None:
+    def _validate_parameters(self) -> None:
+        super()._validate_parameters()
+
         if self.regularization_weight < 0:
             raise ValueError(
                 "`regularization_weight` must be non-negative, but was "
                 f"{self.regularization_weight}."
             )
-
-        super().validate_parameters()
 
 
 @dataclasses.dataclass

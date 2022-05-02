@@ -55,11 +55,9 @@ class Parameters:
     """MuJoCo name of the object being controlled."""
 
     def __post_init__(self) -> None:
-        self.validate_parameters()
+        self._validate_parameters()
 
-    def validate_parameters(self) -> None:
-        """Validates the parameters."""
-
+    def _validate_parameters(self) -> None:
         for object_type in self.object_types:
             if object_type not in [
                 mujoco.mjtObj.mjOBJ_BODY,
