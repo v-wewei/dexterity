@@ -56,10 +56,6 @@ class Juggle(task.Task):
     ) -> None:
         """Construct a new `Juggle` task."""
 
-        hand_names = set([hand.name for hand in hands])
-        if len(hand_names) != len(hands):
-            raise ValueError("Hands must have unique names.")
-
         super().__init__(arena=arena, hands=hands, hand_effectors=hand_effectors)
 
         self._use_dense_reward = use_dense_reward

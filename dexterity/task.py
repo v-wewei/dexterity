@@ -23,11 +23,17 @@ class Task(composer.Task):
         hands: Sequence[dexterous_hand.DexterousHand],
         hand_effectors: Sequence[effector.Effector],
     ) -> None:
+        # Ensure hands have unique names.
+        if len(set(hand.name for hand in hands)) != len(hands):
+            raise ValueError("Each hand must have a unique name.")
+
+        # Ensure effectors have unique prefixes.
+        if len(set(eff.prefix for eff in hand_effectors)) != len(hand_effectors):
+            raise ValueError("Each effector must have a unique prefix.")
+
         self._arena = arena
         self._hands = tuple(hands)
         self._hand_effectors = tuple(hand_effectors)
-
-        self._action_spec = None
 
     # Reference: https://github.com/deepmind/dm_robotics/blob/main/py/moma/subtask_env.py
     def _find_effector_indices(
@@ -66,12 +72,13 @@ class Task(composer.Task):
             e_cmd = action[self._find_effector_indices(eff, physics)]
             eff.set_control(physics, e_cmd)
 
-    def action_spec(self, physics: mjcf.Physics) -> specs.BoundedArray:
-        if self._action_spec is None:
-            # Merge action specs.
-            a_specs = [a.action_spec(physics) for a in self._hand_effectors]
-            self._action_spec = spec_utils.merge_specs(a_specs)
-        return self._action_spec
+    def action_spec(
+        self,
+        physics: mjcf.Physics,
+        effectors: Optional[Sequence[effector.Effector]] = None,
+    ) -> specs.BoundedArray:
+        a_specs = [a.action_spec(physics) for a in (effectors or self.hand_effectors)]
+        return spec_utils.merge_specs(a_specs)
 
     # Accessors.
 

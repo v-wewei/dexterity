@@ -24,7 +24,7 @@ class DampedLeastSquaresParameters(mapper.Parameters):
             )
 
 
-@dataclasses.dataclass
+@dataclasses.dataclass(frozen=True)
 class DampedLeastSquaresMapper(mapper.CartesianVelocitytoJointVelocityMapper):
     """A `CartesianVelocitytoJointVelocityMapper` that uses damped least-squares to
     solve for the joint velocities.
