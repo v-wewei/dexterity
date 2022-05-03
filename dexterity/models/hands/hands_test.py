@@ -1,8 +1,12 @@
+import itertools
+from typing import Tuple
+
 import numpy as np
 from absl.testing import absltest
 from absl.testing import parameterized
 from dm_control import mjcf
 
+from dexterity.inverse_kinematics import ik_solver
 from dexterity.models.hands import adroit_hand
 from dexterity.models.hands import adroit_hand_constants
 from dexterity.models.hands import mpl_hand
@@ -88,6 +92,114 @@ class HandTest(parameterized.TestCase):
         hand.set_joint_angles(physics, rand_qpos)
         physics_joints_qpos = physics.bind(hand.joints).qpos
         np.testing.assert_array_equal(physics_joints_qpos, rand_qpos)
+
+
+class DexterousHandObservablesTest(parameterized.TestCase):
+    @parameterized.parameters(
+        dict(joint_index=0, joint_pos=0),
+        dict(joint_index=1, joint_pos=0.5),
+    )
+    def test_joint_positions_observable(
+        self, joint_index: int, joint_pos: float
+    ) -> None:
+        hand = adroit_hand.AdroitHand()
+        physics = mjcf.Physics.from_mjcf_model(hand.mjcf_model)
+        physics.bind(hand.joints).qpos[joint_index] = joint_pos
+        actual_obs = hand.observables.joint_positions(physics)[joint_index]
+        np.testing.assert_array_almost_equal(actual_obs, joint_pos)
+
+    @parameterized.parameters(
+        dict(joint_index=0, joint_pos=0, expected_obs=(0.0, 1.0)),
+        dict(
+            joint_index=0, joint_pos=0.175, expected_obs=(np.sin(0.175), np.cos(0.175))
+        ),
+    )
+    def test_joint_positions_sin_cos_observable(
+        self, joint_index: int, joint_pos: float, expected_obs: Tuple[float, float]
+    ) -> None:
+        hand = adroit_hand.AdroitHand()
+        physics = mjcf.Physics.from_mjcf_model(hand.mjcf_model)
+        physics.bind(hand.joints).qpos[joint_index] = joint_pos
+        actual_obs = hand.observables.joint_positions_sin_cos(physics)[joint_index]
+        np.testing.assert_array_almost_equal(actual_obs, expected_obs)
+
+    @parameterized.parameters(
+        dict(joint_index=0, joint_vel=0),
+        dict(joint_index=1, joint_vel=0.5),
+    )
+    def test_joint_velocities_observable(
+        self,
+        joint_index: int,
+        joint_vel: float,
+    ) -> None:
+        hand = adroit_hand.AdroitHand()
+        physics = mjcf.Physics.from_mjcf_model(hand.mjcf_model)
+        physics.bind(hand.joints).qvel[joint_index] = joint_vel
+        actual_obs = hand.observables.joint_velocities(physics)[joint_index]
+        np.testing.assert_array_almost_equal(actual_obs, joint_vel)
+
+    @absltest.skip(
+        "Torque readings do not match ground-truth, skipping until I figure out why."
+    )
+    @parameterized.parameters(
+        dict(joint_index=idx, applied_torque=t)
+        for idx, t in itertools.product([0, 2], [0, -6])
+    )
+    def test_joint_torques_observable(
+        self, joint_index: int, applied_torque: float
+    ) -> None:
+
+        hand = adroit_hand.AdroitHand()
+        joint = hand.joints[joint_index]
+        physics = mjcf.Physics.from_mjcf_model(hand.mjcf_model)
+
+        with physics.model.disable("gravity", "limit", "contact", "actuation"):
+            # Apply a cartesian torque to the body containing the joint. We use
+            # `xfrc_applied` rather than `qfrc_applied` because forces in `qfrc_applied`
+            # are not measured by the torque sensor.
+            physics.bind(joint.parent).xfrc_applied[3:] = (
+                applied_torque * physics.bind(joint).xaxis
+            )
+            observed_torque = hand.observables.joint_torques(physics)[joint_index]
+
+        # Note the change in sign, since the sensor measures torques in the
+        # child->parent direction.
+        self.assertAlmostEqual(observed_torque, -applied_torque, delta=0.1)
+
+    @parameterized.parameters(
+        dict(
+            fingertip_positions=np.asarray(
+                [
+                    [-0.003572, -0.020904, 0.371999],
+                    [-0.028277, -0.036063, 0.391271],
+                    [-0.052305, -0.006066, 0.393481],
+                    [-0.089808, -0.042816, 0.423813],
+                    [0.026246, -0.017261, 0.416314],
+                ]
+            )
+        )
+    )
+    def test_fingertip_positions_observable(
+        self, fingertip_positions: np.ndarray
+    ) -> None:
+        hand = adroit_hand.AdroitHand()
+        physics = mjcf.Physics.from_mjcf_model(hand.mjcf_model)
+
+        solver = ik_solver.IKSolver(hand)
+
+        qpos = solver.solve(
+            target_positions=fingertip_positions,
+            linear_tol=1e-3,
+            early_stop=True,
+            stop_on_first_successful_attempt=True,
+        )
+        self.assertIsNotNone(qpos)
+
+        assert qpos is not None  # Appease mypy.
+        hand.set_joint_angles(physics, qpos)
+
+        observed_pos = hand.observables.fingertip_positions(physics).reshape(-1, 3)
+        np.testing.assert_allclose(observed_pos, fingertip_positions, atol=1e-3)
 
 
 if __name__ == "__main__":

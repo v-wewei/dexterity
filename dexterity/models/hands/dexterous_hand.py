@@ -225,9 +225,7 @@ class DexterousHandObservables(composer.Observables):
     def joint_positions_sin_cos(self) -> observable.MJCFFeature:
         def _get_joint_pos_sin_cos(physics: mjcf.Physics) -> np.ndarray:
             qpos = physics.bind(self._entity.joints).qpos
-            qpos_sin = np.sin(qpos)
-            qpos_cos = np.cos(qpos)
-            return np.concatenate([qpos_sin, qpos_cos])
+            return np.vstack([np.sin(qpos), np.cos(qpos)]).T
 
         return observable.Generic(raw_observation_callable=_get_joint_pos_sin_cos)
 
@@ -240,8 +238,7 @@ class DexterousHandObservables(composer.Observables):
         def _get_joint_torques(physics: mjcf.Physics) -> np.ndarray:
             torques = physics.bind(self._entity.joint_torque_sensors).sensordata
             joint_axes = physics.bind(self._entity.joints).axis
-            joint_torques = np.einsum("ij,ij->i", torques.reshape(-1, 3), joint_axes)
-            return joint_torques
+            return np.einsum("ij,ij->i", torques.reshape(-1, 3), joint_axes)
 
         return observable.Generic(raw_observation_callable=_get_joint_torques)
 
