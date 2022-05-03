@@ -236,6 +236,8 @@ class DexterousHandObservables(composer.Observables):
     @composer.observable
     def joint_torques(self) -> observable.Generic:
         def _get_joint_torques(physics: mjcf.Physics) -> np.ndarray:
+            # We only care about torques acting on each joint's axis of rotation, so we
+            # project them.
             torques = physics.bind(self._entity.joint_torque_sensors).sensordata
             joint_axes = physics.bind(self._entity.joints).axis
             return np.einsum("ij,ij->i", torques.reshape(-1, 3), joint_axes)

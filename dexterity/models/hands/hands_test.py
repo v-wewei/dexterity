@@ -138,12 +138,9 @@ class DexterousHandObservablesTest(parameterized.TestCase):
         actual_obs = hand.observables.joint_velocities(physics)[joint_index]
         np.testing.assert_array_almost_equal(actual_obs, joint_vel)
 
-    @absltest.skip(
-        "Torque readings do not match ground-truth, skipping until I figure out why."
-    )
     @parameterized.parameters(
         dict(joint_index=idx, applied_torque=t)
-        for idx, t in itertools.product([0, 2], [0, -6])
+        for idx, t in itertools.product([0, 2, 4], [0, -6, 5])
     )
     def test_joint_torques_observable(
         self, joint_index: int, applied_torque: float
@@ -153,18 +150,29 @@ class DexterousHandObservablesTest(parameterized.TestCase):
         joint = hand.joints[joint_index]
         physics = mjcf.Physics.from_mjcf_model(hand.mjcf_model)
 
-        with physics.model.disable("gravity", "limit", "contact", "actuation"):
-            # Apply a cartesian torque to the body containing the joint. We use
-            # `xfrc_applied` rather than `qfrc_applied` because forces in `qfrc_applied`
-            # are not measured by the torque sensor.
+        with physics.model.disable("contact", "gravity", "actuation"):
+            # Project the torque onto the joint axis and apply it to the joint's parent
+            # body.
             physics.bind(joint.parent).xfrc_applied[3:] = (
                 applied_torque * physics.bind(joint).xaxis
             )
+
+            # Run the simulation forward until the joint stops moving.
+            physics.step()
+            qvel_thresh = 1e-2
+            while max(abs(physics.bind(joint).qvel)) > qvel_thresh:
+                physics.step()
+
+            # Read the torque sensor reading.
             observed_torque = hand.observables.joint_torques(physics)[joint_index]
+
+            # Flip the sign since the sensor reports values in the child->parent
+            # direction.
+            observed_torque = -1.0 * observed_torque
 
         # Note the change in sign, since the sensor measures torques in the
         # child->parent direction.
-        self.assertAlmostEqual(observed_torque, -applied_torque, delta=0.1)
+        self.assertAlmostEqual(observed_torque, applied_torque, delta=1e-2)
 
     @parameterized.parameters(
         dict(
