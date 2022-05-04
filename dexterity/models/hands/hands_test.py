@@ -120,7 +120,9 @@ class DexterousHandObservablesTest(parameterized.TestCase):
         hand = adroit_hand.AdroitHand()
         physics = mjcf.Physics.from_mjcf_model(hand.mjcf_model)
         physics.bind(hand.joints).qpos[joint_index] = joint_pos
-        actual_obs = hand.observables.joint_positions_sin_cos(physics)[joint_index]
+        actual_obs = hand.observables.joint_positions_sin_cos(physics).reshape(-1, 2)[
+            joint_index
+        ]
         np.testing.assert_array_almost_equal(actual_obs, expected_obs)
 
     @parameterized.parameters(
