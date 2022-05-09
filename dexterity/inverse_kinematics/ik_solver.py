@@ -12,7 +12,7 @@ from dm_robotics.geometry import mujoco_physics
 
 from dexterity import controllers
 from dexterity.models.hands import dexterous_hand
-from dexterity.utils import mujoco_utils
+from dexterity.utils.mujoco_utils import get_element_type
 
 # Gain for the linear twist computation, should always be between 0 and 1.
 # 0 corresponds to not moving and 1 corresponds to moving to the target in a single
@@ -60,14 +60,10 @@ class IKSolver:
         self._create_mapper()
 
     def _create_mapper(self) -> None:
-        obj_types = [
-            mujoco_utils.get_element_type(element) for element in self._elements
-        ]
-        obj_names = [element.full_identifier for element in self._elements]
         params = controllers.dls.DampedLeastSquaresParameters(
             model=self._physics.model,
-            object_types=obj_types,
-            object_names=obj_names,
+            object_types=[get_element_type(element) for element in self._elements],
+            object_names=[element.full_identifier for element in self._elements],
             regularization_weight=_REGULARIZATION_WEIGHT,
         )
         self._mapper = controllers.dls.DampedLeastSquaresMapper(params)
@@ -135,14 +131,11 @@ class IKSolver:
 
             # Solve!
             qpos, linear_errors = self._solve_ik(
-                target_positions,
-                linear_tol,
-                max_steps,
-                early_stop,
+                target_positions, linear_tol, max_steps, early_stop
             )
 
             # Check that all fingers are within the desired tolerance.
-            if all(err < linear_tol for err in linear_errors):
+            if all(err <= linear_tol for err in linear_errors):
                 success = True
                 nullspace_jnt_qpos_err = float(
                     np.linalg.norm(qpos - self._nullspace_reference)
@@ -151,11 +144,11 @@ class IKSolver:
                     nullspace_jnt_qpos_min_err = nullspace_jnt_qpos_err
                     sol_qpos = qpos
 
-                if stop_on_first_successful_attempt:
-                    break
+            if success and stop_on_first_successful_attempt:
+                break
 
         if not success:
-            logging.warning(f"{self.__class__.__name__} failed to find a solution.")
+            logging.warning("Inverse kinematics failed to find a solution.")
 
         return sol_qpos
 
@@ -176,14 +169,16 @@ class IKSolver:
             cur_poses.append(cur_pose)
             previous_poses.append(copy.copy(cur_pose))
 
+        target_poses = [geometry.Pose(position=pos) for pos in target_positions]
+
         # Each iteration of this loop attempts to reduce the error between the site's
         # position and the target position.
         for _ in range(max_steps):
             twists = []
-            for i, target_position in enumerate(target_positions):
+            for cur_pose, target_pose in zip(cur_poses, target_poses):
                 twist = _compute_twist(
-                    cur_poses[i],
-                    geometry.Pose(position=target_position, quaternion=None),
+                    cur_pose,
+                    target_pose,
                     _LINEAR_VELOCITY_GAIN,
                     _INTEGRATION_TIMESTEP_SEC,
                 )
@@ -263,5 +258,4 @@ def _compute_twist(
 ) -> np.ndarray:
     """Returns the twist to apply to the element to reach final_pose from init_pose."""
     position_error = final_pose.position - init_pose.position
-    linear = linear_velocity_gain * position_error / control_timestep_seconds
-    return linear
+    return linear_velocity_gain * position_error / control_timestep_seconds

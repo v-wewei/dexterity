@@ -22,6 +22,7 @@ flags.DEFINE_integer("seed", 0, "Random seed.")
 flags.DEFINE_integer("num_solves", 1, "Number of IK solves.")
 flags.DEFINE_float("linear_tol", 1e-3, "Linear tolerance.")
 flags.DEFINE_boolean("disable_plot", False, "Angular tolerance.")
+flags.DEFINE_boolean("optimize_nullspace", False, "Nullspace optimization.")
 
 FLAGS = flags.FLAGS
 
@@ -108,7 +109,7 @@ def main(_) -> None:
             target_positions=target_positions,
             linear_tol=FLAGS.linear_tol,
             early_stop=True,
-            stop_on_first_successful_attempt=True,
+            stop_on_first_successful_attempt=(not FLAGS.optimize_nullspace),
         )
         ik_end = time.time()
 
