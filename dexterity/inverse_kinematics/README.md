@@ -1,8 +1,13 @@
 # Inverse Kinematics Library
 
-This library implements an inverse kinematics (IK) solver for dexterous multi-fingered hands. It takes as input Cartesian positions for the fingers (or end-effectors) of the hand and returns the joint angles needed to place the fingers at those desired positions.
+This library implements an inverse kinematics (IK) solver for dexterous multi-fingered hands. It takes as input Cartesian positions for the fingers of the hand and returns the joint angles needed to place the fingers at those desired positions.
 
-The design of the IK solver is modular in that different solvers can be implemented by hot swapping the underlying controller. Specifically, the solver wraps an instance of [`dexterity.controllers`](../controllers/), which is a library responsible for performing the mapping between Cartesian velocities and joint velocities. The current implementation relies on a simple Jacobian-based [Damped Least Squares] controller. In the future, we'd like to implement more sophisticated controllers, for example, ones that view IK under the lens of [optimization].
+<p float="left">
+  <img src="../../assets/ik_start.png" height="200">
+  <img src="../../assets/ik_end.png" height="200">
+</p>
+
+The design of the IK solver is modular in that different solvers can be implemented by hot swapping the underlying controller. Specifically, the solver wraps an instance of [`dexterity.controllers`](../controllers/), which is a library responsible for performing the mapping between Cartesian velocities and joint velocities. The current implementation relies on a simple Jacobian-based [Damped Least Squares] solver. In the future, we'd like to implement more sophisticated controllers, for example, ones that view IK under the lens of [optimization].
 
 ## Usage
 
@@ -22,10 +27,10 @@ qpos = solver.solve(
     target_positions,
     # How close we want to get to the target positions.
     linear_tol=1e-3,
-    # How many IK attempts to do. Each attempt randomizes the initial joint angles to
-    # arrive at a solution.
+    # How many IK attempts to perform. Each attempt randomizes the initial joint angles
+    # to arrive at a different solution.
     num_attemps=5,
-    # Whether to exit at the first attempt that find a solution within the tolerance.
+    # Whether to exit at the first attempt that finds a solution within the tolerance.
     stop_on_first_successful_attempt=True,
 )
 # If the solves fails, qpos will be None.
