@@ -1,3 +1,5 @@
+from typing import Any
+
 import numpy as np
 from dm_control import mjcf
 from dm_env import specs
@@ -10,6 +12,9 @@ class Wrapper(effector.Effector):
 
     def __init__(self, effector: effector.Effector) -> None:
         self._delegate_effector = effector
+
+    def __getattr__(self, name: str) -> Any:
+        return getattr(self._delegate_effector, name)
 
     def after_compile(self, mjcf_model: mjcf.RootElement) -> None:
         self._delegate_effector.after_compile(mjcf_model)
