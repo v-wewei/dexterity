@@ -59,13 +59,19 @@ class DampedLeastSquaresMapper(mapper.CartesianVelocitytoJointVelocityMapper):
                 object_type=obj_type,
                 object_id=self.params.model.name2id(obj_name, obj_type),
             )
-            jacobians.append(jacobian[:3])
+            jacobians.append(jacobian[:3])  # Ignore rotation component.
         jacobian = np.concatenate(jacobians, axis=0)
 
         # Concatenate twists for each end-effector.
         twist = np.concatenate(target_velocities, axis=0)
 
         # Solve!
-        hess_approx = jacobian.T @ jacobian
-        hess_approx += np.eye(hess_approx.shape[0]) * self.params.regularization_weight
-        return np.linalg.solve(hess_approx, jacobian.T @ twist)
+        if self.params.regularization_weight > 0:
+            hess_approx = jacobian.T @ jacobian
+            hess_approx += (
+                np.eye(hess_approx.shape[0]) * self.params.regularization_weight
+            )
+            return np.linalg.solve(hess_approx, jacobian.T @ twist)
+        # Note: In the undamped case, the problem reduces to standard least-squares,
+        # i.e., we are solving the following linear system of equations: `V = J @ v`.
+        return np.linalg.lstsq(jacobian, twist, rcond=None)[0]
