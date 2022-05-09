@@ -56,7 +56,7 @@ class SmoothActionTest(parameterized.TestCase):
 
         # At initialization, the ema variable should be initialized.
         smoothed_effector.initialize_episode(physics, random_state)
-        self.assertEqual(smoothed_effector.ema.counter, 0)
+        self.assertIsNone(smoothed_effector._ema._value)
 
     @parameterized.parameters(0.0, 0.9, 1.0)
     def test_smoothing(self, alpha: float) -> None:
@@ -92,5 +92,3 @@ class SmoothActionTest(parameterized.TestCase):
             smoothed_effector.previous_action,
             (1 - alpha) * rand_ctrl_1 + alpha * rand_ctrl_0,
         )
-
-        self.assertEqual(smoothed_effector.ema.counter, 2)

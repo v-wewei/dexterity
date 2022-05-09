@@ -15,24 +15,17 @@ class ExponentialSmoother:
             raise ValueError("`alpha` must be between 0.0 and 1.0")
 
         self._alpha = alpha
-        self._counter = 0
         self._value: Optional[np.ndarray] = None
 
     def update(self, value: np.ndarray) -> None:
-        if self._counter == 0:
+        if self._value is None:
             self._value = value
         else:
-            assert self._value is not None
             self._value = self._alpha * self._value + (1 - self._alpha) * value
-        self._counter += 1
 
     @property
     def alpha(self) -> float:
         return self._alpha
-
-    @property
-    def counter(self) -> int:
-        return self._counter
 
     @property
     def smoothed_value(self) -> np.ndarray:
