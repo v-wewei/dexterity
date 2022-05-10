@@ -15,7 +15,7 @@ class MujocoEffector(effector.Effector):
         self,
         actuators: Sequence[hints.MjcfElement],
         prefix: str = "",
-    ):
+    ) -> None:
         self._actuators = actuators
         self._prefix = prefix
         self._action_spec = None

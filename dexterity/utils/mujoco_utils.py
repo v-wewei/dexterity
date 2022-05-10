@@ -1,46 +1,10 @@
-from typing import List, Sequence
+from typing import Sequence
 
 import mujoco
 import numpy as np
 from dm_control import mjcf
-from dm_robotics.transformations import transformations as tr
 
 from dexterity import hints
-
-
-def get_site_pose(physics: mjcf.Physics, site_elem: hints.MjcfElement) -> np.ndarray:
-    """Returns the world pose of the site as a 4x4 transform.
-
-    Args:
-        physics: An `mjcf.Physics` instance.
-        site_entity: An `mjcf.Element` instance.
-    """
-    binding = physics.bind(site_elem)
-    xpos = binding.xpos.reshape(3, 1)
-    xmat = binding.xmat.reshape(3, 3)
-    return np.vstack(
-        [
-            np.hstack([xmat, xpos]),
-            np.array([0, 0, 0, 1]),
-        ]
-    )
-
-
-def get_site_relative_pose(
-    physics: mjcf.Physics, site_a: hints.MjcfElement, site_b: hints.MjcfElement
-) -> np.ndarray:
-    """Returns the pose of `site_a` in the frame of `site_b`.
-
-    Args:
-        physics: An `mjcf.Physics` instance.
-        site_a: An `mjcf.Element` instance.
-        site_b: An `mjcf.Element` instance.
-    """
-    pose_wa = get_site_pose(physics, site_a)  # Pose of site_a in world frame.
-    pose_wb = get_site_pose(physics, site_b)  # Pose of site_b in world frame.
-    pose_bw = tr.hmat_inv(pose_wb)  # Pose of world frame in site_b.
-    pose_ba = pose_bw @ pose_wa  # Pose of site_a in site_b.
-    return pose_ba
 
 
 def get_site_velocity(
@@ -69,39 +33,6 @@ def get_site_velocity(
         flg_local,
     )
     return np.hstack([site_vel[3:], site_vel[:3]])
-
-
-def get_joint_dof_size(model: hints.MjModel, joint_id: int) -> int:
-    """Returns the number of degrees of freedom of the joint."""
-    if joint_id < 0 or joint_id >= model.njnt:
-        raise ValueError(
-            f"Provided joint_id {joint_id} is invalid for the provided model, "
-            f"which has {model.njnt} joints."
-        )
-
-    joint_type = model.jnt_type[joint_id]
-
-    if joint_type == mujoco.mjtJoint.mjJNT_SLIDE:
-        return 1
-    elif joint_type == mujoco.mjtJoint.mjJNT_HINGE:
-        return 1
-    elif joint_type == mujoco.mjtJoint.mjJNT_BALL:
-        return 3
-    elif joint_type == mujoco.mjtJoint.mjJNT_FREE:
-        return 6
-    else:  # Not supported.
-        return -1
-
-
-def joint_ids_to_dof_ids(model: hints.MjModel, joint_ids: Sequence[int]) -> List[int]:
-    dof_ids = []
-    for joint_id in joint_ids:
-        dof = get_joint_dof_size(model, joint_id)
-        if dof == -1:
-            raise ValueError(f"joint_id {joint_id} is not a recognized joint type.")
-        for i in range(dof):
-            dof_ids.append(model.jnt_dofadr[joint_id] + i)
-    return dof_ids
 
 
 def compute_object_6d_jacobian(
