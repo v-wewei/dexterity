@@ -48,12 +48,15 @@ pip install .
 The MuJoCo `dexterity` suite is composed of the following core components:
 
 * [`models`](dexterity/models/): MuJoCo models for dexterous hands and [PyMJCF](https://github.com/deepmind/dm_control/blob/main/dm_control/mjcf/README.md) classes for dynamically customizing them.
-* [`inverse_kinematics`](dexterity/inverse_kinematics/): Inverse kinematics solver for multi-fingered hands.
+* [`inverse_kinematics`](dexterity/inverse_kinematics/): Inverse kinematics library for multi-fingered hands.
 * [`effectors`](dexterity/effectors/): Interfaces for controlling hands and defining action spaces.
 
-These components in conjunction with `dm_control` allow you to define and customize rich environments for reinforcement learning.
+These components, in conjunction with `dm_control`, allow you to define and customize rich environments for reinforcement learning. We facilitate this process by providing the following:
 
-`dexterity` also comes pre-packaged with a suite of benchmark RL environments. Our hope is to grow it over time with crowd-sourced contributions from the research community. For an overview of the current tasks, see the [task library](dexterity/manipulation/README.md).
+* [`task`](dexterity/task.py): Wrappers over `composer.Task` that simplify the creation of generic dexterous tasks as well as goal-reaching based tasks (e.g., successive object reorientation).
+* [`manipulation`](dexterity/manipulation/): A library of pre-defined, benchmark RL environments geared towards dexterous manipulation. For an overview of the available tasks, see the [task library](dexterity/manipulation/README.md).
+
+Our hope is to grow the benchmark over time with crowd-sourced contributions from the research community -- PR contributions are welcome!
 
 ## Acknowledgements
 
