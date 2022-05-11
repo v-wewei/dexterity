@@ -20,13 +20,13 @@ class Arena(composer.Arena):
         )
 
         # Remove the default visual headlight setting in `dm_control.Arena`.
-        self._mjcf_root.visual.remove("headlight")
+        self._mjcf_root.visual.headlight.remove("headlight")
 
         # Remove any default lights.
         for light_elem in self._mjcf_root.worldbody.find_all("light"):
             light_elem.remove()
 
-        # Add lighting.
+        # Add our own custom lights.
         self._mjcf_root.worldbody.add(
             "light",
             pos=(0, 0, 1.5),
