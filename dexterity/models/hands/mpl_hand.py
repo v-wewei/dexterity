@@ -1,4 +1,4 @@
-from typing import List
+from typing import List, Sequence
 
 import numpy as np
 from dm_control import composer
@@ -53,35 +53,35 @@ class MPLHand(dexterous_hand.DexterousHand):
         return self._mjcf_root.model
 
     @composer.cached_property
-    def root_body(self):
+    def root_body(self) -> MjcfElement:
         return self._mjcf_root.find("body", "forearm")
 
     @composer.cached_property
-    def bodies(self) -> List[MjcfElement]:
-        return self.mjcf_model.find_all("body")
+    def bodies(self) -> Sequence[MjcfElement]:
+        return tuple(self.mjcf_model.find_all("body"))
 
     @property
-    def joints(self) -> List[MjcfElement]:
+    def joints(self) -> Sequence[MjcfElement]:
         """List of joint elements belonging to the hand."""
         return self._joints
 
     @property
-    def actuators(self) -> List[MjcfElement]:
+    def actuators(self) -> Sequence[MjcfElement]:
         """List of actuator elements belonging to the hand."""
         return self._actuators
 
     @property
-    def tendons(self) -> List[MjcfElement]:
+    def tendons(self) -> Sequence[MjcfElement]:
         """List of tendon elements belonging to the hand."""
         return self._tendons
 
     @property
-    def joint_torque_sensors(self) -> List[MjcfElement]:
+    def joint_torque_sensors(self) -> Sequence[MjcfElement]:
         """List of joint torque sensor elements belonging to the hand."""
         return self._joint_torque_sensors
 
     @property
-    def fingertip_sites(self) -> List[MjcfElement]:
+    def fingertip_sites(self) -> Sequence[MjcfElement]:
         """List of fingertip site elements belonging to the hand."""
         return self._fingertip_sites
 

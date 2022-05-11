@@ -1,7 +1,7 @@
 import abc
 import dataclasses
 import enum
-from typing import Callable, List, Optional, Tuple
+from typing import Callable, List, Optional, Sequence, Tuple
 
 import numpy as np
 from dm_control import composer
@@ -110,11 +110,11 @@ class DexterousHand(composer.Entity, abc.ABC):
         return self.num_actuators < self.num_joints
 
     @property
-    def fingers_pos_sensors(self) -> List[MjcfElement]:
+    def fingers_pos_sensors(self) -> Sequence[MjcfElement]:
         return self._fingers_pos_sensors
 
     @property
-    def tendons(self) -> List[MjcfElement]:
+    def tendons(self) -> Sequence[MjcfElement]:
         raise NotImplementedError
 
     def sample_joint_angles(
@@ -189,32 +189,32 @@ class DexterousHand(composer.Entity, abc.ABC):
 
     @property
     @abc.abstractmethod
-    def bodies(self) -> List[MjcfElement]:
+    def bodies(self) -> Sequence[MjcfElement]:
         """List of bodies belonging to the hand."""
 
     @property
     @abc.abstractmethod
-    def joints(self) -> List[MjcfElement]:
+    def joints(self) -> Sequence[MjcfElement]:
         """List of joint elements belonging to the hand."""
 
     @property
     @abc.abstractmethod
-    def actuators(self) -> List[MjcfElement]:
+    def actuators(self) -> Sequence[MjcfElement]:
         """List of actuator elements belonging to the hand."""
 
     @property
     @abc.abstractmethod
-    def fingertip_sites(self) -> List[MjcfElement]:
+    def fingertip_sites(self) -> Sequence[MjcfElement]:
         """List of fingertip site elements belonging to the hand."""
 
     @property
     @abc.abstractmethod
-    def joint_torque_sensors(self) -> List[MjcfElement]:
+    def joint_torque_sensors(self) -> Sequence[MjcfElement]:
         """List of joint torque sensor elements belonging to the hand."""
 
     @property
     @abc.abstractmethod
-    def joint_groups(self) -> List[JointGrouping]:
+    def joint_groups(self) -> Sequence[JointGrouping]:
         """A list of `JointGrouping` objects corresponding to hand parts."""
 
     # Abstract methods.

@@ -73,7 +73,7 @@ class Reach(task.GoalTask):
 
     def __init__(
         self,
-        arena: arenas.Arena,
+        arena: arenas.Standard,
         hand: dexterous_hand.DexterousHand,
         hand_effector: effector.Effector,
         goal_generator: goal.GoalGenerator,
