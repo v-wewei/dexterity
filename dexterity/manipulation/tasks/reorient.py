@@ -37,6 +37,10 @@ class Workspace:
     prop_bbox: workspaces.BoundingBox
 
 
+# Fraction of the full joint range to use when initializing the joints of the hand at
+# the start of every episode. Should be between 0 and 1.
+_INIT_JOINT_RANGE_FRACTION = 0.5
+
 # Alpha value of the visual goal hint.
 _HINT_ALPHA = 0.4
 # Position of the hint in the world frame, in meters.
@@ -47,24 +51,27 @@ _PROP_SIZE = 0.02
 
 # Fudge factor for taking the inverse of the orientation error, in radians.
 _ORIENTATION_EPS = 0.1
+
 # Threshold for successful orientation, in radians.
 _ORIENTATION_THRESHOLD = 0.1
+
 # Reward shaping coefficients.
+# TODO(kevin): Needs tuning.
 _ORIENTATION_WEIGHT = 1.0
 _SUCCESS_BONUS_WEIGHT = 800.0
-_ACTION_SMOOTHING_WEIGHT = -0.1  # NOTE(kevin): negative sign.
+_ACTION_SMOOTHING_WEIGHT = -0.01  # NOTE(kevin): negative sign.
 
 # Timestep of the physics simulation.
 _PHYSICS_TIMESTEP: float = 0.005
 
 # Interval between agent actions, in seconds.
-_CONTROL_TIMESTEP: float = 0.025
+_CONTROL_TIMESTEP: float = 0.02
 
 # The maximum number of consecutive solves until the task is terminated.
 _SUCCESSED_NEEDED: int = 1
 
 # The maximum allowed time for reaching the current target, in seconds.
-_MAX_STEPS_SINGLE_SOLVE: int = 300
+_MAX_STEPS_SINGLE_SOLVE: int = 400
 _MAX_TIME_SINGLE_SOLVE: float = _MAX_STEPS_SINGLE_SOLVE * _CONTROL_TIMESTEP
 
 _STEPS_BEFORE_MOVING_TARGET: int = 5
@@ -183,6 +190,12 @@ class ReOrient(task.GoalTask):
         self, physics: mjcf.Physics, random_state: np.random.RandomState
     ) -> None:
         super().initialize_episode(physics, random_state)
+
+        # Randomly initialize the joints of the hand.
+        qpos = self.hand.sample_collision_free_joint_angles(
+            physics, random_state, _INIT_JOINT_RANGE_FRACTION
+        )
+        self.hand.set_joint_angles(physics, qpos)
 
         self._hint_prop.set_pose(physics=physics, quaternion=self._goal)
         self._prop_placer(physics=physics, random_state=random_state)
