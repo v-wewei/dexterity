@@ -27,8 +27,8 @@ from dexterity.manipulation.shared import rewards
 from dexterity.manipulation.shared import tags
 from dexterity.manipulation.shared import workspaces
 from dexterity.models import arenas
+from dexterity.models.hands import adroit_hand
 from dexterity.models.hands import dexterous_hand
-from dexterity.models.hands import shadow_hand_e
 from dexterity.utils import mujoco_collisions
 
 
@@ -62,10 +62,10 @@ _SUCCESS_BONUS_WEIGHT = 800.0
 _ACTION_SMOOTHING_WEIGHT = -0.01  # NOTE(kevin): negative sign.
 
 # Timestep of the physics simulation.
-_PHYSICS_TIMESTEP: float = 0.005
+_PHYSICS_TIMESTEP: float = 0.008
 
 # Interval between agent actions, in seconds.
-_CONTROL_TIMESTEP: float = 0.02
+_CONTROL_TIMESTEP: float = 0.016
 
 # The maximum number of consecutive solves until the task is terminated.
 _SUCCESSED_NEEDED: int = 1
@@ -76,11 +76,11 @@ _MAX_TIME_SINGLE_SOLVE: float = _MAX_STEPS_SINGLE_SOLVE * _CONTROL_TIMESTEP
 
 _STEPS_BEFORE_MOVING_TARGET: int = 5
 
-_BBOX_SIZE = 0.05
+_BBOX_SIZE = 0.06
 _WORKSPACE = Workspace(
     prop_bbox=workspaces.BoundingBox(
-        lower=(-_BBOX_SIZE / 2, -0.13 - _BBOX_SIZE / 2, 0.16),
-        upper=(+_BBOX_SIZE / 2, -0.13 + _BBOX_SIZE / 2, 0.16),
+        lower=(-_BBOX_SIZE / 2, -0.15 - _BBOX_SIZE / 2, 0.16),
+        upper=(+_BBOX_SIZE / 2, -0.15 + _BBOX_SIZE / 2, 0.26),
     ),
 )
 
@@ -340,7 +340,7 @@ def reorient_task(
     """Configure and instantiate a `ReOrient` task."""
     arena = arenas.Standard()
 
-    hand = shadow_hand_e.ShadowHandSeriesE(
+    hand = adroit_hand.AdroitHand(
         observable_options=observations.make_options(
             observation_set.value,
             observations.HAND_OBSERVABLES,
