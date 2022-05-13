@@ -18,6 +18,7 @@ from dexterity import effector
 from dexterity import effectors
 from dexterity import goal
 from dexterity import task
+from dexterity.effectors import wrappers
 from dexterity.manipulation import props
 from dexterity.manipulation.goals import prop_orientation
 from dexterity.manipulation.shared import cameras
@@ -27,8 +28,8 @@ from dexterity.manipulation.shared import rewards
 from dexterity.manipulation.shared import tags
 from dexterity.manipulation.shared import workspaces
 from dexterity.models import arenas
-from dexterity.models.hands import adroit_hand
 from dexterity.models.hands import dexterous_hand
+from dexterity.models.hands import shadow_hand_e
 from dexterity.utils import mujoco_collisions
 
 
@@ -59,16 +60,16 @@ _ORIENTATION_THRESHOLD = 0.1
 # TODO(kevin): Needs tuning.
 _ORIENTATION_WEIGHT = 1.0
 _SUCCESS_BONUS_WEIGHT = 800.0
-_ACTION_SMOOTHING_WEIGHT = -0.01  # NOTE(kevin): negative sign.
+_ACTION_SMOOTHING_WEIGHT = -0.1  # NOTE(kevin): negative sign.
 
 # Timestep of the physics simulation.
-_PHYSICS_TIMESTEP: float = 0.008
+_PHYSICS_TIMESTEP: float = 0.005
 
 # Interval between agent actions, in seconds.
-_CONTROL_TIMESTEP: float = 0.016
+_CONTROL_TIMESTEP: float = 0.025
 
 # The maximum number of consecutive solves until the task is terminated.
-_SUCCESSED_NEEDED: int = 1
+_SUCCESSED_NEEDED: int = 50
 
 # The maximum allowed time for reaching the current target, in seconds.
 _MAX_STEPS_SINGLE_SOLVE: int = 400
@@ -76,11 +77,11 @@ _MAX_TIME_SINGLE_SOLVE: float = _MAX_STEPS_SINGLE_SOLVE * _CONTROL_TIMESTEP
 
 _STEPS_BEFORE_MOVING_TARGET: int = 5
 
-_BBOX_SIZE = 0.06
+_BBOX_SIZE = 0.05
 _WORKSPACE = Workspace(
     prop_bbox=workspaces.BoundingBox(
         lower=(-_BBOX_SIZE / 2, -0.15 - _BBOX_SIZE / 2, 0.16),
-        upper=(+_BBOX_SIZE / 2, -0.15 + _BBOX_SIZE / 2, 0.26),
+        upper=(+_BBOX_SIZE / 2, -0.15 + _BBOX_SIZE / 2, 0.16),
     ),
 )
 
@@ -227,8 +228,8 @@ class ReOrient(task.GoalTask):
 
     def get_reward(self, physics: mjcf.Physics) -> float:
         shaped_reward = _get_shaped_reorientation_reward(
-            physics,
-            self._goal_distance,
+            goal_distance=self._goal_distance,
+            action=self.hand_effector.previous_action,  # type: ignore
         )
         return rewards.weighted_average(shaped_reward)
 
@@ -249,7 +250,7 @@ class ReOrient(task.GoalTask):
 
 
 def _get_shaped_reorientation_reward(
-    physics: mjcf.Physics, goal_distance: np.ndarray
+    goal_distance: np.ndarray, action: np.ndarray
 ) -> Dict[str, rewards.Reward]:
     """Returns a tuple of shaping reward components, as defined in [1].
 
@@ -287,7 +288,7 @@ def _get_shaped_reorientation_reward(
     )
 
     # Action smoothing component.
-    action_smoothing_reward = np.linalg.norm(physics.data.ctrl) ** 2
+    action_smoothing_reward = np.linalg.norm(action) ** 2
     assert isinstance(action_smoothing_reward, float)
     shaped_reward["action_smoothing"] = rewards.Reward(
         value=action_smoothing_reward,
@@ -340,7 +341,7 @@ def reorient_task(
     """Configure and instantiate a `ReOrient` task."""
     arena = arenas.Standard()
 
-    hand = adroit_hand.AdroitHand(
+    hand = shadow_hand_e.ShadowHandSeriesE(
         observable_options=observations.make_options(
             observation_set.value,
             observations.HAND_OBSERVABLES,
@@ -348,6 +349,7 @@ def reorient_task(
     )
 
     hand_effector = effectors.HandEffector(hand=hand, hand_name=hand.name)
+    prev_action_effector = wrappers.PreviousAction(hand_effector)
 
     prop_obs_options = observations.make_options(
         observation_set.value, _FREEPROP_OBSERVABLES
@@ -370,7 +372,7 @@ def reorient_task(
     return ReOrient(
         arena=arena,
         hand=hand,
-        hand_effector=hand_effector,
+        hand_effector=prev_action_effector,
         prop=prop,
         hint_prop=hint_prop,
         goal_generator=goal_generator,

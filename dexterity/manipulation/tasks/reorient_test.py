@@ -28,6 +28,7 @@ class ReOrientTaskTest(absltest.TestCase):
             high=action_spec.maximum,
             size=action_spec.shape,
         )
+        rand_ctrl = rand_ctrl.astype(action_spec.dtype)
         env.task.hand_effector.set_control(env.physics, rand_ctrl)
 
         # Compute shaped reward.
@@ -36,12 +37,12 @@ class ReOrientTaskTest(absltest.TestCase):
             env.task.goal_generator.current_state(env.physics),
         )
         shaped_reward = reorient._get_shaped_reorientation_reward(
-            physics=env.physics,
             goal_distance=goal_distance,
+            action=env.task.hand_effector.previous_action,
         )
 
         # Check individual reward components.
-        np.testing.assert_equal(
+        np.testing.assert_almost_equal(
             shaped_reward["orientation"].value, 1 / reorient._ORIENTATION_THRESHOLD
         )
         np.testing.assert_equal(shaped_reward["success_bonus"].value, 1.0)
