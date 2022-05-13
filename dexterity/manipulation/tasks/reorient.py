@@ -60,7 +60,8 @@ _ORIENTATION_THRESHOLD = 0.1
 # TODO(kevin): Needs tuning.
 _ORIENTATION_WEIGHT = 1.0
 _SUCCESS_BONUS_WEIGHT = 800.0
-_ACTION_SMOOTHING_WEIGHT = -0.1  # NOTE(kevin): negative sign.
+_ACTION_SMOOTHING_WEIGHT = -0.01  # NOTE(kevin): negative sign.
+_FALL_PENALTY_WEIGHT = -800.0
 
 # Timestep of the physics simulation.
 _PHYSICS_TIMESTEP: float = 0.005
@@ -77,11 +78,12 @@ _MAX_TIME_SINGLE_SOLVE: float = _MAX_STEPS_SINGLE_SOLVE * _CONTROL_TIMESTEP
 
 _STEPS_BEFORE_MOVING_TARGET: int = 5
 
-_BBOX_SIZE = 0.05
+_BBOX_X = 0.07
+_BBOX_Y = 0.10
 _WORKSPACE = Workspace(
     prop_bbox=workspaces.BoundingBox(
-        lower=(-_BBOX_SIZE / 2, -0.15 - _BBOX_SIZE / 2, 0.16),
-        upper=(+_BBOX_SIZE / 2, -0.15 + _BBOX_SIZE / 2, 0.16),
+        lower=(-_BBOX_X / 2, -0.125 - _BBOX_Y / 2, 0.16),
+        upper=(+_BBOX_X / 2, -0.125 + _BBOX_Y / 2, 0.20),
     ),
 )
 
@@ -227,9 +229,11 @@ class ReOrient(task.GoalTask):
         return should_terminate or self._failure_termination
 
     def get_reward(self, physics: mjcf.Physics) -> float:
+        del physics  # Unused.
         shaped_reward = _get_shaped_reorientation_reward(
             goal_distance=self._goal_distance,
             action=self.hand_effector.previous_action,  # type: ignore
+            has_fallen=self._failure_termination,
         )
         return rewards.weighted_average(shaped_reward)
 
@@ -241,7 +245,7 @@ class ReOrient(task.GoalTask):
     # Helper methods.
 
     def _is_prop_fallen(self, physics: mjcf.Physics) -> bool:
-        """Returns True if the prop has fallen from the hand."""
+        """Returns True if the prop has fallen and collided with the ground."""
         return mujoco_collisions.has_collision(
             physics=physics,
             collision_geom_prefix_1=[f"{self._prop.name}/"],
@@ -250,7 +254,9 @@ class ReOrient(task.GoalTask):
 
 
 def _get_shaped_reorientation_reward(
-    goal_distance: np.ndarray, action: np.ndarray
+    goal_distance: np.ndarray,
+    action: np.ndarray,
+    has_fallen: bool,
 ) -> Dict[str, rewards.Reward]:
     """Returns a tuple of shaping reward components, as defined in [1].
 
@@ -293,6 +299,14 @@ def _get_shaped_reorientation_reward(
     shaped_reward["action_smoothing"] = rewards.Reward(
         value=action_smoothing_reward,
         weight=_ACTION_SMOOTHING_WEIGHT,
+    )
+
+    # Fall penalty.
+    fall_penalty_reward = float(has_fallen)
+    assert isinstance(fall_penalty_reward, float)
+    shaped_reward["fall_penalty"] = rewards.Reward(
+        value=fall_penalty_reward,
+        weight=_FALL_PENALTY_WEIGHT,
     )
 
     return shaped_reward

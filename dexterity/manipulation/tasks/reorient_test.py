@@ -39,10 +39,11 @@ class ReOrientTaskTest(absltest.TestCase):
         shaped_reward = reorient._get_shaped_reorientation_reward(
             goal_distance=goal_distance,
             action=env.task.hand_effector.previous_action,
+            has_fallen=env.task._is_prop_fallen(env.physics),
         )
 
         # Check individual reward components.
-        np.testing.assert_almost_equal(
+        np.testing.assert_equal(
             shaped_reward["orientation"].value, 1 / reorient._ORIENTATION_THRESHOLD
         )
         np.testing.assert_equal(shaped_reward["success_bonus"].value, 1.0)
