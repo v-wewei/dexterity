@@ -5,6 +5,7 @@ import dataclasses
 from typing import Dict, Optional
 
 import numpy as np
+from absl import logging
 from dm_control import composer
 from dm_control import mjcf
 from dm_control.composer import initializers
@@ -60,8 +61,8 @@ _ORIENTATION_THRESHOLD = 0.1
 # TODO(kevin): Needs tuning.
 _ORIENTATION_WEIGHT = 1.0
 _SUCCESS_BONUS_WEIGHT = 800.0
-_ACTION_SMOOTHING_WEIGHT = -0.01  # NOTE(kevin): negative sign.
-_FALL_PENALTY_WEIGHT = -800.0
+_ACTION_SMOOTHING_WEIGHT = -0.0  # Turning this off for now.
+_FALL_PENALTY_WEIGHT = -100.0
 
 # Timestep of the physics simulation.
 _PHYSICS_TIMESTEP: float = 0.005
@@ -70,7 +71,7 @@ _PHYSICS_TIMESTEP: float = 0.005
 _CONTROL_TIMESTEP: float = 0.025
 
 # The maximum number of consecutive solves until the task is terminated.
-_SUCCESSED_NEEDED: int = 50
+_SUCCESSED_NEEDED: int = 1
 
 # The maximum allowed time for reaching the current target, in seconds.
 _MAX_STEPS_SINGLE_SOLVE: int = 400
@@ -225,8 +226,10 @@ class ReOrient(task.GoalTask):
                 self._failure_termination = True
 
     def should_terminate_episode(self, physics: mjcf.Physics) -> bool:
-        should_terminate = super().should_terminate_episode(physics)
-        return should_terminate or self._failure_termination
+        if self._failure_termination:
+            logging.info("Truncate episode due to prop falling.")
+            return True
+        return super().should_terminate_episode(physics)
 
     def get_reward(self, physics: mjcf.Physics) -> float:
         del physics  # Unused.
@@ -238,9 +241,10 @@ class ReOrient(task.GoalTask):
         return rewards.weighted_average(shaped_reward)
 
     def get_discount(self, physics: mjcf.Physics) -> float:
+        del physics  # Unused.
         if self._failure_termination:
-            return 1.0
-        return super().get_discount(physics)
+            return 0.0
+        return 1.0
 
     # Helper methods.
 
