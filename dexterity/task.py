@@ -69,7 +69,7 @@ class Task(composer.Task):
         del random_state  # Unused.
 
         for eff in self._hand_effectors:
-            e_cmd = action[self._find_effector_indices(eff, physics)]
+            e_cmd = action[np.asarray(self._find_effector_indices(eff, physics))]
             eff.set_control(physics, e_cmd)
 
     def action_spec(
